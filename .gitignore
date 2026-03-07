@@ -1,0 +1,41 @@
+# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+bin/
+build/
+out/
+
+# Tomcat
+*.war
+*.ear
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Windows reserved filename
+nul
+
+# Local storage (user uploaded files)
+WebContent/localstorage/files/
+WebContent/localstorage/news/
+
+# Compiled classes
+*.class
+
+# Maven (if used later)
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+
