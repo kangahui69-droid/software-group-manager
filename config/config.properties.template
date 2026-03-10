@@ -1,0 +1,114 @@
+# 高校软件小组管理系统 - 环境配置文件
+# 使用说明：
+# 1. 复制此文件为 config.local.properties 用于本地开发
+# 2. 复制此文件为 config.test.properties 用于测试环境
+# 3. 复制此文件为 config.prod.properties 用于生产环境
+# 4. 根据实际情况修改配置值
+# 5. 不要将包含真实密码的 config.*.properties 文件提交到Git！
+
+# ============================================
+# 数据库配置
+# ============================================
+
+# 数据库URL
+# 本地开发使用 localhost
+# 格式：jdbc:mysql://主机:端口/数据库名?参数
+# 常用参数：
+#   useUnicode=true&characterEncoding=UTF-8 - 支持中文
+#   useSSL=false - 禁用SSL（开发环境）
+#   serverTimezone=Asia/Shanghai - 设置时区
+#   allowPublicKeyRetrieval=true - MySQL 8.0+需要
+#db.url=jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+
+# 数据库用户名
+db.username=root
+
+# 数据库密码
+# 警告：请将此文件添加到 .gitignore，不要将真实密码提交到Git！
+db.password=your_password_here
+
+# ============================================
+# 文件存储配置
+# ============================================
+
+# 文件上传存储路径
+# 本地开发使用相对路径或绝对路径
+# 生产环境建议使用绝对路径
+file.storage.path=WebContent/localstorage/files
+
+# 图片上传存储路径
+image.storage.path=WebContent/localstorage/images
+
+# 允许上传的文件类型（逗号分隔）
+file.allowed.types=jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip,rar
+
+# 最大文件大小（MB）
+file.max.size=10
+
+# ============================================
+# 系统配置
+# ============================================
+
+# 系统名称
+system.name=高校软件小组管理系统
+
+# 系统版本
+system.version=1.0.0
+
+# 是否开启调试模式（开发环境开启，生产环境关闭）
+system.debug=true
+
+# 会话超时时间（分钟）
+session.timeout=30
+
+# ============================================
+# 邮箱配置（用于密码找回、通知等）
+# ============================================
+
+# 是否启用邮件功能
+mail.enabled=false
+
+# SMTP服务器地址
+# 例如：smtp.qq.com, smtp.163.com, smtp.gmail.com
+mail.smtp.host=smtp.example.com
+
+# SMTP服务器端口
+mail.smtp.port=587
+
+# 发件人邮箱
+mail.from=your_email@example.com
+
+# 发件人密码或授权码
+# 警告：不要将真实密码提交到Git！
+mail.password=your_email_password
+
+# 是否启用SSL
+mail.smtp.ssl=true
+
+# ============================================
+# 安全配置
+# ============================================
+
+# DES加密密钥（用于密码加密）
+# 警告：生产环境请务必修改此密钥！
+# 建议：16位随机字符串
+encryption.des.key=(^&%gasie_%^
+
+# 登录失败最大尝试次数（0表示不限制）
+security.login.max.attempts=5
+
+# 登录失败锁定时间（分钟）
+security.login.lock.time=30
+
+# ============================================
+# 开发环境特殊配置
+# ============================================
+
+# 是否自动创建数据库表（仅开发环境使用）
+dev.auto.create.tables=false
+
+# 是否插入测试数据（仅开发环境使用）
+dev.insert.test.data=false
+
+# 日志级别（DEBUG, INFO, WARN, ERROR）
+log.level=DEBUG
