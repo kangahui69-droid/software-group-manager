@@ -50,3 +50,11 @@ pom.xml.releaseBackup
 
 # virtual machine crash logs
 hs_err_pid*
+
+# Configuration files (DO NOT COMMIT FILES WITH REAL PASSWORDS!)
+# 本地环境配置文件（包含真实密码，绝对不能提交到Git！）
+config/config.local.properties
+config/config.test.properties
+config/config.prod.properties
+# 但保留模板文件（已经包含在Git中）
+# !config/config.properties.template
