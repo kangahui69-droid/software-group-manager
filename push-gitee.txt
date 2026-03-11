@@ -1,0 +1,134 @@
+========================================
+推送到Gitee完整指南
+========================================
+
+项目：高校软件小组管理系统
+目标仓库：https://gitee.com/hsuniversity/softwaregroup.git
+目标分支：develop
+
+========================================
+【状态检查】已完成的工作
+========================================
+
+✅ Git仓库初始化完成
+✅ 远程仓库配置完成 (origin)
+✅ 文件已添加到暂存区 (157个文件)
+✅ Git提交已创建 (commit: 12562f6)
+
+========================================
+【操作步骤】手动执行推送
+========================================
+
+请按以下顺序执行：
+
+【步骤1】打开CMD或Git Bash
+按下Win+R，输入cmd，回车
+
+【步骤2】进入项目目录
+cd /d E:\java\Software_group
+
+【步骤3】执行推送命令
+git push -u origin master:develop
+
+【步骤4】输入身份验证信息（重要！）
+
+执行上面的命令后，会提示：
+
+Username for 'https://gitee.com':
+在此处输入你的Gitee用户名，然后按回车
+
+Password for 'https://gitee.com':
+在此处输入你的Gitee密码或个人访问令牌，然后按回车
+
+（注意：输入密码时不会显示任何字符，这是正常的）
+
+========================================
+【推荐使用】个人访问令牌
+========================================
+
+为了安全，建议使用个人访问令牌代替密码：
+
+1. 登录Gitee (https://gitee.com)
+2. 点击右上角头像 → 设置
+3. 左侧菜单 → 私人令牌
+4. 点击「+生成新令牌」
+5. 输入令牌描述（如：SoftwareGroup推送）
+6. 勾选权限：projects（查看、编辑项目）
+7. 点击「提交」，复制生成的令牌
+8. 在上面的Password处粘贴该令牌
+
+========================================
+【推送成功验证】
+========================================
+
+如果推送成功，你会看到类似输出：
+
+Enumerating objects: 157, done.
+Counting objects: 100% (157/157), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (120/120), done.
+Writing objects: 100% (157/157), 12.5 MiB | 5.2 MiB/s, done.
+Total 157 (delta 25), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (25/25), done.
+To https://gitee.com/hsuniversity/softwaregroup.git
+ * [new branch]      master -> develop
+
+此时访问以下地址查看：
+https://gitee.com/hsuniversity/softwaregroup/tree/develop/
+
+========================================
+【常见问题】问题排查
+========================================
+
+Q1: 提示 "fatal: unable to access..."
+A: 检查网络连接，确认能访问 https://gitee.com
+
+Q2: 提示 "Authentication failed"
+A: 用户名或密码/令牌错误，请重新输入
+
+Q3: 提示 "failed to push some refs"
+A: 远程仓库已有代码，执行：
+   git pull origin develop --allow-unrelated-histories
+   然后再推送
+
+Q4: 提示 "could not resolve host"
+A: DNS解析失败，尝试：
+   git push https://IP地址替换/hsuniversity/softwaregroup.git master:develop
+
+========================================
+【提交信息摘要】
+========================================
+
+本次提交包含以下重要改进：
+
+【安全改进】
+1. 外置敏感配置到db.properties和config.properties
+2. 数据库密码、DES密钥不再硬编码在代码中
+3. 更新.gitignore防止敏感文件提交
+
+【性能改进】
+1. 添加HikariCP数据库连接池，替换原生JDBC
+2. 修复pom.xml中Java版本不一致问题(统一为1.8)
+3. 添加SLF4J日志框架
+
+【修改文件】
+- pom.xml: 添加HikariCP、SLF4J依赖，修复Java版本
+- DBUtil.java: 完全重写，使用HikariCP连接池
+- Config.java: 支持从配置文件读取
+- .gitignore: 添加敏感文件忽略
+
+【新增文件】
+- src/main/resources/db.properties
+- src/main/resources/config.properties
+
+========================================
+【项目信息】
+========================================
+
+项目名称：高校软件小组管理系统
+技术栈：JSP + Servlet + JDBC + MySQL + Maven
+本地路径：E:\java\Software_group
+远程仓库：https://gitee.com/hsuniversity/softwaregroup.git
+目标分支：develop
+
+========================================
