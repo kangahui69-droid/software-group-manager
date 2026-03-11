@@ -2,7 +2,7 @@
     <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
         <jsp:include page="../common/layout_top.jsp">
             <jsp:param name="title" value="新闻动态" />
-            <jsp:param name="active" value="notice" />
+            <jsp:param name="active" value="${param.type}" />
         </jsp:include>
 
         <div class="page-header d-print-none">
