@@ -169,7 +169,7 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">生日</label>
                                     <input type="date" class="form-control" name="birthday"
-                                        value="${birthdayValue}">
+                                        value="${birthdayValue}" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">学号</label>
