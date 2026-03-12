@@ -193,6 +193,56 @@
         <url-pattern>/upload-avatar</url-pattern>
     </servlet-mapping>
 
+    <!-- 简历Servlet -->
+    <servlet>
+        <servlet-name>ResumeServlet</servlet-name>
+        <servlet-class>servlet.ResumeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResumeServlet</servlet-name>
+        <url-pattern>/resume</url-pattern>
+    </servlet-mapping>
+
+    <!-- 简历-教育经历Servlet -->
+    <servlet>
+        <servlet-name>ResumeEducationServlet</servlet-name>
+        <servlet-class>servlet.ResumeEducationServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResumeEducationServlet</servlet-name>
+        <url-pattern>/resume/education</url-pattern>
+    </servlet-mapping>
+
+    <!-- 简历-技能特长Servlet -->
+    <servlet>
+        <servlet-name>ResumeSkillServlet</servlet-name>
+        <servlet-class>servlet.ResumeSkillServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResumeSkillServlet</servlet-name>
+        <url-pattern>/resume/skill</url-pattern>
+    </servlet-mapping>
+
+    <!-- 简历-项目经历Servlet -->
+    <servlet>
+        <servlet-name>ResumeProjectServlet</servlet-name>
+        <servlet-class>servlet.ResumeProjectServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResumeProjectServlet</servlet-name>
+        <url-pattern>/resume/project</url-pattern>
+    </servlet-mapping>
+
+    <!-- 简历-获奖情况Servlet -->
+    <servlet>
+        <servlet-name>ResumeAwardServlet</servlet-name>
+        <servlet-class>servlet.ResumeAwardServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResumeAwardServlet</servlet-name>
+        <url-pattern>/resume/award</url-pattern>
+    </servlet-mapping>
+
     <!-- 用户资料Servlet -->
     <servlet>
         <servlet-name>ProfileServlet</servlet-name>
