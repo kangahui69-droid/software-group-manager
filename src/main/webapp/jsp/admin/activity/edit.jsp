@@ -254,11 +254,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 当活动时间确定后，限制报名截止时间不能超过活动开始时间
+    // 当活动时间确定后，限制报名截止时间必须早于活动开始时间
     activityStartInput.addEventListener('change', function() {
         if (this.value) {
-            // 报名截止时间不能超过活动开始时间
+            // 报名截止时间必须早于活动开始时间（严格小于）
             regEndInput.max = this.value;
+            // 如果当前报名截止时间晚于或等于活动开始时间，清空报名截止时间
+            if (regEndInput.value && regEndInput.value >= this.value) {
+                regEndInput.value = '';
+                alert('报名截止时间已清空，请重新选择早于活动开始时间的时间');
+            }
         } else {
             regEndInput.removeAttribute('max');
         }
