@@ -126,12 +126,14 @@
                 <script>
                     let initialContent = "";
                 <%if (isEdit && content != null && !content.isEmpty()) {
-                    // Escape content for JavaScript
-                    String escapedContent = content.replace("\\", "\\\\")
-                            .replace("\"", "\\\"")
-                            .replace("\n", "\\n")
-                            .replace("\r", "")
-                            .replace("`", "\\`");
+                    // Escape content for JavaScript - 修复转义逻辑
+                    String escapedContent = content
+                            .replace("&", "&amp;")      // 必须在最前面
+                            .replace("<", "&lt;")       // HTML 标签
+                            .replace(">", "&gt;")
+                            .replace("\"", "&quot;")     // 引号
+                            .replace("'", "&#x27;")      // 单引号
+                            .replace("/", "&#x2F;");     // 斜杠
                 %>
                             initialContent = "<%= escapedContent %>";
                 <% } %>
