@@ -60,7 +60,7 @@
                                     <a href="${pageContext.request.contextPath}/award?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
                                         <i class="bi bi-award me-3 text-yellow"></i> 我的奖项
                                     </a>
-                                    <a href="resume.jsp" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
+                                    <a href="${pageContext.request.contextPath}/resume?action=list" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
                                         <i class="bi bi-file-earmark-person me-3 text-purple"></i> 我的简历
                                     </a>
                                 </div>
