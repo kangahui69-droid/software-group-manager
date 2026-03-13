@@ -18,6 +18,9 @@
                 <a href="${pageContext.request.contextPath}/resume?action=create" class="btn btn-primary">
                     <i class="bi bi-plus-lg me-1"></i>创建新简历
                 </a>
+                <a href="${pageContext.request.contextPath}/resume?action=recycleBin" class="btn btn-outline-danger ms-2">
+                    <i class="bi bi-trash me-1"></i>回收站
+                </a>
             </div>
         </div>
     </div>
@@ -46,6 +49,15 @@
             <div class="d-flex">
                 <div><i class="bi bi-check-circle-fill me-2"></i></div>
                 <div>简历已删除！</div>
+            </div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+        </div>
+    </c:if>
+    <c:if test="${param.success == 'restored'}">
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="d-flex">
+                <div><i class="bi bi-check-circle-fill me-2"></i></div>
+                <div>简历恢复成功！</div>
             </div>
             <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
         </div>

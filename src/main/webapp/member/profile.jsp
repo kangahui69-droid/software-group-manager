@@ -112,7 +112,7 @@
                             </a>
                         </div>
                         <div class="col-6 col-md-6">
-                            <a href="${pageContext.request.contextPath}/member/resume.jsp" class="card card-link">
+                            <a href="${pageContext.request.contextPath}/resume?action=list" class="card card-link">
                                 <div class="card-body p-4 text-center">
                                     <div class="mb-2">
                                         <i class="bi bi-file-earmark-text h2 text-blue"></i>
