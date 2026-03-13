@@ -27,10 +27,95 @@
                 .badge.bg-blue {
                     color: #ffffff !important;
                 }
+                
+                /* 按钮hover效果 */
+                .btn-hover-lift {
+                    transition: all 0.3s ease;
+                }
+                .btn-hover-lift:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                }
+                
+                /* 空状态图标动画效果 */
+                .empty-img i {
+                    animation: pulse 2s infinite;
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 0.6; }
+                    50% { opacity: 1; }
+                }
+                
+                /* 面包屑导航样式优化 */
+                .breadcrumb-item a {
+                    color: #206bc4;
+                    text-decoration: none;
+                }
+                .breadcrumb-item a:hover {
+                    text-decoration: underline;
+                }
+
+                /* 全局 Loading 遮罩层 */
+                #global-loading {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: none;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                }
+
+                #global-loading.active {
+                    display: flex;
+                }
+
+                /* Loading 动画 */
+                .loading-spinner {
+                    width: 50px;
+                    height: 50px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #3498db;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                }
+
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                .loading-text {
+                    color: white;
+                    margin-top: 15px;
+                    font-size: 16px;
+                    text-align: center;
+                }
+
+                /* 页面加载时的过渡效果 */
+                .page-content {
+                    opacity: 1;
+                    transition: opacity 0.3s ease-in-out;
+                }
+
+                .page-content.loading {
+                    opacity: 0.7;
+                }
             </style>
         </head>
 
         <body>
+            <!-- 全局 Loading 组件 -->
+            <div id="global-loading">
+                <div class="text-center">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">加载中...</div>
+                </div>
+            </div>
+
             <div class="page">
                 <c:if test="${sessionScope.user.role == 'ADMIN'}">
                     <jsp:include page="admin_sidebar.jsp" />

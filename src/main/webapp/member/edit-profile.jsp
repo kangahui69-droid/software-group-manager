@@ -35,6 +35,10 @@
     <jsp:param name="title" value="编辑资料" />
 </jsp:include>
 
+<!-- Quill.js 富文本编辑器 -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
 <div class="container-xl">
     <div class="row">
         <div class="col-12">
@@ -169,7 +173,7 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">生日</label>
                                     <input type="date" class="form-control" name="birthday"
-                                        value="${birthdayValue}">
+                                        value="${birthdayValue}" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">学号</label>
@@ -196,8 +200,10 @@
                                 </div>
                                 <div class="col-md-12 mb-3">
                                     <label class="form-label">个人简介</label>
-                                    <textarea class="form-control" name="bio" rows="4"
-                                        placeholder="请输入个人简介">${memberProfile.introduction}</textarea>
+                                    <!-- 富文本编辑器容器 -->
+                                    <div id="editor-container" style="height: 200px; background: white;"></div>
+                                    <!-- 隐藏域用于表单提交 -->
+                                    <input type="hidden" name="bio" id="bio-hidden" value="${memberProfile.introduction}">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">GitHub</label>
@@ -363,6 +369,49 @@
             alert('新密码长度不能少于6位');
             e.preventDefault();
             return;
+        }
+    });
+</script>
+
+<!-- Quill富文本编辑器初始化 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化Quill编辑器
+        var quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: '请输入个人简介...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': [1, 2, 3, false] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'align': [] }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // 获取隐藏域
+        var hiddenInput = document.getElementById('bio-hidden');
+
+        // 如果隐藏域已有内容，设置为编辑器内容
+        if (hiddenInput && hiddenInput.value) {
+            quill.root.innerHTML = hiddenInput.value;
+        }
+
+        // 在表单提交前同步编辑器内容到隐藏域
+        var form = document.getElementById('profileForm');
+        if (form) {
+            form.addEventListener('submit', function() {
+                if (hiddenInput) {
+                    hiddenInput.value = quill.root.innerHTML;
+                }
+            });
         }
     });
 </script>
