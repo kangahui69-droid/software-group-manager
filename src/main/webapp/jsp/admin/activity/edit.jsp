@@ -91,15 +91,16 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">开始时间</label>
-                                    <input type="datetime-local" class="form-control" name="activityStartTime" 
-                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                    <input type="datetime-local" class="form-control" name="activityStartTime" id="activityStartTime"
+                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd HH:mm' />"
+                                           min="<%= new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date()) %>">
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">结束时间</label>
-                                    <input type="datetime-local" class="form-control" name="activityEndTime" 
+                                    <input type="datetime-local" class="form-control" name="activityEndTime" id="activityEndTime"
                                            value="<fmt:formatDate value='${activity.activityEndTime}' pattern='yyyy-MM-dd HH:mm' />">
                                 </div>
                             </div>
@@ -109,15 +110,16 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">报名开始时间</label>
-                                    <input type="datetime-local" class="form-control" name="registrationStartTime" 
-                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                    <input type="datetime-local" class="form-control" name="registrationStartTime" id="registrationStartTime"
+                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd HH:mm' />"
+                                           min="<%= new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date()) %>">
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">报名截止时间</label>
-                                    <input type="datetime-local" class="form-control" name="registrationEndTime" 
+                                    <input type="datetime-local" class="form-control" name="registrationEndTime" id="registrationEndTime"
                                            value="<fmt:formatDate value='${activity.registrationEndTime}' pattern='yyyy-MM-dd HH:mm' />">
                                 </div>
                             </div>
@@ -218,4 +220,88 @@
         }
     }
 })();
+
+// 日期验证逻辑
+document.addEventListener('DOMContentLoaded', function() {
+    var activityStartInput = document.getElementById('activityStartTime');
+    var activityEndInput = document.getElementById('activityEndTime');
+    var regStartInput = document.getElementById('registrationStartTime');
+    var regEndInput = document.getElementById('registrationEndTime');
+    
+    // 当活动时间改变时，更新结束时间的最小值
+    activityStartInput.addEventListener('change', function() {
+        if (this.value) {
+            activityEndInput.min = this.value;
+            // 如果结束时间早于开始时间，清空结束时间
+            if (activityEndInput.value && activityEndInput.value < this.value) {
+                activityEndInput.value = '';
+            }
+        } else {
+            activityEndInput.removeAttribute('min');
+        }
+    });
+    
+    // 当报名开始时间改变时，更新报名结束时间的最小值
+    regStartInput.addEventListener('change', function() {
+        if (this.value) {
+            regEndInput.min = this.value;
+            // 如果报名结束时间早于开始时间，清空结束时间
+            if (regEndInput.value && regEndInput.value < this.value) {
+                regEndInput.value = '';
+            }
+        } else {
+            regEndInput.removeAttribute('min');
+        }
+    });
+    
+    // 当活动时间确定后，限制报名截止时间必须早于活动开始时间
+    activityStartInput.addEventListener('change', function() {
+        if (this.value) {
+            // 报名截止时间必须早于活动开始时间（严格小于）
+            regEndInput.max = this.value;
+            // 如果当前报名截止时间晚于或等于活动开始时间，清空报名截止时间
+            if (regEndInput.value && regEndInput.value >= this.value) {
+                regEndInput.value = '';
+                alert('报名截止时间已清空，请重新选择早于活动开始时间的时间');
+            }
+        } else {
+            regEndInput.removeAttribute('max');
+        }
+    });
+    
+    // 表单提交验证
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var activityStart = activityStartInput.value;
+        var activityEnd = activityEndInput.value;
+        var regStart = regStartInput.value;
+        var regEnd = regEndInput.value;
+        
+        // 验证活动结束时间
+        if (activityStart && activityEnd) {
+            if (activityEnd <= activityStart) {
+                alert('活动结束时间必须晚于开始时间');
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        // 验证报名结束时间
+        if (regStart && regEnd) {
+            if (regEnd <= regStart) {
+                alert('报名截止时间必须晚于开始时间');
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        // 验证报名截止时间必须早于活动开始时间（严格小于）
+        if (regEnd && activityStart) {
+            if (regEnd >= activityStart) {
+                alert('报名截止时间必须早于活动开始时间');
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+});
 </script>
