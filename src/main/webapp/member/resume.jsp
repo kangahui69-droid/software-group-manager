@@ -1,10 +1,19 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <jsp:include page="../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="我的简历" />
 </jsp:include>
 
 <div class="container-xl">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mt-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="${pageContext.request.contextPath}/index.jsp">首页</a></li>
+            <li class="breadcrumb-item active" aria-current="page">我的简历</li>
+        </ol>
+    </nav>
+    
     <!-- 页面标题 -->
     <div class="page-header d-print-none">
         <div class="row g-2 align-items-center">
@@ -15,7 +24,7 @@
                 <div class="text-muted mt-1">管理和完善您的个人简历</div>
             </div>
             <div class="col-auto">
-                <a href="${pageContext.request.contextPath}/resume?action=create" class="btn btn-primary">
+                <a href="${pageContext.request.contextPath}/resume?action=create" class="btn btn-primary btn-hover-lift">
                     <i class="bi bi-plus-lg me-1"></i>创建新简历
                 </a>
                 <a href="${pageContext.request.contextPath}/resume?action=recycleBin" class="btn btn-outline-danger ms-2">
@@ -100,14 +109,14 @@
                         <div class="card-body">
                             <div class="empty">
                                 <div class="empty-img">
-                                    <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                                    <i class="bi bi-file-earmark-text display-1 text-primary" style="font-size: 5rem; opacity: 0.8;"></i>
                                 </div>
                                 <p class="empty-title h3">还没有创建简历</p>
                                 <p class="empty-subtitle text-muted">
                                     创建您的第一份简历，展示您的技能和经验
                                 </p>
                                 <div class="empty-action">
-                                    <a href="${pageContext.request.contextPath}/resume?action=create" class="btn btn-primary">
+                                    <a href="${pageContext.request.contextPath}/resume?action=create" class="btn btn-primary btn-hover-lift">
                                         <i class="bi bi-plus-lg me-1"></i>创建简历
                                     </a>
                                 </div>
@@ -145,7 +154,7 @@
                             <div class="card-body">
                                 <div class="mb-2">
                                     <i class="bi bi-calendar me-1 text-muted"></i>
-                                    <small class="text-muted">创建于: ${resume.createdAt}</small>
+                                    <small class="text-muted">创建于: <fmt:formatDate value="${resume.createdAt}" pattern="yyyy年MM月dd日"/></small>
                                 </div>
                                 <div class="mb-2">
                                     <i class="bi bi-eye me-1 text-muted"></i>
@@ -161,11 +170,11 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="btn-group">
                                         <a href="${pageContext.request.contextPath}/resume?action=view&id=${resume.id}"
-                                           class="btn btn-outline-primary btn-sm">
+                                           class="btn btn-outline-primary btn-sm btn-hover-lift">
                                             <i class="bi bi-eye"></i> 查看
                                         </a>
                                         <a href="${pageContext.request.contextPath}/resume?action=edit&id=${resume.id}"
-                                           class="btn btn-outline-secondary btn-sm">
+                                           class="btn btn-outline-secondary btn-sm btn-hover-lift">
                                             <i class="bi bi-pencil"></i> 编辑
                                         </a>
                                     </div>
