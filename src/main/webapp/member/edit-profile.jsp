@@ -6,6 +6,12 @@
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Date" %>
 <%
+    // 检查用户是否已登录
+    if (session.getAttribute("user") == null) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp");
+        return;
+    }
+
     if (session.getAttribute("memberProfile") == null) {
         model.User user = (model.User)session.getAttribute("user");
         if (user != null) {
@@ -101,6 +107,8 @@
                     <form id="profileForm" method="post"
                         action="${pageContext.request.contextPath}/member/profile/update"
                         enctype="multipart/form-data">
+                        <%-- CSRF Token --%>
+                        <input type="hidden" name="_csrf" value="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>" />
                         <!-- 头像上传区域 -->
                         <div class="mb-4">
                             <h3 class="mb-3">头像设置</h3>

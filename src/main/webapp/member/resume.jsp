@@ -1,6 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%
+    // 防护逻辑：确保只有通过 Servlet 才能访问此页面
+    // 如果 resumes 属性为 null，说明用户直接访问了 JSP 页面，重定向到 Servlet
+    if (request.getAttribute("resumes") == null) {
+        response.sendRedirect(request.getContextPath() + "/resume?action=list");
+        return;
+    }
+%>
 <jsp:include page="../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="我的简历" />
 </jsp:include>
@@ -89,6 +97,15 @@
             <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
         </div>
     </c:if>
+    <c:if test="${param.error == 'invalid_id'}">
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <div class="d-flex">
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i></div>
+                <div>无效的ID格式！</div>
+            </div>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+        </div>
+    </c:if>
     <c:if test="${param.error == 'failed'}">
         <div class="alert alert-danger alert-dismissible" role="alert">
             <div class="d-flex">
@@ -102,6 +119,7 @@
     <!-- 简历列表 -->
     <div class="row row-cards">
         <c:choose>
+            <%-- 使用 empty 检查，能同时处理 null 和空列表 --%>
             <c:when test="${empty resumes}">
                 <!-- 空状态 -->
                 <div class="col-12">

@@ -488,6 +488,12 @@ public class AwardServlet extends HttpServlet {
         request.setAttribute("awardLevels", awardLevels);
         request.setAttribute("competitionLevels", dictionaryDAO.findByType("COMPETITION_LEVEL"));
 
+        // 检查是否有传入的用户ID（管理员为其他成员添加获奖）
+        String userIdParam = request.getParameter("userId");
+        if (userIdParam != null && !userIdParam.isEmpty()) {
+            request.setAttribute("targetUserId", userIdParam);
+        }
+
         request.getRequestDispatcher("/member/award/submit.jsp").forward(request, response);
     }
 
@@ -559,6 +565,13 @@ public class AwardServlet extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
 
+        // 确定目标用户ID（管理员可以为其他成员添加获奖）
+        Integer targetUserId = user.getId();
+        String targetUserIdParam = request.getParameter("targetUserId");
+        if (targetUserIdParam != null && !targetUserIdParam.isEmpty() && "ADMIN".equals(user.getRole())) {
+            targetUserId = Integer.parseInt(targetUserIdParam);
+        }
+
         String competition = request.getParameter("competition");
         String competitionLocation = request.getParameter("competitionLocation");
         String competitionTime = request.getParameter("competitionTime");
@@ -570,7 +583,8 @@ public class AwardServlet extends HttpServlet {
         String description = request.getParameter("description");
 
         Award award = new Award();
-        award.setUserId(user.getId());
+        award.setUserId(targetUserId);
+        award.setCreatedBy(user.getId()); // 记录实际创建者
         award.setCompetition(competition);
         award.setCompetitionLocation(competitionLocation);
         try {
