@@ -228,7 +228,7 @@
                                 <span class="input-group-text" style="align-self: flex-start;">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                                 </span>
-                                <textarea class="form-control" rows="4" readonly>${memberProfile.introduction}</textarea>
+                                <textarea class="form-control" rows="4" readonly><c:out value="${memberProfile.introduction}" default=""/></textarea>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">

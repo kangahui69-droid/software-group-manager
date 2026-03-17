@@ -1,7 +1,9 @@
 package servlet;
 
 import dao.UserDAO;
+import dao.AwardDAO;
 import model.User;
+import model.Award;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -17,6 +19,7 @@ import java.util.List;
  */
 public class MemberServlet extends HttpServlet {
     private UserDAO userDAO = new UserDAO();
+    private AwardDAO awardDAO = new AwardDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -218,6 +221,11 @@ public class MemberServlet extends HttpServlet {
             }
 
             request.setAttribute("user", user);
+
+            // 加载该成员的获奖情况列表
+            List<Award> awards = awardDAO.findByUserId(id);
+            request.setAttribute("awards", awards);
+
             request.getRequestDispatcher("/jsp/admin/member/view.jsp").forward(request, response);
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/admin/member/list");

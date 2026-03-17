@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS resume_projects (
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS resume_awards (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT '记录ID',
-    resume_id INT NOT NULL COMMENT '简历ID（关联resumes表）',
+    resume_id INT  NULL COMMENT '简历ID（关联resumes表）',
     award_id INT COMMENT '关联的系统奖项ID（awards表），手动添加可为空',
     award_name VARCHAR(200) NOT NULL COMMENT '奖项名称',
     competition_name VARCHAR(200) COMMENT '比赛/活动名称',
