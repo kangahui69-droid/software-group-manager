@@ -19,6 +19,9 @@
                         </div>
                     <% } %>
                     <form action="${pageContext.request.contextPath}/award?action=submit" method="post" enctype="multipart/form-data">
+                    <%-- CSRF Token：防止跨站请求伪造攻击 --%>
+                    <% String csrfToken = CSRFTokenUtil.getOrCreateToken(session); %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <script>
                     
                     // 监听奖项类型变化，动态显示或隐藏团队名称框
