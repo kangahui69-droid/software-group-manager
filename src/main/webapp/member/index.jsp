@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ page import="model.User" %>
+    <%@ page import="util.XSSFilterUtil" %>
         <% User user=(User) session.getAttribute("user"); if (user==null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp" ); return; } %>
             <jsp:include page="../jsp/common/layout_top.jsp">
@@ -25,13 +26,13 @@
                             <div class="card">
                                 <div class="card-body p-4 text-center">
                                     <span class="avatar avatar-xl mb-3 avatar-rounded bg-blue-lt">
-                                        <%= user.getUsername().substring(0,1).toUpperCase() %>
+                                        <%= XSSFilterUtil.filter(user.getUsername().substring(0,1).toUpperCase()) %>
                                     </span>
                                     <h3 class="m-0 mb-1">
-                                        <%= user.getUsername() %>
+                                        <%= XSSFilterUtil.filter(user.getUsername()) %>
                                     </h3>
                                     <div class="text-muted text-capitalize">
-                                        <%= user.getRole().toLowerCase() %>
+                                        <%= XSSFilterUtil.filter(user.getRole().toLowerCase()) %>
                                     </div>
                                     <div class="mt-3">
                                         <span class="badge bg-green-lt">正式成员</span>
@@ -112,7 +113,7 @@
                                                 </div>
                                                 <div class="col">
                                                     <div class="font-weight-medium">我的奖项</div>
-                                                    <div class="text-muted"><a href="award/list.jsp"
+                                                    <div class="text-muted"><a href="${pageContext.request.contextPath}/award?action=list"
                                                             class="text-reset">荣誉证书管理</a></div>
                                                 </div>
                                             </div>
@@ -129,7 +130,7 @@
                                                 </div>
                                                 <div class="col">
                                                     <div class="font-weight-medium">我的简历</div>
-                                                    <div class="text-muted"><a href="resume.jsp"
+                                                    <div class="text-muted"><a href="${pageContext.request.contextPath}/resume?action=list"
                                                             class="text-reset">在线简历维护</a></div>
                                                 </div>
                                             </div>

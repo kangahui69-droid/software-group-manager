@@ -40,8 +40,6 @@
                 <div class="card-body">
                     <form id="passwordForm" method="post"
                         action="${pageContext.request.contextPath}/member/password">
-                        <%-- CSRF Token --%>
-                        <input type="hidden" name="_csrf" value="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>" />
                         <div class="mb-4">
                             <h3 class="mb-3">密码设置</h3>
                             <div class="row">

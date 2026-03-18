@@ -108,7 +108,6 @@
                         action="${pageContext.request.contextPath}/member/profile/update"
                         enctype="multipart/form-data">
                         <%-- CSRF Token --%>
-                        <input type="hidden" name="_csrf" value="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>" />
                         <!-- 头像上传区域 -->
                         <div class="mb-4">
                             <h3 class="mb-3">头像设置</h3>
