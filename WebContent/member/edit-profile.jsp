@@ -6,6 +6,12 @@
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Date" %>
 <%
+    // 检查用户是否已登录
+    if (session.getAttribute("user") == null) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp");
+        return;
+    }
+
     if (session.getAttribute("memberProfile") == null) {
         model.User user = (model.User)session.getAttribute("user");
         if (user != null) {
@@ -34,6 +40,10 @@
 <jsp:include page="../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="编辑资料" />
 </jsp:include>
+
+<!-- Quill.js 富文本编辑器 -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
 <div class="container-xl">
     <div class="row">
@@ -97,15 +107,37 @@
                     <form id="profileForm" method="post"
                         action="${pageContext.request.contextPath}/member/profile/update"
                         enctype="multipart/form-data">
+                        <%-- CSRF Token --%>
                         <!-- 头像上传区域 -->
                         <div class="mb-4">
                             <h3 class="mb-3">头像设置</h3>
                             <div class="d-flex align-items-center">
                                 <div class="me-4">
-                                    <img id="avatarPreview"
-                                        src="${memberProfile != null && memberProfile.avatarFileId != null ? (pageContext.request.contextPath.concat('/file?action=view&id=')).concat(memberProfile.avatarFileId) : pageContext.request.contextPath.concat('/images/avatar/default-avatar.svg')}"
-                                        alt="用户头像" class="rounded-circle" width="120"
-                                        height="120">
+                                    <c:choose>
+                                        <%-- 情况1：有头像文件 --%>
+                                        <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
+                                            <img id="avatarPreview"
+                                                 src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
+                                                 alt="用户头像"
+                                                 class="rounded-circle"
+                                                 width="120"
+                                                 height="120"
+                                                 onerror="this.style.display='none'; document.getElementById('avatarInitial').style.display='flex';">
+                                            <div id="avatarInitial"
+                                                 class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                                 style="width: 120px; height: 120px; font-size: 48px; font-weight: bold; display: none;">
+                                                ${not empty user.name ? user.name.charAt(0) : '用'}
+                                            </div>
+                                        </c:when>
+                                        <%-- 情况2：无头像，显示姓名首字 --%>
+                                        <c:otherwise>
+                                            <div id="avatarPreview"
+                                                 class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                                 style="width: 120px; height: 120px; font-size: 48px; font-weight: bold;">
+                                                ${not empty user.name ? user.name.charAt(0) : '用'}
+                                            </div>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </div>
                                 <div>
                                     <label for="avatarUpload"
@@ -169,7 +201,11 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">生日</label>
                                     <input type="date" class="form-control" name="birthday"
-                                        value="${birthdayValue}">
+                                        value="${birthdayValue}" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">姓名</label>
+                                    <input type="text" class="form-control" value="${user.name}" readonly>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">学号</label>
@@ -196,8 +232,10 @@
                                 </div>
                                 <div class="col-md-12 mb-3">
                                     <label class="form-label">个人简介</label>
-                                    <textarea class="form-control" name="bio" rows="4"
-                                        placeholder="请输入个人简介">${memberProfile.introduction}</textarea>
+                                    <!-- 富文本编辑器容器 -->
+                                    <div id="editor-container" style="height: 200px; background: white;"></div>
+                                    <!-- 隐藏域用于表单提交 -->
+                                    <input type="hidden" name="bio" id="bio-hidden" value="${memberProfile.introduction}">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">GitHub</label>
@@ -363,6 +401,49 @@
             alert('新密码长度不能少于6位');
             e.preventDefault();
             return;
+        }
+    });
+</script>
+
+<!-- Quill富文本编辑器初始化 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化Quill编辑器
+        var quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: '请输入个人简介...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': [1, 2, 3, false] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'align': [] }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // 获取隐藏域
+        var hiddenInput = document.getElementById('bio-hidden');
+
+        // 如果隐藏域已有内容，设置为编辑器内容
+        if (hiddenInput && hiddenInput.value) {
+            quill.root.innerHTML = hiddenInput.value;
+        }
+
+        // 在表单提交前同步编辑器内容到隐藏域
+        var form = document.getElementById('profileForm');
+        if (form) {
+            form.addEventListener('submit', function() {
+                if (hiddenInput) {
+                    hiddenInput.value = quill.root.innerHTML;
+                }
+            });
         }
     });
 </script>

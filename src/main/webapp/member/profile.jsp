@@ -43,13 +43,31 @@
                     <div class="d-flex flex-column align-items-center text-center">
                         <div class="mb-4">
                             <!-- 头像显示区域 -->
-                            <img id="avatarPreview" 
-                                 src="${memberProfile != null && memberProfile.avatarFileId != null ? pageContext.request.contextPath.concat('/file?action=view&id=').concat(memberProfile.avatarFileId) : pageContext.request.contextPath.concat('/images/avatar/default-avatar.svg')}" 
-                                 alt="用户头像" 
-                                 class="rounded-circle" 
-                                 width="150" 
-                                 height="150" 
-                                 onerror="this.src='${pageContext.request.contextPath}/images/avatar/default-avatar.svg'">
+                            <c:choose>
+                                <%-- 情况1：有头像文件 --%>
+                                <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
+                                    <img id="avatarPreview"
+                                         src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
+                                         alt="用户头像"
+                                         class="rounded-circle"
+                                         width="150"
+                                         height="150"
+                                         onerror="this.style.display='none'; document.getElementById('avatarInitial').style.display='flex';">
+                                    <div id="avatarInitial"
+                                         class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                         style="width: 150px; height: 150px; font-size: 60px; font-weight: bold; display: none;">
+                                        ${not empty user.name ? user.name.charAt(0) : '用'}
+                                    </div>
+                                </c:when>
+                                <%-- 情况2：无头像，显示姓名首字 --%>
+                                <c:otherwise>
+                                    <div id="avatarPreview"
+                                         class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                         style="width: 150px; height: 150px; font-size: 60px; font-weight: bold;">
+                                        ${not empty user.name ? user.name.charAt(0) : '用'}
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                         <div class="mt-3">
                             <h4>${user.username}</h4>
@@ -193,6 +211,15 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                                 </span>
                                 <input type="text" class="form-control" value="${birthdayDisplay}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">姓名</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="8" r="4"></circle><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></svg>
+                                </span>
+                                <input type="text" class="form-control" value="${user.name}" readonly>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">

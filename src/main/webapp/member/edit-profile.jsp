@@ -113,10 +113,31 @@
                             <h3 class="mb-3">头像设置</h3>
                             <div class="d-flex align-items-center">
                                 <div class="me-4">
-                                    <img id="avatarPreview"
-                                        src="${memberProfile != null && memberProfile.avatarFileId != null ? (pageContext.request.contextPath.concat('/file?action=view&id=')).concat(memberProfile.avatarFileId) : pageContext.request.contextPath.concat('/images/avatar/default-avatar.svg')}"
-                                        alt="用户头像" class="rounded-circle" width="120"
-                                        height="120">
+                                    <c:choose>
+                                        <%-- 情况1：有头像文件 --%>
+                                        <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
+                                            <img id="avatarPreview"
+                                                 src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
+                                                 alt="用户头像"
+                                                 class="rounded-circle"
+                                                 width="120"
+                                                 height="120"
+                                                 onerror="this.style.display='none'; document.getElementById('avatarInitial').style.display='flex';">
+                                            <div id="avatarInitial"
+                                                 class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                                 style="width: 120px; height: 120px; font-size: 48px; font-weight: bold; display: none;">
+                                                ${not empty user.name ? user.name.charAt(0) : '用'}
+                                            </div>
+                                        </c:when>
+                                        <%-- 情况2：无头像，显示姓名首字 --%>
+                                        <c:otherwise>
+                                            <div id="avatarPreview"
+                                                 class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                                 style="width: 120px; height: 120px; font-size: 48px; font-weight: bold;">
+                                                ${not empty user.name ? user.name.charAt(0) : '用'}
+                                            </div>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </div>
                                 <div>
                                     <label for="avatarUpload"
@@ -181,6 +202,10 @@
                                     <label class="form-label">生日</label>
                                     <input type="date" class="form-control" name="birthday"
                                         value="${birthdayValue}" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">姓名</label>
+                                    <input type="text" class="form-control" value="${user.name}" readonly>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">学号</label>
