@@ -161,9 +161,11 @@ public class ProfileServlet extends HttpServlet {
 
             // 处理头像上传
             String contentType = request.getContentType();
+            System.out.println("[头像上传] Content-Type: " + contentType);
             if (contentType != null && contentType.toLowerCase().contains("multipart/form-data")) {
                 try {
                     Part avatarPart = request.getPart("avatar");
+                    System.out.println("[头像上传] avatarPart=" + (avatarPart != null) + ", size=" + (avatarPart != null ? avatarPart.getSize() : 0));
                     if (avatarPart != null && avatarPart.getSize() > 0) {
                         // 验证文件大小（500KB）
                         if (avatarPart.getSize() > 500 * 1024) {
@@ -171,7 +173,7 @@ public class ProfileServlet extends HttpServlet {
                             request.getRequestDispatcher("/member/edit-profile.jsp").forward(request, response);
                             return;
                         }
-                        
+
                         // 验证文件类型
                         String fileType = avatarPart.getContentType();
                         String[] allowedTypes = {"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"};
@@ -187,18 +189,24 @@ public class ProfileServlet extends HttpServlet {
                             request.getRequestDispatcher("/member/edit-profile.jsp").forward(request, response);
                             return;
                         }
-                        
+
                         String fileName = getSubmittedFileName(avatarPart);
                         String fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
                         String uniqueFileName = "avatar_" + currentUser.getId() + "_" + System.currentTimeMillis() + "."
                                 + fileExtension;
                         // 统一路径：localstorage/images/avatar
                         String uploadDir = getServletContext().getRealPath("/localstorage/images/avatar");
+                        System.out.println("[头像上传] 上传目录: " + uploadDir);
                         java.io.File uploadDirFile = new java.io.File(uploadDir);
-                        if (!uploadDirFile.exists())
-                            uploadDirFile.mkdirs();
-                        avatarPart.write(uploadDir + java.io.File.separator + uniqueFileName);
+                        if (!uploadDirFile.exists()) {
+                            boolean created = uploadDirFile.mkdirs();
+                            System.out.println("[头像上传] 创建目录: " + created);
+                        }
+                        String fullFilePath = uploadDir + java.io.File.separator + uniqueFileName;
+                        avatarPart.write(fullFilePath);
+                        System.out.println("[头像上传] 文件已保存到: " + fullFilePath);
 
+                        // 保存文件记录到数据库
                         FileStorage fileStorage = new FileStorage();
                         fileStorage.setCreateBy(currentUser.getId());
                         fileStorage.setOriginalName(uniqueFileName);
@@ -208,21 +216,30 @@ public class ProfileServlet extends HttpServlet {
                         fileStorage.setFileSize(avatarPart.getSize());
                         fileStorage.setCategory("avatar_image");
                         Integer fileId = fileStorageDAO.insert(fileStorage);
-                        
-                        // 获取旧头像ID用于软删除
+                        System.out.println("[头像上传] 数据库插入结果 fileId=" + fileId);
+
+                        // 获取旧头像ID用于软删除（必须在更新profile之前获取）
                         Integer oldAvatarFileId = profile.getAvatarFileId();
-                        
+                        System.out.println("[头像上传] 旧头像ID=" + oldAvatarFileId);
+
                         if (fileId != null) {
                             profile.setAvatarFileId(fileId);
+                            System.out.println("[头像上传] 设置新头像ID=" + fileId);
                         }
-                        
+
                         // 软删除旧头像
                         if (oldAvatarFileId != null) {
-                            fileStorageDAO.softDelete(oldAvatarFileId);
+                            boolean deleted = fileStorageDAO.softDelete(oldAvatarFileId);
+                            System.out.println("[头像上传] 软删除旧头像结果=" + deleted);
                         }
                     }
                 } catch (Exception e) {
-                    // 没有上传头像，继续保存其他字段
+                    // 记录详细错误信息
+                    System.err.println("[头像上传] 发生异常: " + e.getClass().getName() + ": " + e.getMessage());
+                    e.printStackTrace();
+                    // 将错误信息设置到request属性中，以便在页面上显示
+                    request.setAttribute("avatarUploadError", "头像上传失败: " + e.getMessage());
+                    // 不要在这里返回，继续保存其他字段
                 }
             }
 
