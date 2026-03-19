@@ -146,9 +146,9 @@
                                             <a href="#" class="nav-link d-flex lh-1 text-reset p-0"
                                                 data-bs-toggle="dropdown" aria-label="Open user menu">
                                                 <span
-                                                    class="avatar avatar-sm bg-blue-lt">${sessionScope.user.username.substring(0,1).toUpperCase()}</span>
+                                                    class="avatar avatar-sm bg-blue-lt">${not empty sessionScope.user.name ? sessionScope.user.name.charAt(0) : sessionScope.user.username.substring(0,1)}</span>
                                                 <div class="d-none d-xl-block ps-2">
-                                                    <div>${sessionScope.user.username}</div>
+                                                    <div>${not empty sessionScope.user.name ? sessionScope.user.name : sessionScope.user.username}</div>
                                                     <div class="mt-1 small text-muted text-capitalize">
                                                         ${sessionScope.user.role.toLowerCase()}</div>
                                                 </div>
