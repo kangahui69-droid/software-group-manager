@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rn \"createStatement\\\\|executeUpdate.*+\\\\|executeQuery.*+\" --include=*.java src/main/java/)",
+      "Bash(grep -rn \"createStatement\\\\|executeQuery.*.*\\\\+\\\\|executeUpdate.*.*\\\\+\" --include=*.java src/main/java/)",
+      "Bash(grep -rn \".*SELECT.*.*\\\\+\\\\|.*INSERT.*.*\\\\+\\\\|.*UPDATE.*.*\\\\+\\\\|.*DELETE.*.*\\\\+\" --include=*.java src/main/java/)"
+    ]
+  }
+}
