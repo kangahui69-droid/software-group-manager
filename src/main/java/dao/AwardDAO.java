@@ -580,6 +580,29 @@ public class AwardDAO {
     }
 
     /**
+     * 统计待审核的奖项数量
+     */
+    public int countPending() {
+        String sql = "SELECT COUNT(*) FROM award WHERE award_status = 'PENDING'";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
+
+    /**
      * 关闭资源
      */
     private void closeResources(Connection conn, PreparedStatement pstmt, ResultSet rs) {

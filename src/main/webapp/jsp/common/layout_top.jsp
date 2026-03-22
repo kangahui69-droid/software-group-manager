@@ -156,7 +156,7 @@
                                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                                                 <c:choose>
                                                     <c:when test="${sessionScope.user.role == 'ADMIN'}">
-                                                        <a href="${pageContext.request.contextPath}/admin/index.jsp"
+                                                        <a href="${pageContext.request.contextPath}/admin/dashboard"
                                                             class="dropdown-item">管理中心</a>
                                                         <a href="${pageContext.request.contextPath}/admin/profile.jsp"
                                                             class="dropdown-item">个人信息</a>
