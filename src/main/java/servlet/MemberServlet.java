@@ -266,6 +266,9 @@ public class MemberServlet extends HttpServlet {
             throws ServletException, IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+        String name = request.getParameter("name");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
         String role = request.getParameter("role");
         String statusStr = request.getParameter("status");
 
@@ -274,6 +277,9 @@ public class MemberServlet extends HttpServlet {
             User user = new User();
             user.setUsername(username);
             user.setPassword(password); // 注意：实际应用中应该对密码进行加密
+            user.setName(name != null ? name : username); // 如果没有提供姓名，使用用户名作为默认值
+            user.setEmail(email != null && !email.isEmpty() ? email : username + "@default.com"); // 如果没有提供邮箱，生成默认邮箱
+            user.setPhone(phone); // 手机号可以为空
             user.setRole(role);
             user.setStatus(statusStr != null ? Integer.parseInt(statusStr) : 1); // 默认启用
             try {

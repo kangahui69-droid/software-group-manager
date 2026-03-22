@@ -373,9 +373,22 @@
             return;
         }
 
+        // 预览新头像
         const reader = new FileReader();
         reader.onload = function (e) {
-            document.getElementById('avatarPreview').src = e.target.result;
+            let preview = document.getElementById('avatarPreview');
+            // 如果当前是div（显示首字母），则替换为img
+            if (preview.tagName === 'DIV') {
+                const img = document.createElement('img');
+                img.id = 'avatarPreview';
+                img.className = 'rounded-circle';
+                img.width = 120;
+                img.height = 120;
+                img.alt = '用户头像';
+                preview.parentNode.replaceChild(img, preview);
+                preview = img;
+            }
+            preview.src = e.target.result;
         };
         reader.readAsDataURL(file);
     });

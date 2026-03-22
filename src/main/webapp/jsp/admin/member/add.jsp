@@ -18,68 +18,100 @@
 
 <div class="page-body">
     <div class="container-xl">
-        <div class="row">
+        <div class="row justify-content-center">
             <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-body">
-                        <form method="post" action="${pageContext.request.contextPath}/admin/member/">
-                            <input type="hidden" name="action" value="add">
-                            
-                            <!-- 错误提示 -->
-                            <c:if test="${not empty error}">
-                                <div class="alert alert-danger" role="alert">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alert-circle" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <circle cx="12" cy="12" r="9"></circle>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                        <line x1="11" y1="12" x2="12" y2="12"></line>
-                                        <line x1="11" y1="16" x2="12" y2="16"></line>
-                                    </svg>
-                                    ${error}
-                                </div>
-                            </c:if>
-                            
-                            <div class="mb-3">
-                                <label class="form-label required">用户名</label>
-                                <input type="text" class="form-control" name="username" placeholder="请输入用户名" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label required">密码</label>
-                                <input type="password" class="form-control" name="password" placeholder="请输入密码" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label required">角色</label>
-                                <select class="form-select" name="role" required>
-                                    <option value="MEMBER">普通成员</option>
-                                    <option value="ADMIN">管理员</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label required">用户类型</label>
-                                <select class="form-select" name="userType" required>
-                                    <option value="STUDENT">学生</option>
-                                    <option value="TEACHER">教师</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">状态</label>
-                                <select class="form-select" name="status">
-                                    <option value="1">启用</option>
-                                    <option value="0">禁用</option>
-                                </select>
-                            </div>
-                            
-                            <div class="d-flex justify-content-end">
-                                <a href="${pageContext.request.contextPath}/admin/member/list" class="btn btn-secondary me-2">取消</a>
-                                <button type="submit" class="btn btn-primary">保存</button>
-                            </div>
-                        </form>
+                <form method="post" action="${pageContext.request.contextPath}/admin/member/" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">填写成员信息</h3>
                     </div>
-                </div>
+                    <div class="card-body">
+                        <input type="hidden" name="action" value="add">
+
+                        <!-- 错误提示 -->
+                        <c:if test="${not empty error}">
+                            <div class="alert alert-danger" role="alert">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alert-circle" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    <line x1="11" y1="12" x2="12" y2="12"></line>
+                                    <line x1="11" y1="16" x2="12" y2="16"></line>
+                                </svg>
+                                ${error}
+                            </div>
+                        </c:if>
+
+                        <div class="mb-3">
+                            <label class="form-label required">真实姓名</label>
+                            <input type="text" class="form-control" name="name" placeholder="请输入真实姓名" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">学号</label>
+                                    <input type="text" class="form-control" name="username" placeholder="请输入学号" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">密码</label>
+                                    <input type="password" class="form-control" name="password" placeholder="请输入密码" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">角色</label>
+                                    <select class="form-select" name="role" required>
+                                        <option value="MEMBER">普通成员</option>
+                                        <option value="ADMIN">管理员</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">用户类型</label>
+                                    <select class="form-select" name="userType" required>
+                                        <option value="STUDENT">学生</option>
+                                        <option value="TEACHER">教师</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">手机号</label>
+                                    <input type="tel" class="form-control" name="phone" placeholder="请输入手机号" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">邮箱</label>
+                                    <input type="email" class="form-control" name="email" placeholder="选填">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">状态</label>
+                            <select class="form-select" name="status">
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <div class="d-flex">
+                            <a href="${pageContext.request.contextPath}/admin/member/list" class="btn btn-link">取消</a>
+                            <button type="submit" class="btn btn-primary ms-auto">保存</button>
+                        </div>
+                    </div>
+                </form>
             </div>
             <div class="col-lg-4">
                 <div class="card">
@@ -88,7 +120,7 @@
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-info" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12.01" y2="8"></line><polyline points="11 12 12 12 12 16 13 16"></polyline></svg>
-                                用户名不能重复
+                                学号作为用户名，不能重复，用于登录系统
                             </li>
                             <li class="list-group-item">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-info" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12.01" y2="8"></line><polyline points="11 12 12 12 12 16 13 16"></polyline></svg>
