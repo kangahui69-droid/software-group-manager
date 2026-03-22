@@ -283,13 +283,29 @@ public class AdminServlet extends HttpServlet {
             throws ServletException, IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+        String name = request.getParameter("name");
+        String phone = request.getParameter("phone");
+        String email = request.getParameter("email");
         String role = request.getParameter("role");
         String statusStr = request.getParameter("status");
         Integer status = Integer.parseInt(statusStr);
 
+        // 如果name为空，使用username作为默认值
+        if (name == null || name.trim().isEmpty()) {
+            name = username;
+        }
+
+        // 如果email为空，生成一个默认邮箱
+        if (email == null || email.trim().isEmpty()) {
+            email = username + "@default.com";
+        }
+
         User user = new User();
         user.setUsername(username);
-        user.setPassword(password); // 密码会在UserDAO中进行MD5加密
+        user.setPassword(password); // 密码会在UserDAO中进行加密
+        user.setName(name);
+        user.setPhone(phone);
+        user.setEmail(email);
         user.setRole(role);
         user.setStatus(status);
 

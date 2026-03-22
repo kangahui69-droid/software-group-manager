@@ -197,16 +197,6 @@
         <url-pattern>/admin/log/*</url-pattern>
     </servlet-mapping>
 
-    <!-- 头像上传Servlet -->
-    <servlet>
-        <servlet-name>AvatarUploadServlet</servlet-name>
-        <servlet-class>servlet.AvatarUploadServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AvatarUploadServlet</servlet-name>
-        <url-pattern>/upload-avatar</url-pattern>
-    </servlet-mapping>
-
     <!-- 简历Servlet -->
     <servlet>
         <servlet-name>ResumeServlet</servlet-name>

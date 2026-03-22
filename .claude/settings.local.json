@@ -3,7 +3,13 @@
     "allow": [
       "Bash(grep -rn \"createStatement\\\\|executeUpdate.*+\\\\|executeQuery.*+\" --include=*.java src/main/java/)",
       "Bash(grep -rn \"createStatement\\\\|executeQuery.*.*\\\\+\\\\|executeUpdate.*.*\\\\+\" --include=*.java src/main/java/)",
-      "Bash(grep -rn \".*SELECT.*.*\\\\+\\\\|.*INSERT.*.*\\\\+\\\\|.*UPDATE.*.*\\\\+\\\\|.*DELETE.*.*\\\\+\" --include=*.java src/main/java/)"
+      "Bash(grep -rn \".*SELECT.*.*\\\\+\\\\|.*INSERT.*.*\\\\+\\\\|.*UPDATE.*.*\\\\+\\\\|.*DELETE.*.*\\\\+\" --include=*.java src/main/java/)",
+      "Bash(find e:/java/Software_group -name pom.xml -o -name build.gradle -o -name *.war -o -name *.jar)",
+      "Bash(mysql -u root -pkang2005. -e \"USE software_group; SHOW TABLES;\")",
+      "Bash(mysql -u root -pkang2005. -e \"SELECT COUNT\\(*\\) FROM software_group.activity;\")",
+      "Bash(mysql -u root -pkang2005. -e \"SELECT COUNT\\(*\\) FROM information_schema.tables WHERE table_schema = ''software_group'';\")",
+      "Bash(ls -lh E:/java/Software_group/database_export_*.sql)",
+      "Bash(ls -lh E:/java/Software_group/*.sql)"
     ]
   }
 }
