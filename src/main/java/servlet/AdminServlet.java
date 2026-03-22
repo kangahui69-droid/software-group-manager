@@ -6,6 +6,9 @@ import dao.ProjectDAO;
 import dao.UserDAO;
 import dao.AdminProfileDAO;
 import dao.FileStorageDAO;
+import dao.AwardDAO;
+import dao.RecruitApplicationDAO;
+import dao.ActivityParticipantDAO;
 import model.User;
 import model.AdminProfile;
 
@@ -32,6 +35,9 @@ public class AdminServlet extends HttpServlet {
     private OperationLogDAO logDAO = new OperationLogDAO();
     private AdminProfileDAO adminProfileDAO = new AdminProfileDAO();
     private FileStorageDAO fileStorageDAO = new FileStorageDAO();
+    private AwardDAO awardDAO = new AwardDAO();
+    private RecruitApplicationDAO recruitDAO = new RecruitApplicationDAO();
+    private ActivityParticipantDAO activityParticipantDAO = new ActivityParticipantDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -207,11 +213,21 @@ public class AdminServlet extends HttpServlet {
         int userCount = userDAO.findAll().size();
         int logCount = logDAO.countAll();
 
+        // 获取待审核事项统计
+        int pendingAwards = awardDAO.countPending();
+        int pendingRecruits = recruitDAO.countPending();
+        int pendingActivities = activityParticipantDAO.countPending();
+        int totalPending = pendingAwards + pendingRecruits + pendingActivities;
+
         // 将数据存入request
         request.setAttribute("newsCount", newsCount);
         request.setAttribute("projectCount", projectCount);
         request.setAttribute("userCount", userCount);
         request.setAttribute("logCount", logCount);
+        request.setAttribute("pendingAwards", pendingAwards);
+        request.setAttribute("pendingRecruits", pendingRecruits);
+        request.setAttribute("pendingActivities", pendingActivities);
+        request.setAttribute("totalPending", totalPending);
 
         // 直接forward到admin/index.jsp
         request.getRequestDispatcher("/admin/index.jsp").forward(request, response);

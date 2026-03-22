@@ -12,10 +12,18 @@
     Integer projectCount = (Integer) request.getAttribute("projectCount");
     Integer userCount = (Integer) request.getAttribute("userCount");
     Integer logCount = (Integer) request.getAttribute("logCount");
+    Integer pendingAwards = (Integer) request.getAttribute("pendingAwards");
+    Integer pendingRecruits = (Integer) request.getAttribute("pendingRecruits");
+    Integer pendingActivities = (Integer) request.getAttribute("pendingActivities");
+    Integer totalPending = (Integer) request.getAttribute("totalPending");
     if (newsCount == null) newsCount = 0;
     if (projectCount == null) projectCount = 0;
     if (userCount == null) userCount = 0;
     if (logCount == null) logCount = 0;
+    if (pendingAwards == null) pendingAwards = 0;
+    if (pendingRecruits == null) pendingRecruits = 0;
+    if (pendingActivities == null) pendingActivities = 0;
+    if (totalPending == null) totalPending = 0;
 %>
 <jsp:include page="../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="管理中心" />
@@ -23,6 +31,52 @@
 
 <div class="page-body">
     <div class="container-xl">
+        <!-- 待审核事项统计卡片 -->
+        <% if (totalPending > 0) { %>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-sm card-link">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="avatar avatar-lg bg-yellow text-yellow-fg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <circle cx="12" cy="12" r="9" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-fill">
+                                <div class="h2 mb-0"><%= totalPending %> 项待审核</div>
+                                <div class="text-muted text-sm">
+                                    <% if (pendingAwards > 0) { %><span class="badge bg-yellow me-1"><%= pendingAwards %> 奖项</span><% } %>
+                                    <% if (pendingRecruits > 0) { %><span class="badge bg-teal me-1"><%= pendingRecruits %> 招新</span><% } %>
+                                    <% if (pendingActivities > 0) { %><span class="badge bg-green me-1"><%= pendingActivities %> 活动</span><% } %>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <%
+                                    // 根据待审核类型决定跳转链接（优先级：招新 > 活动 > 奖项）
+                                    String reviewUrl;
+                                    if (pendingRecruits > 0) {
+                                        reviewUrl = contextPath + "/admin/recruit/manage";
+                                    } else if (pendingActivities > 0) {
+                                        reviewUrl = contextPath + "/activity/list";
+                                    } else if (pendingAwards > 0) {
+                                        reviewUrl = contextPath + "/award?action=approveList&status=PENDING";
+                                    } else {
+                                        reviewUrl = contextPath + "/award?action=approveList&status=PENDING";
+                                    }
+                                %>
+                                <a href="<%= reviewUrl %>" class="btn btn-yellow">去审核</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
         <div class="row row-cards">
             <div class="col-sm-6 col-lg-3">
                 <a href="<%= contextPath %>/news?action=manage" class="card card-link">

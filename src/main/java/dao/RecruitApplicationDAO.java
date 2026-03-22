@@ -243,6 +243,29 @@ public class RecruitApplicationDAO {
     }
 
     /**
+     * 统计待审核的招新申请数量（status = 1 表示待审核）
+     */
+    public int countPending() {
+        String sql = "SELECT COUNT(*) FROM recruit_application WHERE status = 1";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
+
+    /**
      * 关闭资源
      */
     private void closeResources(Connection conn, PreparedStatement pstmt, ResultSet rs) {

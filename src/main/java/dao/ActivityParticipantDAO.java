@@ -211,6 +211,31 @@ public class ActivityParticipantDAO {
         return null;
     }
 
+    /**
+     * 统计待审核的活动报名数量（只统计活动未结束的）
+     */
+    public int countPending() {
+        String sql = "SELECT COUNT(*) FROM activity_participant ap " +
+                     "JOIN activity a ON ap.activity_id = a.id " +
+                     "WHERE ap.status = 'pending' AND a.registration_end_time > NOW()";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
+
     private void closeResources(Connection conn, PreparedStatement pstmt, ResultSet rs) {
         try {
             if (rs != null) rs.close();
