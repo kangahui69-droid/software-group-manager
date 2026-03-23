@@ -237,13 +237,42 @@
     }
 })();
 
+// 显示错误提示的辅助函数
+function showFieldError(message) {
+    // 移除已存在的错误提示
+    var existingError = document.querySelector('.field-error-alert');
+    if (existingError) {
+        existingError.remove();
+    }
+
+    // 创建错误提示元素
+    var errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger field-error-alert';
+    errorDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ' + message;
+
+    // 插入到表单顶部
+    var cardBody = document.querySelector('.card-body');
+    var firstChild = cardBody.firstChild;
+    cardBody.insertBefore(errorDiv, firstChild);
+
+    // 滚动到顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 3秒后自动移除
+    setTimeout(function() {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
 // 日期验证逻辑
 document.addEventListener('DOMContentLoaded', function() {
     var activityStartInput = document.getElementById('activityStartTime');
     var activityEndInput = document.getElementById('activityEndTime');
     var regStartInput = document.getElementById('registrationStartTime');
     var regEndInput = document.getElementById('registrationEndTime');
-    
+
     // 当活动时间改变时，更新结束时间的最小值
     activityStartInput.addEventListener('change', function() {
         if (this.value) {
@@ -251,12 +280,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // 如果结束时间早于开始时间，清空结束时间
             if (activityEndInput.value && activityEndInput.value < this.value) {
                 activityEndInput.value = '';
+                showFieldError('报名截止时间已重置，请重新选择早于活动开始时间的时间');
             }
         } else {
             activityEndInput.removeAttribute('min');
         }
     });
-    
+
     // 当报名开始时间改变时，更新报名结束时间的最小值
     regStartInput.addEventListener('change', function() {
         if (this.value) {
@@ -269,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
             regEndInput.removeAttribute('min');
         }
     });
-    
+
     // 当活动时间确定后，限制报名截止时间必须早于活动开始时间
     activityStartInput.addEventListener('change', function() {
         if (this.value) {
@@ -278,42 +308,42 @@ document.addEventListener('DOMContentLoaded', function() {
             // 如果当前报名截止时间晚于或等于活动开始时间，清空报名截止时间
             if (regEndInput.value && regEndInput.value >= this.value) {
                 regEndInput.value = '';
-                alert('报名截止时间已清空，请重新选择早于活动开始时间的时间');
+                showFieldError('报名截止时间已重置，请重新选择早于活动开始时间的时间');
             }
         } else {
             regEndInput.removeAttribute('max');
         }
     });
-    
+
     // 表单提交验证
     document.querySelector('form').addEventListener('submit', function(e) {
         var activityStart = activityStartInput.value;
         var activityEnd = activityEndInput.value;
         var regStart = regStartInput.value;
         var regEnd = regEndInput.value;
-        
+
         // 验证活动结束时间
         if (activityStart && activityEnd) {
             if (activityEnd <= activityStart) {
-                alert('活动结束时间必须晚于开始时间');
+                showFieldError('活动结束时间必须晚于开始时间');
                 e.preventDefault();
                 return false;
             }
         }
-        
+
         // 验证报名结束时间
         if (regStart && regEnd) {
             if (regEnd <= regStart) {
-                alert('报名截止时间必须晚于开始时间');
+                showFieldError('报名截止时间必须晚于报名开始时间');
                 e.preventDefault();
                 return false;
             }
         }
-        
+
         // 验证报名截止时间必须早于活动开始时间（严格小于）
         if (regEnd && activityStart) {
             if (regEnd >= activityStart) {
-                alert('报名截止时间必须早于活动开始时间');
+                showFieldError('报名截止时间必须早于活动开始时间');
                 e.preventDefault();
                 return false;
             }

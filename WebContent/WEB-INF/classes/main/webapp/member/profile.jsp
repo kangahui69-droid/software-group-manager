@@ -70,7 +70,7 @@
                             </c:choose>
                         </div>
                         <div class="mt-3">
-                            <h4>${user.username}</h4>
+                            <h4>${not empty user.name ? user.name : user.username}</h4>
                             <p class="text-muted font-size-sm">${user.role}</p>
                             <p class="text-muted font-size-sm">
                                 <c:choose>

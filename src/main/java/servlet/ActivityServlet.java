@@ -383,6 +383,15 @@ public class ActivityServlet extends HttpServlet {
         try {
             Activity activity = extractFromRequest(request);
 
+            // ====== 时间校验 ======
+            String timeError = validateActivityTime(activity);
+            if (timeError != null) {
+                response.sendRedirect(request.getContextPath() +
+                    "/activity?action=create&error=" + encode(timeError));
+                return;
+            }
+            // ======================
+
             // 后端安全校验：新建活动时只允许"即将开始"或"进行中"
             String status = activity.getStatus();
             if ("completed".equalsIgnoreCase(status) || "canceled".equalsIgnoreCase(status)) {
@@ -423,7 +432,16 @@ public class ActivityServlet extends HttpServlet {
             Activity activity = extractFromRequest(request);
             activity.setId(Integer.parseInt(request.getParameter("id")));
 
-            // ====== 新增：同名活动时间冲突校验（编辑时排除自己） ======
+            // ====== 时间校验 ======
+            String timeError = validateActivityTime(activity);
+            if (timeError != null) {
+                response.sendRedirect(request.getContextPath() +
+                    "/activity?action=edit&id=" + activity.getId() + "&error=" + encode(timeError));
+                return;
+            }
+            // ======================
+
+            // 同名活动时间冲突校验（编辑时排除自己） ======
             if (activityDAO.existsByTitleAndTimeWindow(
                     activity.getTitle(),
                     activity.getActivityStartTime(),
@@ -836,6 +854,57 @@ public class ActivityServlet extends HttpServlet {
         }
     }
     
+    /**
+     * 校验活动时间合理性
+     * @param activity 活动对象
+     * @return null表示校验通过，String表示错误信息
+     */
+    private String validateActivityTime(Activity activity) {
+        // 1. 活动开始时间不能为空
+        if (activity.getActivityStartTime() == null) {
+            return "活动开始时间不能为空";
+        }
+
+        // 2. 活动结束时间不能为空
+        if (activity.getActivityEndTime() == null) {
+            return "活动结束时间不能为空";
+        }
+
+        // 3. 活动结束时间必须晚于开始时间
+        if (!activity.getActivityEndTime().after(activity.getActivityStartTime())) {
+            return "活动结束时间必须晚于开始时间";
+        }
+
+        // 4. 活动持续时间不能超过合理范围（如不超过30天）
+        long durationMs = activity.getActivityEndTime().getTime() - activity.getActivityStartTime().getTime();
+        long maxDurationMs = 30L * 24 * 60 * 60 * 1000; // 30天
+        if (durationMs > maxDurationMs) {
+            return "活动持续时间不能超过30天";
+        }
+
+        // 5. 报名开始时间不能为空
+        if (activity.getRegistrationStartTime() == null) {
+            return "报名开始时间不能为空";
+        }
+
+        // 6. 报名截止时间不能为空
+        if (activity.getRegistrationEndTime() == null) {
+            return "报名截止时间不能为空";
+        }
+
+        // 7. 报名结束时间必须晚于开始时间
+        if (!activity.getRegistrationEndTime().after(activity.getRegistrationStartTime())) {
+            return "报名截止时间必须晚于报名开始时间";
+        }
+
+        // 8. 报名截止时间必须早于活动开始时间
+        if (!activity.getRegistrationEndTime().before(activity.getActivityStartTime())) {
+            return "报名截止时间必须早于活动开始时间";
+        }
+
+        return null; // 校验通过
+    }
+
     private String encode(String message) {
         try {
             return URLEncoder.encode(message, "UTF-8");

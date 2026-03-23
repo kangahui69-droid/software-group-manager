@@ -575,36 +575,37 @@ public class AwardServlet extends HttpServlet {
         String competition = request.getParameter("competition");
         String competitionLocation = request.getParameter("competitionLocation");
         String competitionTime = request.getParameter("competitionTime");
-        String awardName = request.getParameter("awardName");
+        String teamName = request.getParameter("teamName");
         String awardLevel = request.getParameter("awardLevel");
         String awardType = request.getParameter("awardType");
         String awardCategory = request.getParameter("awardCategory");
         String competitionLevel = request.getParameter("competitionLevel");
-        String description = request.getParameter("description");
+
+        // 基本校验
+        if (competition == null || competition.trim().isEmpty() ||
+            competitionTime == null || competitionTime.trim().isEmpty() ||
+            awardLevel == null || awardLevel.trim().isEmpty() ||
+            awardType == null || awardType.trim().isEmpty() ||
+            awardCategory == null || awardCategory.trim().isEmpty() ||
+            competitionLevel == null || competitionLevel.trim().isEmpty()) {
+            request.setAttribute("error", "请填写所有必填项");
+            showSubmitForm(request, response);
+            return;
+        }
 
         Award award = new Award();
         award.setUserId(targetUserId);
         award.setCreatedBy(user.getId()); // 记录实际创建者
         award.setCompetition(competition);
         award.setCompetitionLocation(competitionLocation);
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date date = sdf.parse(competitionTime);
-            award.setCompetitionTime(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        award.setAwardName(awardName);
-        award.setAwardLevel(Integer.parseInt(awardLevel));
-        award.setAwardType(Integer.parseInt(awardType));
-        award.setAwardCategory(Integer.parseInt(awardCategory));
-        award.setCompetitionLevel(Integer.parseInt(competitionLevel));
-        award.setDescription(description);
-        award.setAwardStatus("PENDING");
+        award.setTeamName(teamName);
 
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             Date date = sdf.parse(competitionTime);
+            award.setCompetitionTime(date);
+
+            // 从比赛时间提取年份
             Calendar cal = Calendar.getInstance();
             cal.setTime(date);
             award.setYear(cal.get(Calendar.YEAR));
@@ -612,9 +613,76 @@ public class AwardServlet extends HttpServlet {
             e.printStackTrace();
         }
 
-        awardDAO.insert(award);
+        award.setAwardLevel(Integer.parseInt(awardLevel));
+        award.setAwardType(Integer.parseInt(awardType));
+        award.setAwardCategory(Integer.parseInt(awardCategory));
+        award.setCompetitionLevel(Integer.parseInt(competitionLevel));
+        award.setAwardStatus("PENDING");
+        // 设置name字段（用于列表显示）
+        award.setName(competition);
 
-        response.sendRedirect(request.getContextPath() + "/member/award/list");
+        System.out.println("=== 准备插入奖项 ===");
+        System.out.println("  competition: " + competition);
+        System.out.println("  competitionTime: " + competitionTime);
+        System.out.println("  awardLevel: " + awardLevel);
+        System.out.println("  awardType: " + awardType);
+        System.out.println("  awardCategory: " + awardCategory);
+        System.out.println("  competitionLevel: " + competitionLevel);
+
+        // 保存奖项 - 检查插入结果
+        boolean insertSuccess = awardDAO.insert(award);
+        System.out.println("=== 插入结果: " + insertSuccess + " ===");
+        System.out.println("=== 插入后的 award.getId(): " + award.getId() + " ===");
+
+        if (!insertSuccess || award.getId() == null) {
+            System.err.println("=== 奖项插入失败！===");
+            request.setAttribute("error", "奖项提交失败，请重试");
+            showSubmitForm(request, response);
+            return;
+        }
+
+        Integer awardId = award.getId();
+        System.out.println("=== 开始处理图片上传, awardId: " + awardId + " ===");
+
+        // 处理图片上传
+        try {
+            Collection<Part> parts = request.getParts();
+            for (Part part : parts) {
+                if (part.getName().equals("awardImages") && part.getSize() > 0) {
+                    String originalFileName = part.getSubmittedFileName();
+                    if (originalFileName != null && !originalFileName.isEmpty()) {
+                        String fileExtension = "";
+                        int dotIndex = originalFileName.lastIndexOf('.');
+                        if (dotIndex > 0) {
+                            fileExtension = originalFileName.substring(dotIndex);
+                        }
+                        String fileName = System.currentTimeMillis() + "_" + System.nanoTime() + fileExtension;
+                        String uploadPath = getServletContext().getRealPath("/") + UPLOAD_DIR;
+                        File uploadDir = new File(uploadPath);
+                        if (!uploadDir.exists()) {
+                            uploadDir.mkdirs();
+                        }
+
+                        String filePath = uploadPath + File.separator + fileName;
+                        part.write(filePath);
+                        System.out.println("=== 图片保存成功: " + filePath + " ===");
+
+                        AwardImage image = new AwardImage();
+                        image.setAwardId(awardId);
+                        image.setImagePath(UPLOAD_DIR + "/" + fileName);
+                        image.setOriginalName(originalFileName);
+                        awardImageDAO.insert(image);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("=== 图片上传失败（不影响奖项提交）===");
+            // 图片上传失败不影响奖项提交
+        }
+
+        System.out.println("=== 奖项提交成功，准备重定向 ===");
+        response.sendRedirect(request.getContextPath() + "/award?action=list&success=" + encode("奖项提交成功，请等待管理员审核"));
     }
 
     // 更新奖项
@@ -775,6 +843,17 @@ public class AwardServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/member/award/detail?id=" + awardId);
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/member/award/list");
+        }
+    }
+
+    /**
+     * URL编码工具方法
+     */
+    private String encode(String message) {
+        try {
+            return java.net.URLEncoder.encode(message, "UTF-8");
+        } catch (Exception e) {
+            return message;
         }
     }
 }
