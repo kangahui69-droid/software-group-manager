@@ -32,9 +32,14 @@
                         <h3 class="card-title">活动信息</h3>
                     </div>
                     <div class="card-body">
-                        <c:if test="${not empty error}">
+                        <c:if test="${not empty param.error}">
                             <div class="alert alert-danger">
-                                ${error}
+                                ${param.error}
+                            </div>
+                        </c:if>
+                        <c:if test="${not empty param.success}">
+                            <div class="alert alert-success">
+                                ${param.success}
                             </div>
                         </c:if>
                         
@@ -146,11 +151,22 @@
                         <div class="mb-3">
                             <label class="form-label required">活动状态</label>
                             <select class="form-select" name="status" required>
-                                <option value="upcoming" ${empty activity or activity.status eq 'upcoming' ? 'selected' : ''}>即将开始</option>
-                                <option value="ongoing" ${activity.status eq 'ongoing' ? 'selected' : ''}>进行中</option>
-                                <option value="completed" ${activity.status eq 'completed' ? 'selected' : ''}>已结束</option>
-                                <option value="canceled" ${activity.status eq 'canceled' ? 'selected' : ''}>已取消</option>
+                                <%-- 新建活动：只允许选择"即将开始"或"进行中" --%>
+                                <c:if test="${empty activity}">
+                                    <option value="upcoming" selected>即将开始</option>
+                                    <option value="ongoing">进行中</option>
+                                </c:if>
+                                <%-- 编辑活动：显示所有状态 --%>
+                                <c:if test="${not empty activity}">
+                                    <option value="upcoming" ${activity.status eq 'upcoming' ? 'selected' : ''}>即将开始</option>
+                                    <option value="ongoing" ${activity.status eq 'ongoing' ? 'selected' : ''}>进行中</option>
+                                    <option value="completed" ${activity.status eq 'completed' ? 'selected' : ''}>已结束</option>
+                                    <option value="canceled" ${activity.status eq 'canceled' ? 'selected' : ''}>已取消</option>
+                                </c:if>
                             </select>
+                            <c:if test="${empty activity}">
+                                <small class="text-muted">新建活动时只能选择"即将开始"或"进行中"</small>
+                            </c:if>
                         </div>
                     </div>
                     <div class="card-footer text-end">

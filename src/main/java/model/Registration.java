@@ -18,6 +18,9 @@ public class Registration {
     private String userName;
     private String studentId;
     private String major;
+    private String grade; // 班级/年级
+    private String phone; // 手机号
+    private String email; // 邮箱
     
     // 扩展字段（用于页面展示）
     private String activityName;
@@ -107,6 +110,30 @@ public class Registration {
 
     public void setMajor(String major) {
         this.major = major;
+    }
+
+    public String getGrade() {
+        return grade;
+    }
+
+    public void setGrade(String grade) {
+        this.grade = grade;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getActivityName() {

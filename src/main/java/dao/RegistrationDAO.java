@@ -140,9 +140,13 @@ public class RegistrationDAO {
     public List<Registration> findByActivityId(Integer activityId) {
         List<Registration> registrations = new ArrayList<>();
         String sql = "SELECT ap.*, a.name as activity_name, a.activity_start_time, a.activity_end_time, " +
-                    "a.location, a.registration_end_time " +
+                    "a.location, a.registration_end_time, " +
+                    "u.name as user_name, u.email as user_email, u.phone as user_phone, " +
+                    "mp.student_id, mp.major, mp.grade as grade_class " +
                     "FROM activity_participant ap " +
                     "JOIN activity a ON ap.activity_id = a.id " +
+                    "LEFT JOIN user u ON ap.user_id = u.id " +
+                    "LEFT JOIN member_profile mp ON u.id = mp.user_id " +
                     "WHERE ap.activity_id = ? " +
                     "ORDER BY ap.created_at ASC";
         Connection conn = null;
@@ -347,24 +351,58 @@ public class RegistrationDAO {
         registration.setCreatedAt(rs.getTimestamp("created_at"));
         registration.setUpdatedAt(rs.getTimestamp("updated_at"));
         registration.setNotes(rs.getString("notes"));
-        
+
         // 关联活动信息
-        if (rs.getMetaData().getColumnCount() > 8) {
+        if (hasColumn(rs, "activity_name")) {
             registration.setActivityName(rs.getString("activity_name"));
-            
+
             Timestamp activityStartTime = rs.getTimestamp("activity_start_time");
             registration.setActivityStartTime(activityStartTime != null ? new java.util.Date(activityStartTime.getTime()) : null);
-            
+
             Timestamp activityEndTime = rs.getTimestamp("activity_end_time");
             registration.setActivityEndTime(activityEndTime != null ? new java.util.Date(activityEndTime.getTime()) : null);
-            
+
             registration.setLocation(rs.getString("location"));
-            
+
             Timestamp registrationEndTime = rs.getTimestamp("registration_end_time");
             registration.setRegistrationEndTime(registrationEndTime != null ? new java.util.Date(registrationEndTime.getTime()) : null);
         }
-        
+
+        // 关联用户信息
+        if (hasColumn(rs, "user_name")) {
+            registration.setUserName(rs.getString("user_name"));
+        }
+        if (hasColumn(rs, "user_email")) {
+            // 可在Registration模型中添加email字段，如需显示邮箱可在此扩展
+        }
+        if (hasColumn(rs, "user_phone")) {
+            // 可在Registration模型中添加phone字段，如需显示手机号可在此扩展
+        }
+        if (hasColumn(rs, "student_id")) {
+            registration.setStudentId(rs.getString("student_id"));
+        }
+        if (hasColumn(rs, "major")) {
+            registration.setMajor(rs.getString("major"));
+        }
+        if (hasColumn(rs, "grade_class")) {
+            registration.setGrade(rs.getString("grade_class"));
+        }
+
         return registration;
+    }
+
+    /**
+     * 检查ResultSet是否包含指定列
+     */
+    private boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        for (int i = 1; i <= columnCount; i++) {
+            if (metaData.getColumnLabel(i).equalsIgnoreCase(columnName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
