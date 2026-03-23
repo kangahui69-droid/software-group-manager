@@ -238,8 +238,51 @@ public class ActivityDAO {
         
         // 动态计算是否开放报名
         activity.setRegistrationOpen(activity.isInRegistrationPeriod());
-        
+
         return activity;
+    }
+
+    /**
+     * 检查指定时间段内是否存在同名活动
+     * @param title 活动名称
+     * @param startTime 活动开始时间
+     * @param endTime 活动结束时间
+     * @param excludeId 排除的活动ID（编辑时使用）
+     * @return true-存在冲突的同名活动，false-不存在
+     */
+    public boolean existsByTitleAndTimeWindow(String title, java.util.Date startTime, java.util.Date endTime, Integer excludeId) {
+        // 两段时间重叠的条件：start1 < end2 且 end1 > start2
+        String sql = "SELECT COUNT(*) FROM activity WHERE name = ? AND deleted = 0 " +
+                "AND activity_start_time < ? AND activity_end_time > ?";
+
+        if (excludeId != null) {
+            sql += " AND id != ?";
+        }
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, title);
+            pstmt.setTimestamp(2, new Timestamp(endTime.getTime()));   // 新活动结束时间 > 现有活动开始时间
+            pstmt.setTimestamp(3, new Timestamp(startTime.getTime())); // 新活动开始时间 < 现有活动结束时间
+
+            if (excludeId != null) {
+                pstmt.setInt(4, excludeId);
+            }
+
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return false;
     }
 
     /**

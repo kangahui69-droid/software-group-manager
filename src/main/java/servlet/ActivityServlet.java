@@ -382,6 +382,31 @@ public class ActivityServlet extends HttpServlet {
     private void createActivity(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             Activity activity = extractFromRequest(request);
+
+            // 后端安全校验：新建活动时只允许"即将开始"或"进行中"
+            String status = activity.getStatus();
+            if ("completed".equalsIgnoreCase(status) || "canceled".equalsIgnoreCase(status)) {
+                // 非法状态，自动修正为默认值
+                activity.setStatus("upcoming");
+                // 或者返回错误：
+                // response.sendRedirect(request.getContextPath() + "/activity?action=create&error=" + encode("新建活动不能选择已结束或已取消状态"));
+                // return;
+            }
+
+            // ====== 同名活动时间冲突校验 ======
+            // 检查是否存在时间重叠的同名活动
+            if (activityDAO.existsByTitleAndTimeWindow(
+                    activity.getTitle(),
+                    activity.getActivityStartTime(),
+                    activity.getActivityEndTime(),
+                    null)) {
+                response.sendRedirect(request.getContextPath() +
+                    "/activity?action=create&error=" +
+                    encode("不能创建相同名称相同时间段的活动"));
+                return;
+            }
+            // =====================================
+
             if (activityDAO.insert(activity)) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动创建成功"));
             } else {
@@ -397,6 +422,20 @@ public class ActivityServlet extends HttpServlet {
         try {
             Activity activity = extractFromRequest(request);
             activity.setId(Integer.parseInt(request.getParameter("id")));
+
+            // ====== 新增：同名活动时间冲突校验（编辑时排除自己） ======
+            if (activityDAO.existsByTitleAndTimeWindow(
+                    activity.getTitle(),
+                    activity.getActivityStartTime(),
+                    activity.getActivityEndTime(),
+                    activity.getId())) {
+                response.sendRedirect(request.getContextPath() +
+                    "/activity?action=edit&id=" + activity.getId() + "&error=" +
+                    encode("不能创建相同名称相同时间段的活动"));
+                return;
+            }
+            // =======================================================
+
             if (activityDAO.update(activity)) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动更新成功"));
             } else {

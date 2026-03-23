@@ -193,6 +193,8 @@
                                 <th>姓名</th>
                                 <th>学号</th>
                                 <th>专业</th>
+                                <th>班级</th>
+                                <th>手机号</th>
                                 <th>报名时间</th>
                                 <th>状态</th>
                                 <th>操作</th>
@@ -209,6 +211,8 @@
                                     <td>${r.userName}</td>
                                     <td class="text-muted">${r.studentId}</td>
                                     <td class="text-muted">${r.major}</td>
+                                    <td class="text-muted">${r.grade}</td>
+                                    <td class="text-muted">${r.phone}</td>
                                     <td class="text-muted">
                                         <fmt:formatDate value="${r.createdAt}" pattern="yyyy-MM-dd HH:mm" />
                                     </td>
@@ -250,7 +254,7 @@
                             </c:forEach>
                             <c:if test="${empty registrations}">
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted">暂无报名人员</td>
+                                    <td colspan="10" class="text-center text-muted">暂无报名人员</td>
                                 </tr>
                             </c:if>
                         </tbody>
