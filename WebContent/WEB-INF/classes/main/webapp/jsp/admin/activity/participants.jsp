@@ -149,6 +149,26 @@
             </div>
         </c:if>
         
+        <!-- 人数上限提示 -->
+        <c:if test="${activity.maxParticipants != null && activity.maxParticipants > 0}">
+            <c:set var="confirmedCount" value="0" />
+            <c:forEach var="r" items="${registrations}">
+                <c:if test="${r.status == 'confirmed'}"><c:set var="confirmedCount" value="${confirmedCount + 1}" /></c:if>
+            </c:forEach>
+            <c:set var="availableSlots" value="${activity.maxParticipants - confirmedCount}" />
+            <div class="alert ${availableSlots > 0 ? 'alert-info' : 'alert-danger'}">
+                <strong>人数限制：</strong>已确认 ${confirmedCount} / ${activity.maxParticipants} 人
+                <c:choose>
+                    <c:when test="${availableSlots > 0}">
+                        （还可通过 <span class="badge bg-primary">${availableSlots}</span> 人）
+                    </c:when>
+                    <c:otherwise>
+                        <span class="text-danger fw-bold">（已满员，无法再通过报名）</span>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </c:if>
+
         <!-- 已过期提示 -->
         <c:if test="${activity.registrationEnded}">
             <div class="alert alert-warning">

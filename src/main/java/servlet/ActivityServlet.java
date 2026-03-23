@@ -664,14 +664,31 @@ public class ActivityServlet extends HttpServlet {
         try {
             int activityId = Integer.parseInt(activityIdStr);
             int userId = Integer.parseInt(userIdStr);
-            
-            // 检查活动是否已过期
+
+            // 检查活动是否存在
             Activity activity = activityDAO.findById(activityId);
-            if (activity != null && activity.isRegistrationEnded()) {
+            if (activity == null) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动不存在"));
+                return;
+            }
+
+            // 检查活动是否已过期
+            if (activity.isRegistrationEnded()) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动已过期，无法审核"));
                 return;
             }
-            
+
+            // 检查人数上限
+            if (activity.getMaxParticipants() != null && activity.getMaxParticipants() > 0) {
+                int currentCount = registrationDAO.getParticipantCount(activityId, "confirmed");
+                if (currentCount >= activity.getMaxParticipants()) {
+                    response.sendRedirect(request.getContextPath() +
+                        "/activity?action=participants&id=" + activityId + "&error=" +
+                        encode("审核失败：活动报名人数已满（上限" + activity.getMaxParticipants() + "人）"));
+                    return;
+                }
+            }
+
             registrationDAO.updateStatus(activityId, userId, "confirmed", null);
             response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&success=" + encode("已通过"));
         } catch (NumberFormatException e) {
@@ -741,19 +758,46 @@ public class ActivityServlet extends HttpServlet {
 
         try {
             int activityId = Integer.parseInt(activityIdStr);
-            
-            // 检查活动是否已过期
+
+            // 检查活动是否存在
             Activity activity = activityDAO.findById(activityId);
-            if (activity != null && activity.isRegistrationEnded()) {
+            if (activity == null) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动不存在"));
+                return;
+            }
+
+            // 检查活动是否已过期
+            if (activity.isRegistrationEnded()) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动已过期，无法审核"));
                 return;
             }
-            
+
+            // 检查人数上限
+            if (activity.getMaxParticipants() != null && activity.getMaxParticipants() > 0) {
+                int currentCount = registrationDAO.getParticipantCount(activityId, "confirmed");
+                int availableSlots = activity.getMaxParticipants() - currentCount;
+
+                if (availableSlots <= 0) {
+                    response.sendRedirect(request.getContextPath() +
+                        "/activity?action=participants&id=" + activityId + "&error=" +
+                        encode("审核失败：活动报名人数已满（上限" + activity.getMaxParticipants() + "人）"));
+                    return;
+                }
+
+                // 如果要审核的人数超过剩余名额，阻止操作
+                if (userIdsStr.length > availableSlots) {
+                    response.sendRedirect(request.getContextPath() +
+                        "/activity?action=participants&id=" + activityId + "&error=" +
+                        encode("审核失败：剩余名额不足，最多还可通过 " + availableSlots + " 人，当前选择了 " + userIdsStr.length + " 人"));
+                    return;
+                }
+            }
+
             List<Integer> userIds = new ArrayList<>();
             for (String uid : userIdsStr) {
                 userIds.add(Integer.parseInt(uid));
             }
-            
+
             registrationDAO.batchUpdateStatus(userIds, activityId, "confirmed");
             response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&success=" + encode("批量通过成功"));
         } catch (NumberFormatException e) {
