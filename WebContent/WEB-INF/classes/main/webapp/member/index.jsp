@@ -4,7 +4,7 @@
         <% User user=(User) session.getAttribute("user"); if (user==null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp" ); return; } %>
             <jsp:include page="../jsp/common/layout_top.jsp">
-                <jsp:param name="title" value="成员中心" />
+                <jsp:param name="title" value="个人中心" />
             </jsp:include>
 
             <div class="page-header d-print-none">
@@ -12,7 +12,7 @@
                     <div class="row g-2 align-items-center">
                         <div class="col">
                             <h2 class="page-title">
-                                成员中心
+                                个人中心
                             </h2>
                         </div>
                     </div>
@@ -26,10 +26,10 @@
                             <div class="card">
                                 <div class="card-body p-4 text-center">
                                     <span class="avatar avatar-xl mb-3 avatar-rounded bg-blue-lt">
-                                        <%= XSSFilterUtil.filter(user.getUsername().substring(0,1).toUpperCase()) %>
+                                        ${not empty user.name ? user.name.charAt(0) : user.username.substring(0,1)}
                                     </span>
                                     <h3 class="m-0 mb-1">
-                                        <%= XSSFilterUtil.filter(user.getUsername()) %>
+                                        ${not empty user.name ? user.name : user.username}
                                     </h3>
                                     <div class="text-muted text-capitalize">
                                         <%= XSSFilterUtil.filter(user.getRole().toLowerCase()) %>

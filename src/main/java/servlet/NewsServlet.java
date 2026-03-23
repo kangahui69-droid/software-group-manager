@@ -237,6 +237,21 @@ public class NewsServlet extends HttpServlet {
         String type = request.getParameter("type");
         String content = request.getParameter("content");
         String summary = request.getParameter("summary");
+        String statusStr = request.getParameter("status");
+
+        // 解析status，默认为1（正常）
+        int status = 1;
+        if (statusStr != null && !statusStr.isEmpty()) {
+            try {
+                status = Integer.parseInt(statusStr);
+                // 校验status值必须在有效范围内
+                if (status != 0 && status != 1) {
+                    status = 1; // 无效值默认为正常
+                }
+            } catch (NumberFormatException e) {
+                status = 1; // 解析失败默认为正常
+            }
+        }
 
         try {
             // 生成HTML文件路径
@@ -261,7 +276,7 @@ public class NewsServlet extends HttpServlet {
             news.setContentPath(relativePath);
             news.setSummary(summary);
             news.setAuthorId(authorId);
-            news.setStatus(1);
+            news.setStatus(status);
 
             if (newsDAO.insert(news)) {
                 response.sendRedirect(request.getContextPath() + "/news?action=manage");
@@ -325,8 +340,19 @@ public class NewsServlet extends HttpServlet {
             news.setTitle(title);
             news.setType(type);
             news.setSummary(summary);
-            if (statusStr != null) {
-                news.setStatus(Integer.parseInt(statusStr));
+
+            // 解析并校验status值
+            if (statusStr != null && !statusStr.isEmpty()) {
+                try {
+                    int status = Integer.parseInt(statusStr);
+                    // 只接受有效的status值（0或1）
+                    if (status == 0 || status == 1) {
+                        news.setStatus(status);
+                    }
+                    // 无效值不更新，保持原值
+                } catch (NumberFormatException e) {
+                    // 解析失败，不更新，保持原值
+                }
             }
 
             if (newsDAO.update(news)) {
