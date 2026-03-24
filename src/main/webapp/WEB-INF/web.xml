@@ -257,6 +257,16 @@
         <url-pattern>/resume/award</url-pattern>
     </servlet-mapping>
 
+    <!-- AI助手Servlet -->
+    <servlet>
+        <servlet-name>AIServlet</servlet-name>
+        <servlet-class>servlet.AIServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AIServlet</servlet-name>
+        <url-pattern>/ai</url-pattern>
+    </servlet-mapping>
+
     <!-- 用户资料Servlet -->
     <servlet>
         <servlet-name>ProfileServlet</servlet-name>

@@ -1,0 +1,302 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI助手 - 高校软件小组管理系统</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/tabler.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+        }
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+        }
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user {
+            text-align: right;
+        }
+        .message-content {
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .message.assistant .message-content {
+            background: white;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: left;
+        }
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .chat-input-area {
+            padding: 20px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+            border-radius: 25px;
+            padding: 12px 20px;
+            border: 1px solid #dee2e6;
+        }
+        .chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn-send {
+            border-radius: 25px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        .btn-send:hover {
+            opacity: 0.9;
+            color: white;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .role-badge.admin { background: #dc3545; color: white; }
+        .role-badge.member { background: #28a745; color: white; }
+        .role-badge.guest { background: #6c757d; color: white; }
+        .quick-questions {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .quick-questions h6 {
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .quick-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 3px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+            text-align: center;
+        }
+        .typing-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: typing 1.4s infinite;
+            margin: 0 2px;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="container-fluid">
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card chat-container">
+                        <div class="chat-header">
+                            <h4><i class="bi bi-robot me-2"></i>AI智能助手</h4>
+                            <p class="mb-0 small opacity-75">高校软件小组管理系统 - 您的智能帮手</p>
+                        </div>
+                        
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="quick-questions">
+                                <h6><i class="bi bi-lightning me-1"></i>快捷问题</h6>
+                                <span class="quick-btn" onclick="sendQuickQuestion('如何发布新闻？')">如何发布新闻</span>
+                                <span class="quick-btn" onclick="sendQuickQuestion('如何审核奖项申请？')">如何审核奖项</span>
+                                <span class="quick-btn" onclick="sendQuickQuestion('如何创建活动？')">如何创建活动</span>
+                                <span class="quick-btn" onclick="sendQuickQuestion('如何处理招新报名？')">如何处理招新</span>
+                                <span class="quick-btn" onclick="sendQuickQuestion('如何重置成员密码？')">如何重置密码</span>
+                            </div>
+                            
+                            <div class="message assistant">
+                                <span class="role-badge ${userRole == 'ADMIN' ? 'admin' : userRole == 'MEMBER' ? 'member' : 'guest'}">
+                                    ${userRole == 'ADMIN' ? '管理员' : userRole == 'MEMBER' ? '成员' : '游客'}
+                                </span>
+                                <div class="message-content">
+                                    您好！我是AI助手，有什么可以帮您的吗？<br><br>
+                                    您可以问我关于系统的任何问题，比如：<br>
+                                    • 如何发布和管理新闻<br>
+                                    • 如何审核奖项申请<br>
+                                    • 如何创建和管理活动<br>
+                                    • 如何处理招新报名<br>
+                                    • 如何管理成员和项目<br><br>
+                                    <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
+                                </div>
+                                <div class="message-time">${sessionScope.user != null ? sessionScope.user.name : '游客'} · 刚刚</div>
+                            </div>
+                        </div>
+                        
+                        <div class="typing-indicator" id="typingIndicator">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span style="margin-left: 10px; color: #999;">AI正在思考中...</span>
+                        </div>
+                        
+                        <div class="chat-input-area">
+                            <form id="chatForm">
+                                <input type="hidden" name="session_id" id="sessionId" value="${sessionId}">
+                                <div class="input-group">
+                                    <input type="text" name="message" id="messageInput" 
+                                           class="chat-input" placeholder="请输入您的问题..." autocomplete="off">
+                                    <button type="submit" class="btn btn-send">
+                                        <i class="bi bi-send me-1"></i>发送
+                                    </button>
+                                </div>
+                            </form>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    按 Enter 发送，Shift + Enter 换行
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('chatForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var message = document.getElementById('messageInput').value.trim();
+        if (!message) return;
+
+        addMessage('user', message);
+        document.getElementById('messageInput').value = '';
+        showTyping(true);
+
+        var sessionId = document.getElementById('sessionId').value;
+
+        fetch('${pageContext.request.contextPath}/ai?action=send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'message=' + encodeURIComponent(message) + '&session_id=' + encodeURIComponent(sessionId)
+        })
+        .then(res => res.json())
+        .then(data => {
+            showTyping(false);
+            if (data.success) {
+                addMessage('assistant', data.response);
+            } else {
+                addMessage('assistant', '抱歉，发生了错误：' + (data.error || '未知错误'));
+            }
+        })
+        .catch(err => {
+            showTyping(false);
+            addMessage('assistant', '网络错误，请稍后重试。');
+            console.error(err);
+        });
+    });
+
+    function sendQuickQuestion(question) {
+        document.getElementById('messageInput').value = question;
+        document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+    }
+
+    function addMessage(role, content) {
+        var messagesDiv = document.getElementById('chatMessages');
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'message ' + role;
+        
+        var time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        var userName = '${sessionScope.user != null ? sessionScope.user.name : "游客"}';
+        
+        content = content.replace(/\n/g, '<br>');
+        
+        msgDiv.innerHTML = '<div class="message-content">' + content + '</div>' +
+                          '<div class="message-time">' + userName + ' · ' + time + '</div>';
+        
+        messagesDiv.appendChild(msgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function showTyping(show) {
+        document.getElementById('typingIndicator').style.display = show ? 'block' : 'none';
+        if (show) {
+            var messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    }
+
+    document.getElementById('messageInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+        }
+    });
+    </script>
+</body>
+</html>
