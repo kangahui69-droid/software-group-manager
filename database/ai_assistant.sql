@@ -3,6 +3,52 @@
 -- 高校软件小组管理系统
 -- ============================================
 
+-- 创建AI对话日志表（原有表）
+CREATE TABLE IF NOT EXISTS `ai_conversation_log` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `session_id` VARCHAR(64) DEFAULT NULL COMMENT '会话ID',
+    `user_id` INT DEFAULT NULL COMMENT '用户ID',
+    `user_role` VARCHAR(20) DEFAULT NULL COMMENT '用户角色',
+    `question` TEXT NOT NULL COMMENT '用户提问',
+    `ai_answer` TEXT COMMENT 'AI回答',
+    `source` VARCHAR(20) DEFAULT NULL COMMENT '回答来源：faq/llm',
+    `reference_id` INT DEFAULT NULL COMMENT '关联FAQ ID',
+    `rating` TINYINT DEFAULT NULL COMMENT '用户评分1-5',
+    `is_validated` TINYINT DEFAULT '0' COMMENT '是否已验证：1-是，0-否',
+    `validated_by` INT DEFAULT NULL COMMENT '验证人ID',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_session_id` (`session_id`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_user_role` (`user_role`),
+    INDEX `idx_created_at` (`created_at`),
+    INDEX `idx_source` (`source`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI对话日志表';
+
+-- 创建FAQ知识表（原有表）
+CREATE TABLE IF NOT EXISTS `ai_faq_knowledge` (
+    `id` INT NOT NULL AUTO_INCREMENT COMMENT 'FAQ ID',
+    `category` VARCHAR(50) DEFAULT NULL COMMENT '问题分类',
+    `question` VARCHAR(500) NOT NULL COMMENT '问题',
+    `answer` TEXT NOT NULL COMMENT '答案',
+    `keywords` VARCHAR(255) DEFAULT NULL COMMENT '关键词，用于匹配',
+    `target_role` VARCHAR(20) DEFAULT 'ALL' COMMENT '目标角色：ADMIN/MEMBER/GUEST/ALL',
+    `priority` INT DEFAULT '1' COMMENT '优先级1-5',
+    `view_count` INT DEFAULT '0' COMMENT '查看次数',
+    `useful_count` INT DEFAULT '0' COMMENT '点赞次数',
+    `status` TINYINT DEFAULT '1' COMMENT '状态：1-启用，0-禁用',
+    `verified` TINYINT DEFAULT '0' COMMENT '是否已验证：1-是，0-否',
+    `verified_at` DATETIME DEFAULT NULL COMMENT '验证时间',
+    `verified_by` INT DEFAULT NULL COMMENT '验证人ID',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_category` (`category`),
+    INDEX `idx_target_role` (`target_role`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_verified` (`verified`)
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='FAQ知识表';
+
 -- 创建AI对话记录表
 CREATE TABLE IF NOT EXISTS `ai_conversation` (
     `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
@@ -37,6 +83,21 @@ CREATE TABLE IF NOT EXISTS `ai_knowledge_base` (
     INDEX `idx_category` (`category`),
     INDEX `idx_keywords` (`keywords`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI知识库表';
+
+-- 创建AI提问统计表
+CREATE TABLE IF NOT EXISTS `ai_faq_statistics` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    `question_hash` VARCHAR(64) UNIQUE COMMENT '问题哈希值',
+    `normalized_question` VARCHAR(500) COMMENT '标准化问题',
+    `query_count` INT DEFAULT 1 COMMENT '查询次数',
+    `avg_rating` DECIMAL(3,2) DEFAULT NULL COMMENT '平均评分',
+    `last_query_at` DATETIME DEFAULT NULL COMMENT '最后查询时间',
+    `suggested_faq` TINYINT DEFAULT 0 COMMENT '是否建议FAQ：1-是，0-否',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX `idx_query_count` (`query_count`),
+    INDEX `idx_suggested` (`suggested_faq`),
+    INDEX `idx_last_query` (`last_query_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI提问统计表';
 
 -- ============================================
 -- 初始化知识库数据

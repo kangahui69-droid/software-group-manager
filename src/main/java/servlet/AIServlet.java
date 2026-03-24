@@ -49,6 +49,8 @@ public class AIServlet extends HttpServlet {
             req.getRequestDispatcher("/jsp/ai/ai_chat.jsp").forward(req, resp);
         } else if ("history".equals(action)) {
             getChatHistory(req, resp);
+        } else if ("statistics".equals(action)) {
+            showStatistics(req, resp);
         } else {
             resp.sendRedirect(req.getContextPath() + "/ai?action=chat");
         }
@@ -120,5 +122,11 @@ public class AIServlet extends HttpServlet {
 
         PrintWriter out = resp.getWriter();
         out.print(gson.toJson(result));
+    }
+
+    private void showStatistics(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        List<model.AIFaqStatistics> stats = aiService.getAllFaqStatistics();
+        req.setAttribute("stats", stats);
+        req.getRequestDispatcher("/jsp/ai/ai_statistics.jsp").forward(req, resp);
     }
 }
