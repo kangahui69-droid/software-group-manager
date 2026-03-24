@@ -198,6 +198,13 @@
                                     </li>
                                     <c:choose>
                                         <c:when test="${empty sessionScope.user}">
+                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai?action=chat">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
+                                                </a>
+                                            </li>
                                             <li class="nav-item ${param.active == 'notice' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/news?type=notice">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
@@ -230,6 +237,13 @@
                                             </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role != 'ADMIN'}">
+                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai?action=chat">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
+                                                </a>
+                                            </li>
                                             <li class="nav-item ${param.active == 'notice' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/news?type=notice">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
@@ -254,53 +268,68 @@
                                             </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role == 'ADMIN'}">
+                                            <li class="nav-item dropdown ${param.active == 'ai' || param.active == 'ai_stats' ? 'active' : ''}">
+                                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
+                                                </a>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/ai?action=chat">
+                                                        <i class="bi bi-chat-dots me-1"></i>AI对话
+                                                    </a>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/ai?action=statistics">
+                                                        <i class="bi bi-graph-up me-1"></i>AI统计
+                                                    </a>
+                                                </div>
+                                            </li>
                                             <li class="nav-item ${param.active == 'news' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/news?action=manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-newspaper"></i></span>
-                                                    <span class="nav-link-title">新闻管理</span>
+                                                    <span class="nav-link-title">新闻</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'activity' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/activity/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-calendar-check"></i></span>
-                                                    <span class="nav-link-title">活动管理</span>
+                                                    <span class="nav-link-title">活动</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'project' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/project/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-kanban"></i></span>
-                                                    <span class="nav-link-title">项目管理</span>
+                                                    <span class="nav-link-title">项目</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'award' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/award/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-trophy"></i></span>
-                                                    <span class="nav-link-title">奖项管理</span>
+                                                    <span class="nav-link-title">奖项</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'user' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/admin/member/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-people"></i></span>
-                                                    <span class="nav-link-title">用户管理</span>
+                                                    <span class="nav-link-title">用户</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'recruit' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/admin/recruit/manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-person-plus-fill"></i></span>
-                                                    <span class="nav-link-title">报名管理</span>
+                                                    <span class="nav-link-title">报名</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'log' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/admin/log/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-journal-text"></i></span>
-                                                    <span class="nav-link-title">日志管理</span>
+                                                    <span class="nav-link-title">日志</span>
                                                 </a>
                                             </li>
                                         </c:when>
@@ -311,3 +340,4 @@
                     </div>
                 </header>
                 <div class="page-wrapper">
+                </div>

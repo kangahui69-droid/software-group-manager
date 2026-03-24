@@ -5,29 +5,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI助手 - 高校软件小组管理系统</title>
+    <title>AI助手 - 黄山学院软件小组管理系统</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/tabler.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        .chat-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .page-wrapper {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-fullscreen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
         }
         .chat-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
-            border-radius: 10px 10px 0 0;
-            text-align: center;
+            padding: 15px 20px;
+            flex-shrink: 0;
         }
         .chat-messages {
-            height: 400px;
+            flex: 1;
             overflow-y: auto;
             padding: 20px;
             background: #f8f9fa;
-            border-left: 1px solid #dee2e6;
-            border-right: 1px solid #dee2e6;
+            min-height: 0;
         }
         .message {
             margin-bottom: 15px;
@@ -63,11 +74,10 @@
             margin-top: 5px;
         }
         .chat-input-area {
-            padding: 20px;
+            padding: 15px 20px;
             background: white;
-            border: 1px solid #dee2e6;
-            border-top: none;
-            border-radius: 0 0 10px 10px;
+            border-top: 1px solid #dee2e6;
+            flex-shrink: 0;
         }
         .input-group {
             display: flex;
@@ -106,20 +116,22 @@
         .role-badge.member { background: #28a745; color: white; }
         .role-badge.guest { background: #6c757d; color: white; }
         .quick-questions {
-            padding: 15px;
-            background: #f8f9fa;
+            padding: 12px 15px;
+            background: #fff;
             border-radius: 10px;
             margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
         }
         .quick-questions h6 {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: #666;
+            font-size: 14px;
         }
         .quick-btn {
             display: inline-block;
-            padding: 6px 12px;
-            margin: 3px;
-            background: white;
+            padding: 5px 10px;
+            margin: 2px;
+            background: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 15px;
             font-size: 12px;
@@ -152,77 +164,113 @@
             0%, 60%, 100% { transform: translateY(0); }
             30% { transform: translateY(-10px); }
         }
-        .card {
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
     </style>
 </head>
 <body>
     <div class="page-wrapper">
-        <div class="container-fluid">
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="card chat-container">
-                        <div class="chat-header">
-                            <h4><i class="bi bi-robot me-2"></i>AI智能助手</h4>
-                            <p class="mb-0 small opacity-75">高校软件小组管理系统 - 您的智能帮手</p>
-                        </div>
-                        
-                        <div class="chat-messages" id="chatMessages">
-                            <div class="quick-questions">
-                                <h6><i class="bi bi-lightning me-1"></i>快捷问题</h6>
-                                <span class="quick-btn" onclick="sendQuickQuestion('如何发布新闻？')">如何发布新闻</span>
-                                <span class="quick-btn" onclick="sendQuickQuestion('如何审核奖项申请？')">如何审核奖项</span>
-                                <span class="quick-btn" onclick="sendQuickQuestion('如何创建活动？')">如何创建活动</span>
-                                <span class="quick-btn" onclick="sendQuickQuestion('如何处理招新报名？')">如何处理招新</span>
-                                <span class="quick-btn" onclick="sendQuickQuestion('如何重置成员密码？')">如何重置密码</span>
-                            </div>
-                            
-                            <div class="message assistant">
-                                <span class="role-badge ${userRole == 'ADMIN' ? 'admin' : userRole == 'MEMBER' ? 'member' : 'guest'}">
-                                    ${userRole == 'ADMIN' ? '管理员' : userRole == 'MEMBER' ? '成员' : '游客'}
-                                </span>
-                                <div class="message-content">
-                                    您好！我是AI助手，有什么可以帮您的吗？<br><br>
-                                    您可以问我关于系统的任何问题，比如：<br>
-                                    • 如何发布和管理新闻<br>
-                                    • 如何审核奖项申请<br>
-                                    • 如何创建和管理活动<br>
-                                    • 如何处理招新报名<br>
-                                    • 如何管理成员和项目<br><br>
-                                    <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
-                                </div>
-                                <div class="message-time">${sessionScope.user != null ? sessionScope.user.name : '游客'} · 刚刚</div>
-                            </div>
-                        </div>
-                        
-                        <div class="typing-indicator" id="typingIndicator">
-                            <span class="typing-dot"></span>
-                            <span class="typing-dot"></span>
-                            <span class="typing-dot"></span>
-                            <span style="margin-left: 10px; color: #999;">AI正在思考中...</span>
-                        </div>
-                        
-                        <div class="chat-input-area">
-                            <form id="chatForm">
-                                <input type="hidden" name="session_id" id="sessionId" value="${sessionId}">
-                                <div class="input-group">
-                                    <input type="text" name="message" id="messageInput" 
-                                           class="chat-input" placeholder="请输入您的问题..." autocomplete="off">
-                                    <button type="submit" class="btn btn-send">
-                                        <i class="bi bi-send me-1"></i>发送
-                                    </button>
-                                </div>
-                            </form>
-                            <div class="text-center mt-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    按 Enter 发送，Shift + Enter 换行
-                                </small>
-                            </div>
-                        </div>
+        <div class="chat-fullscreen">
+            <div class="chat-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="bi bi-robot me-2"></i>AI智能助手</h4>
+                    <a href="${pageContext.request.contextPath}/index.jsp" class="btn btn-sm btn-outline-light">
+                        <i class="bi bi-house me-1"></i>返回首页
+                    </a>
+                </div>
+                <p class="mb-0 mt-1 small opacity-75">黄山学院软件小组管理系统 - 您的智能帮手</p>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="quick-questions">
+                    <h6><i class="bi bi-lightning me-1"></i>快捷问题</h6>
+                    <c:choose>
+                        <c:when test="${userRole == 'ADMIN'}">
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何发布新闻？')">如何发布新闻</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何审核奖项申请？')">如何审核奖项</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何创建活动？')">如何创建活动</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何处理招新报名？')">如何处理招新</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何重置成员密码？')">如何重置密码</span>
+                        </c:when>
+                        <c:when test="${userRole == 'MEMBER'}">
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何修改个人资料？')">如何修改资料</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何提交奖项申请？')">如何提交奖项</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何报名参加活动？')">如何报名活动</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何创建项目？')">如何创建项目</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何编辑个人简历？')">如何编辑简历</span>
+                        </c:when>
+                        <c:otherwise>
+                            <span class="quick-btn" onclick="sendQuickQuestion('软件小组是做什么的？')">小组简介</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何提交招新报名？')">如何报名</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('有哪些新闻和活动？')">查看动态</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('如何登录系统？')">如何登录</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('忘记了密码怎么办？')">忘记密码</span>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+                
+                <div class="message assistant">
+                    <span class="role-badge" style="background: #667eea; color: white;">
+                        <i class="bi bi-robot me-1"></i>AI助手
+                    </span>
+                    <div class="message-content">
+                        <c:choose>
+                            <c:when test="${userRole == 'ADMIN'}">
+                                您好，管理员！我是AI助手，专门为您提供系统管理方面的帮助。<br><br>
+                                我可以帮您解答以下问题：<br>
+                                • 如何发布和管理新闻<br>
+                                • 如何审核奖项、项目、招新申请<br>
+                                • 如何创建和管理活动<br>
+                                • 如何管理成员和重置密码<br>
+                                • 如何查看系统日志和统计数据<br><br>
+                                <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
+                            </c:when>
+                            <c:when test="${userRole == 'MEMBER'}">
+                                您好，成员！我是AI助手，很高兴为您服务。<br><br>
+                                我可以帮您解答以下问题：<br>
+                                • 如何修改个人资料<br>
+                                • 如何提交奖项申请<br>
+                                • 如何报名参加活动<br>
+                                • 如何创建和管理项目<br>
+                                • 如何编辑个人简历<br><br>
+                                <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
+                            </c:when>
+                            <c:otherwise>
+                                您好！我是AI助手，很高兴为您服务。<br><br>
+                                我可以帮您了解以下信息：<br>
+                                • 软件小组简介和最新动态<br>
+                                • 查看新闻和活动信息<br>
+                                • 如何提交招新报名加入我们<br>
+                                • 注册登录相关问题<br><br>
+                                <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
+                    <div class="message-time"><i class="bi bi-robot me-1"></i>AI助手 · 刚刚</div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span style="margin-left: 10px; color: #999;">AI正在思考中...</span>
+            </div>
+            
+            <div class="chat-input-area">
+                <form id="chatForm">
+                    <input type="hidden" name="session_id" id="sessionId" value="${sessionId}">
+                    <div class="input-group">
+                        <input type="text" name="message" id="messageInput" 
+                               class="chat-input" placeholder="请输入您的问题..." autocomplete="off">
+                        <button type="submit" class="btn btn-send">
+                            <i class="bi bi-send me-1"></i>发送
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        按 Enter 发送，Shift + Enter 换行
+                    </small>
                 </div>
             </div>
         </div>
@@ -272,12 +320,12 @@
         msgDiv.className = 'message ' + role;
         
         var time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-        var userName = '${sessionScope.user != null ? sessionScope.user.name : "游客"}';
+        var senderName = role === 'assistant' ? '<i class="bi bi-robot me-1"></i>AI助手' : '${sessionScope.user != null ? sessionScope.user.name : "游客"}';
         
         content = content.replace(/\n/g, '<br>');
         
         msgDiv.innerHTML = '<div class="message-content">' + content + '</div>' +
-                          '<div class="message-time">' + userName + ' · ' + time + '</div>';
+                          '<div class="message-time">' + senderName + ' · ' + time + '</div>';
         
         messagesDiv.appendChild(msgDiv);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;

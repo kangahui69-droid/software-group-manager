@@ -27,10 +27,95 @@
                 .badge.bg-blue {
                     color: #ffffff !important;
                 }
+                
+                /* 按钮hover效果 */
+                .btn-hover-lift {
+                    transition: all 0.3s ease;
+                }
+                .btn-hover-lift:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                }
+                
+                /* 空状态图标动画效果 */
+                .empty-img i {
+                    animation: pulse 2s infinite;
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 0.6; }
+                    50% { opacity: 1; }
+                }
+                
+                /* 面包屑导航样式优化 */
+                .breadcrumb-item a {
+                    color: #206bc4;
+                    text-decoration: none;
+                }
+                .breadcrumb-item a:hover {
+                    text-decoration: underline;
+                }
+
+                /* 全局 Loading 遮罩层 */
+                #global-loading {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: none;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                }
+
+                #global-loading.active {
+                    display: flex;
+                }
+
+                /* Loading 动画 */
+                .loading-spinner {
+                    width: 50px;
+                    height: 50px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #3498db;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                }
+
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                .loading-text {
+                    color: white;
+                    margin-top: 15px;
+                    font-size: 16px;
+                    text-align: center;
+                }
+
+                /* 页面加载时的过渡效果 */
+                .page-content {
+                    opacity: 1;
+                    transition: opacity 0.3s ease-in-out;
+                }
+
+                .page-content.loading {
+                    opacity: 0.7;
+                }
             </style>
         </head>
 
         <body>
+            <!-- 全局 Loading 组件 -->
+            <div id="global-loading">
+                <div class="text-center">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">加载中...</div>
+                </div>
+            </div>
+
             <div class="page">
                 <c:if test="${sessionScope.user.role == 'ADMIN'}">
                     <jsp:include page="admin_sidebar.jsp" />
@@ -61,9 +146,9 @@
                                             <a href="#" class="nav-link d-flex lh-1 text-reset p-0"
                                                 data-bs-toggle="dropdown" aria-label="Open user menu">
                                                 <span
-                                                    class="avatar avatar-sm bg-blue-lt">${sessionScope.user.username.substring(0,1).toUpperCase()}</span>
+                                                    class="avatar avatar-sm bg-blue-lt">${not empty sessionScope.user.name ? sessionScope.user.name.charAt(0) : sessionScope.user.username.substring(0,1)}</span>
                                                 <div class="d-none d-xl-block ps-2">
-                                                    <div>${sessionScope.user.username}</div>
+                                                    <div>${not empty sessionScope.user.name ? sessionScope.user.name : sessionScope.user.username}</div>
                                                     <div class="mt-1 small text-muted text-capitalize">
                                                         ${sessionScope.user.role.toLowerCase()}</div>
                                                 </div>
@@ -71,7 +156,7 @@
                                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                                                 <c:choose>
                                                     <c:when test="${sessionScope.user.role == 'ADMIN'}">
-                                                        <a href="${pageContext.request.contextPath}/admin/index.jsp"
+                                                        <a href="${pageContext.request.contextPath}/admin/dashboard"
                                                             class="dropdown-item">管理中心</a>
                                                         <a href="${pageContext.request.contextPath}/admin/profile.jsp"
                                                             class="dropdown-item">个人信息</a>
@@ -113,6 +198,13 @@
                                     </li>
                                     <c:choose>
                                         <c:when test="${empty sessionScope.user}">
+                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai?action=chat">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
+                                                </a>
+                                            </li>
                                             <li class="nav-item ${param.active == 'notice' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/news?type=notice">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
@@ -145,6 +237,13 @@
                                             </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role != 'ADMIN'}">
+                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai?action=chat">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
+                                                </a>
+                                            </li>
                                             <li class="nav-item ${param.active == 'notice' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/news?type=notice">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
@@ -169,53 +268,68 @@
                                             </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role == 'ADMIN'}">
+                                            <li class="nav-item dropdown ${param.active == 'ai' || param.active == 'ai_stats' ? 'active' : ''}">
+                                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
+                                                </a>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/ai?action=chat">
+                                                        <i class="bi bi-chat-dots me-1"></i>AI对话
+                                                    </a>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/ai?action=statistics">
+                                                        <i class="bi bi-graph-up me-1"></i>AI统计
+                                                    </a>
+                                                </div>
+                                            </li>
                                             <li class="nav-item ${param.active == 'news' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/news?action=manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-newspaper"></i></span>
-                                                    <span class="nav-link-title">新闻管理</span>
+                                                    <span class="nav-link-title">新闻</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'activity' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/activity/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-calendar-check"></i></span>
-                                                    <span class="nav-link-title">活动管理</span>
+                                                    <span class="nav-link-title">活动</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'project' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/project/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-kanban"></i></span>
-                                                    <span class="nav-link-title">项目管理</span>
+                                                    <span class="nav-link-title">项目</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'award' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/award/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-trophy"></i></span>
-                                                    <span class="nav-link-title">奖项管理</span>
+                                                    <span class="nav-link-title">奖项</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'user' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/admin/member/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-people"></i></span>
-                                                    <span class="nav-link-title">用户管理</span>
+                                                    <span class="nav-link-title">用户</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'recruit' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/admin/recruit/manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-person-plus-fill"></i></span>
-                                                    <span class="nav-link-title">报名管理</span>
+                                                    <span class="nav-link-title">报名</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'log' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/admin/log/list">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-journal-text"></i></span>
-                                                    <span class="nav-link-title">日志管理</span>
+                                                    <span class="nav-link-title">日志</span>
                                                 </a>
                                             </li>
                                         </c:when>
@@ -226,3 +340,5 @@
                     </div>
                 </header>
                 <div class="page-wrapper">
+
+                </div>

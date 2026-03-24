@@ -3,9 +3,11 @@ package service;
 import dao.AIConversationDAO;
 import dao.AIMessageDAO;
 import dao.AIKnowledgeBaseDAO;
+import dao.AIFaqStatisticsDAO;
 import model.AIConversation;
 import model.AIMessage;
 import model.AIKnowledgeBase;
+import model.AIFaqStatistics;
 import model.User;
 import util.AIClientUtil;
 
@@ -19,6 +21,7 @@ public class AIService {
     private AIConversationDAO conversationDAO = new AIConversationDAO();
     private AIMessageDAO messageDAO = new AIMessageDAO();
     private AIKnowledgeBaseDAO knowledgeBaseDAO = new AIKnowledgeBaseDAO();
+    private AIFaqStatisticsDAO faqStatsDAO = new AIFaqStatisticsDAO();
 
     public String getAIResponse(String userMessage, String sessionId, User user) {
         AIConversation conversation = conversationDAO.findBySessionId(sessionId);
@@ -60,7 +63,30 @@ public class AIService {
         assistantMsg.setCreatedAt(new Date());
         messageDAO.save(assistantMsg);
 
+        recordQuestionStatistics(userMessage);
+
         return aiResponse;
+    }
+
+    private void recordQuestionStatistics(String question) {
+        try {
+            String normalized = question.trim().toLowerCase();
+            AIFaqStatistics stats = faqStatsDAO.findByHash(normalized.hashCode() + "");
+            if (stats == null) {
+                stats = new AIFaqStatistics();
+                stats.setQuestionHash(normalized.hashCode() + "");
+                stats.setNormalizedQuestion(question.trim());
+                stats.setQueryCount(1);
+                stats.setLastQueryAt(new Date());
+                faqStatsDAO.save(stats);
+            } else {
+                stats.setQueryCount(stats.getQueryCount() + 1);
+                stats.setLastQueryAt(new Date());
+                faqStatsDAO.update(stats);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public List<AIMessage> getConversationHistory(String sessionId) {
@@ -83,32 +109,24 @@ public class AIService {
         return knowledgeBaseDAO.findAll();
     }
 
+    public List<AIFaqStatistics> getFaqStatistics(int limit) {
+        return faqStatsDAO.findTopQuestions(limit);
+    }
+
+    public List<AIFaqStatistics> getAllFaqStatistics() {
+        return faqStatsDAO.findAllOrderByCount();
+    }
+
     public String generateSessionId() {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
     private String buildSystemPrompt(String userRole) {
-        String basePrompt = "你是高校软件小组管理系统的AI助手。";
-
-        switch (userRole) {
-            case "ADMIN":
-                return basePrompt +
-                    "当前用户是【管理员】，可使用全部管理功能。\n" +
-                    "管理员功能包括：新闻管理、奖项审核、活动管理、项目审批、" +
-                    "成员管理、招新审核、操作日志、数据统计等。\n" +
-                    "请提供专业的管理操作指导。";
-            case "MEMBER":
-                return basePrompt +
-                    "当前用户是【小组成员】。\n" +
-                    "成员功能包括：个人资料管理、奖项申报、活动报名、" +
-                    "项目管理、简历编辑、密码修改等。\n" +
-                    "请提供简洁的成员操作指导。";
-            default:
-                return basePrompt +
-                    "当前用户是【游客】（未登录）。\n" +
-                    "游客可浏览公开新闻、活动，提交招新报名。\n" +
-                    "请引导用户了解系统，提示注册登录方式。";
-        }
+        return "你是黄山学院软件小组管理系统的AI助手。\n" +
+            "你是一个专业、友好的智能助手，帮助用户解答关于软件小组管理系统的问题。\n" +
+            "你可以回答关于：新闻管理、奖项申请、活动报名、项目管理、\n" +
+            "成员管理、招新流程、系统使用等各方面的问题。\n" +
+            "请用简洁、专业的方式回答问题。";
     }
 
     private String buildContext(String userMessage, String userRole) {
