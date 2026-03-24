@@ -42,12 +42,14 @@ public class AIClientUtil {
     }
 
     public String chat(String systemPrompt, String userMessage) {
-        if (apiKey == null || apiKey.isEmpty()) {
+        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("your_api_key_here")) {
             return getDefaultResponse(userMessage);
         }
 
         try {
             switch (provider) {
+                case "minimax":
+                    return chatWithMinimax(systemPrompt, userMessage);
                 case "wenxin":
                     return chatWithWenxin(systemPrompt, userMessage);
                 case "qwen":
@@ -59,8 +61,54 @@ public class AIClientUtil {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return "抱歉，AI服务暂时不可用。请稍后再试或联系管理员。";
+            return "抱歉，AI服务暂时不可用。请稍后再试或联系管理员。错误信息: " + e.getMessage();
         }
+    }
+
+    private String chatWithMinimax(String systemPrompt, String userMessage) throws Exception {
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(createMessage("system", systemPrompt));
+        messages.add(createMessage("user", userMessage));
+        
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        
+        HttpPost request = new HttpPost(apiUrl);
+        request.setHeader("Authorization", "Bearer " + apiKey);
+        request.setHeader("Content-Type", "application/json");
+        request.setEntity(new StringEntity(gson.toJson(requestBody), StandardCharsets.UTF_8));
+        
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpResponse response = client.execute(request);
+            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            System.out.println("[AIClient] MiniMax response: " + responseBody);
+            
+            Map<String, Object> respMap = gson.fromJson(responseBody, Map.class);
+            
+            if (respMap.containsKey("choices")) {
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) respMap.get("choices");
+                if (choices != null && !choices.isEmpty()) {
+                    Map<String, Object> choice = choices.get(0);
+                    if (choice.containsKey("message")) {
+                        Map<String, Object> message = (Map<String, Object>) choice.get("message");
+                        return (String) message.get("content");
+                    }
+                }
+            }
+            
+            if (respMap.containsKey("base_resp")) {
+                Map<String, Object> baseResp = (Map<String, Object>) respMap.get("base_resp");
+                if (baseResp.containsKey("status_msg")) {
+                    return "MiniMax服务错误: " + baseResp.get("status_msg");
+                }
+            }
+            
+            if (respMap.containsKey("error")) {
+                return "MiniMax错误: " + respMap.get("error");
+            }
+        }
+        return "抱歉，无法获取AI回复。";
     }
 
     private String chatWithWenxin(String systemPrompt, String userMessage) throws Exception {
