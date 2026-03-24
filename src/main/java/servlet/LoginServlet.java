@@ -35,6 +35,13 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("username", user.getUsername());
             session.setAttribute("role", user.getRole());
 
+            // 检查是否必须修改密码
+            if (Boolean.TRUE.equals(user.getMustChangePassword())) {
+                // 必须先修改密码，跳转到修改密码页面
+                response.sendRedirect(request.getContextPath() + "/member/password-change.jsp?mustChange=1");
+                return;
+            }
+
             // 根据角色跳转
             if ("ADMIN".equalsIgnoreCase(user.getRole())) {
                 response.sendRedirect(request.getContextPath() + "/admin/dashboard");

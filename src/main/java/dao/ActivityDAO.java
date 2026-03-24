@@ -119,6 +119,46 @@ public class ActivityDAO {
     }
 
     /**
+     * 根据ID查询活动（带悲观锁，用于并发控制）
+     * 使用 SELECT ... FOR UPDATE 锁定行
+     *
+     * @param id 活动ID
+     * @param conn 数据库连接（外部传入，不自动关闭）
+     * @return Activity对象
+     */
+    public Activity findByIdForUpdate(Integer id, Connection conn) {
+        String sql = "SELECT * FROM activity WHERE id = ? AND deleted = 0 FOR UPDATE";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, id);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToActivity(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询活动失败: " + e.getMessage(), e);
+        } finally {
+            closePstmt(pstmt);
+            closeRs(rs);
+        }
+        return null;
+    }
+
+    /**
+     * 关闭ResultSet（不关闭连接，由调用方管理）
+     */
+    private void closeRs(ResultSet rs) {
+        try {
+            if (rs != null) rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * 添加活动
      */
     public boolean insert(Activity activity) {
@@ -203,6 +243,38 @@ public class ActivityDAO {
             closeResources(conn, pstmt, null);
         }
         return false;
+    }
+
+    /**
+     * 删除活动（使用外部传入的连接，支持事务）
+     * @param id 活动ID
+     * @param conn 数据库连接
+     * @return 是否删除成功
+     */
+    public boolean delete(Integer id, Connection conn) {
+        String sql = "UPDATE activity SET deleted = 1, status = 'CANCELED' WHERE id=?";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, id);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("删除活动失败: " + e.getMessage(), e);
+        } finally {
+            closePstmt(pstmt);
+        }
+    }
+
+    /**
+     * 关闭PreparedStatement（不关闭连接，由调用方管理）
+     */
+    private void closePstmt(PreparedStatement pstmt) {
+        try {
+            if (pstmt != null) pstmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

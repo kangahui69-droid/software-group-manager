@@ -30,6 +30,16 @@
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/member/*</url-pattern>
         <url-pattern>/admin/*</url-pattern>
+        <url-pattern>/activity</url-pattern>
+        <url-pattern>/activity/*</url-pattern>
+        <url-pattern>/news</url-pattern>
+        <url-pattern>/news/*</url-pattern>
+        <url-pattern>/project</url-pattern>
+        <url-pattern>/project/*</url-pattern>
+        <url-pattern>/award</url-pattern>
+        <url-pattern>/award/*</url-pattern>
+        <url-pattern>/recruit</url-pattern>
+        <url-pattern>/recruit/*</url-pattern>
     </filter-mapping>
 
     <!-- 操作日志过滤器 -->

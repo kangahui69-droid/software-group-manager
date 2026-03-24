@@ -245,10 +245,10 @@ public class MemberServlet extends HttpServlet {
             Integer id = Integer.parseInt(idParam);
             User user = userDAO.findById(id);
             if (user != null) {
-                // Reset password to 123456
-                boolean success = userDAO.updatePassword(id, "123456");
+                // 重置密码为123456并标记必须修改
+                boolean success = userDAO.resetPassword(id, "123456");
                 if (success) {
-                    request.setAttribute("success", "密码重置成功，新密码：123456");
+                    request.setAttribute("success", "密码已重置为123456（用户首次登录必须修改密码）");
                 } else {
                     request.setAttribute("error", "密码重置失败");
                 }

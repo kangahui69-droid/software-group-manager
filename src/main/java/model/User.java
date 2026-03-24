@@ -20,6 +20,7 @@ public class User {
     private Date createdAt;
     private Date updatedAt;
     private Integer avatarFileId; // 头像文件ID
+    private Boolean mustChangePassword; // 是否必须修改密码（密码重置后设为true）
     private Map<String, Object> extraInfo = new HashMap<>();
 
     public User() {
@@ -139,6 +140,14 @@ public class User {
 
     public void setAvatarFileId(Integer avatarFileId) {
         this.avatarFileId = avatarFileId;
+    }
+
+    public Boolean getMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(Boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
     }
 
     public Map<String, Object> getExtraInfo() {

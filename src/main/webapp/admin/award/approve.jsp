@@ -68,6 +68,9 @@
                             <div class="col-md-1 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary w-100">搜索</button>
                             </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <a href="${pageContext.request.contextPath}/award?action=approveList&status=ALL" class="btn btn-outline-secondary w-100">重置</a>
+                            </div>
                         </form>
                     </div>
                     

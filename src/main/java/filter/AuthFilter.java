@@ -27,10 +27,40 @@ public class AuthFilter implements Filter {
 
         HttpSession session = httpRequest.getSession(false);
         String requestURI = httpRequest.getRequestURI();
+        String contextPath = httpRequest.getContextPath();
+
+        // ===== 公开路径白名单：不需要登录即可访问 =====
+        // 允许访问的公开路径
+        boolean isPublicPath =
+                // 招新申请相关（公开）
+                requestURI.contains("/recruit/apply") ||
+                requestURI.endsWith(contextPath + "/recruit") ||
+                requestURI.endsWith(contextPath + "/recruit/") ||
+                requestURI.contains("/recruit/success") ||
+                // 新闻列表查看（公开）
+                requestURI.contains("/news/list") ||
+                requestURI.contains("/news?type=notice") ||
+                requestURI.contains("/news?type=award") ||
+                requestURI.contains("/news?type=activity") ||
+                requestURI.contains("/news?type=news") ||
+                requestURI.endsWith(contextPath + "/news") ||
+                requestURI.endsWith(contextPath + "/news/") ||
+                // 新闻详情查看（公开，URL格式：/news?action=detail&id=xxx）
+                requestURI.contains("/news?action=detail") ||
+                // 主页（公开）
+                requestURI.endsWith(contextPath + "/index.jsp") ||
+                requestURI.endsWith(contextPath + "/");
+
+        // 如果是公开路径，直接放行
+        if (isPublicPath) {
+            chain.doFilter(request, response);
+            return;
+        }
+        // ================================================
 
         // 检查是否已登录
         if (session == null || session.getAttribute("user") == null) {
-            httpResponse.sendRedirect(httpRequest.getContextPath() + "/login.jsp");
+            httpResponse.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
