@@ -146,7 +146,7 @@ public class UserDAO {
      */
     public boolean insert(User user) throws SQLException {
         System.out.println("=== DEBUG UserDAO.insert: username=" + user.getUsername() + ", role=" + user.getRole());
-        String sql = "INSERT INTO user (username, password, name, email, phone, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO user (username, password, name, email, phone, role, status, must_change_password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -159,6 +159,8 @@ public class UserDAO {
             pstmt.setString(5, user.getPhone());
             pstmt.setString(6, user.getRole());
             pstmt.setInt(7, user.getStatus() != null ? user.getStatus() : 1);
+            // 设置必须修改密码标志
+            pstmt.setInt(8, Boolean.TRUE.equals(user.getMustChangePassword()) ? 1 : 0);
             boolean result = pstmt.executeUpdate() > 0;
             if (result) {
                 ResultSet rs = pstmt.getGeneratedKeys();
@@ -236,6 +238,52 @@ public class UserDAO {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, DESUtil.encrypt(newPassword));
             pstmt.setInt(2, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return false;
+    }
+
+    /**
+     * 重置密码（设置随机密码并标记必须修改）
+     * @param userId 用户ID
+     * @param newPassword 新密码（明文，会自动加密）
+     * @return 是否成功
+     */
+    public boolean resetPassword(Integer userId, String newPassword) {
+        String sql = "UPDATE user SET password = ?, must_change_password = 1 WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, DESUtil.encrypt(newPassword));
+            pstmt.setInt(2, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return false;
+    }
+
+    /**
+     * 清除必须修改密码标志
+     * @param userId 用户ID
+     * @return 是否成功
+     */
+    public boolean clearMustChangePassword(Integer userId) {
+        String sql = "UPDATE user SET must_change_password = 0 WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -422,6 +470,16 @@ public class UserDAO {
         user.setStatus(rs.getInt("status"));
         user.setCreatedAt(rs.getTimestamp("created_at"));
         user.setUpdatedAt(rs.getTimestamp("updated_at"));
+
+        // 处理 must_change_password 字段（可能为null）
+        try {
+            int mustChange = rs.getInt("must_change_password");
+            user.setMustChangePassword(mustChange == 1);
+        } catch (SQLException e) {
+            // 字段不存在时忽略
+            user.setMustChangePassword(false);
+        }
+
         return user;
     }
 

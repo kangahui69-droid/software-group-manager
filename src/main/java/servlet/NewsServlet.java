@@ -3,7 +3,9 @@ package servlet;
 import dao.NewsDAO;
 import model.News;
 import model.User;
+import util.AuthHelper;
 import util.FileUtil;
+import util.HtmlSanitizer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -49,66 +51,27 @@ public class NewsServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        System.out.println("NewsServlet doPost entered");
-        try {
-            request.setCharacterEncoding("UTF-8");
+        // 使用统一权限检查工具
+        if (!AuthHelper.checkAdmin(request, response)) {
+            return;
+        }
 
-            // Log all parameters
-            System.out.println("--- Request Parameters ---");
-            java.util.Enumeration<String> params = request.getParameterNames();
-            while (params.hasMoreElements()) {
-                String paramName = params.nextElement();
-                String paramValue = request.getParameter(paramName);
-                // Truncate long content for logging
-                if (paramValue != null && paramValue.length() > 100) {
-                    System.out.println(paramName + ": " + paramValue.substring(0, 100) + "... [length="
-                            + paramValue.length() + "]");
-                } else {
-                    System.out.println(paramName + ": " + paramValue);
-                }
-            }
-            System.out.println("--------------------------");
+        User user = AuthHelper.getCurrentUser(request);
+        request.setCharacterEncoding("UTF-8");
 
-            HttpSession session = request.getSession(false);
-            if (session == null) {
-                System.out.println("Debug: Session is NULL");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
-            if (session.getAttribute("user") == null) {
-                System.out.println("Debug: Session exists but 'user' attribute is NULL");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
+        String action = request.getParameter("action");
+        if (action != null) {
+            action = action.trim();
+        }
 
-            User user = (User) session.getAttribute("user");
-            System.out.println("Debug: User: " + (user != null ? user.getUsername() : "null"));
-
-            if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
-                System.out.println("Debug: User is not ADMIN.");
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-
-            String action = request.getParameter("action");
-            if (action != null) {
-                action = action.trim();
-            }
-            System.out.println("Debug: Received action: '" + action + "'");
-
-            if ("create".equals(action)) {
-                createNews(request, response, user.getId());
-            } else if ("update".equals(action)) {
-                updateNews(request, response);
-            } else if ("delete".equals(action)) {
-                deleteNews(request, response);
-            } else {
-                System.out.println("Debug: Action not matched. Redirecting to manage.");
-                response.sendRedirect(request.getContextPath() + "/news?action=manage");
-            }
-        } catch (Exception e) {
-            System.out.println("CRITICAL ERROR in doPost:");
-            e.printStackTrace();
+        if ("create".equals(action)) {
+            createNews(request, response, user.getId());
+        } else if ("update".equals(action)) {
+            updateNews(request, response);
+        } else if ("delete".equals(action)) {
+            deleteNews(request, response);
+        } else {
+            response.sendRedirect(request.getContextPath() + "/news?action=manage");
         }
     }
 
@@ -135,14 +98,8 @@ public class NewsServlet extends HttpServlet {
      */
     private void manageNews(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
-            return;
-        }
-        User user = (User) session.getAttribute("user");
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        // 使用统一权限检查工具
+        if (!AuthHelper.checkAdmin(request, response)) {
             return;
         }
 
@@ -170,6 +127,11 @@ public class NewsServlet extends HttpServlet {
      */
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // 使用统一权限检查工具
+        if (!AuthHelper.checkAdmin(request, response)) {
+            return;
+        }
+
         String idStr = request.getParameter("id");
         if (idStr != null && !idStr.isEmpty()) {
             try {
@@ -239,6 +201,12 @@ public class NewsServlet extends HttpServlet {
         String summary = request.getParameter("summary");
         String statusStr = request.getParameter("status");
 
+        // ===== XSS防护：净化用户输入 =====
+        title = HtmlSanitizer.sanitizeBasic(title);
+        summary = HtmlSanitizer.sanitizeBasic(summary);
+        content = HtmlSanitizer.sanitizeRichText(content);
+        // ==================================
+
         // 解析status，默认为1（正常）
         int status = 1;
         if (statusStr != null && !statusStr.isEmpty()) {
@@ -263,7 +231,7 @@ public class NewsServlet extends HttpServlet {
             File htmlFile = new File(realPath);
             FileUtil.ensureDirectoryExists(htmlFile.getParent());
 
-            // 保存HTML内容
+            // 保存HTML内容（已净化）
             try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
                     new java.io.FileOutputStream(htmlFile), java.nio.charset.StandardCharsets.UTF_8)) {
                 writer.write(content);
@@ -303,6 +271,12 @@ public class NewsServlet extends HttpServlet {
         String summary = request.getParameter("summary");
         String statusStr = request.getParameter("status");
 
+        // ===== XSS防护：净化用户输入 =====
+        title = HtmlSanitizer.sanitizeBasic(title);
+        summary = HtmlSanitizer.sanitizeBasic(summary);
+        content = HtmlSanitizer.sanitizeRichText(content);
+        // ==================================
+
         if (idStr == null || idStr.isEmpty()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
@@ -316,11 +290,8 @@ public class NewsServlet extends HttpServlet {
                 return;
             }
 
-            // 更新HTML内容
+            // 更新HTML内容（已净化）
             String realPath = getServletContext().getRealPath("/" + news.getContentPath());
-            System.out.println("Processing Update for News ID: " + id);
-            System.out.println("Content Received Length: " + (content != null ? content.length() : "null"));
-            System.out.println("Target File Path: " + realPath);
 
             File htmlFile = new File(realPath);
             FileUtil.ensureDirectoryExists(htmlFile.getParent());
@@ -328,14 +299,6 @@ public class NewsServlet extends HttpServlet {
                     new java.io.FileOutputStream(htmlFile), java.nio.charset.StandardCharsets.UTF_8)) {
                 writer.write(content);
             }
-
-            // Verify write
-            if (htmlFile.exists()) {
-                System.out.println("Verified: File exists. Size: " + htmlFile.length());
-            } else {
-                System.out.println("Verified: File DOES NOT exist after write!");
-            }
-            System.out.println("File write operation completed.");
 
             news.setTitle(title);
             news.setType(type);

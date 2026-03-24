@@ -305,6 +305,8 @@ public class RecruitServlet extends HttpServlet {
                     user.setPhone(app.getPhone());
                     user.setRole("MEMBER");
                     user.setStatus(1);
+                    // 标记必须修改密码
+                    user.setMustChangePassword(true);
 
                     boolean created = userDAO.insert(user);
                     if (created) {

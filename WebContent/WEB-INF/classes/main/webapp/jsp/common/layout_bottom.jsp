@@ -60,13 +60,14 @@
             GlobalLoading.hide();
         });
 
-        // 为所有表单添加自动 Loading 功能
+        // 为所有表单添加自动 Loading 功能（仅POST表单）
         document.addEventListener('DOMContentLoaded', function() {
             // 为所有 form 元素添加 submit 事件监听
             document.querySelectorAll('form').forEach(function(form) {
                 form.addEventListener('submit', function(e) {
-                    // 检查是否有 data-no-loading 属性，有则不显示 loading
-                    if (!form.hasAttribute('data-no-loading')) {
+                    // 检查是否有 data-no-loading 属性，或者是否为 GET 请求
+                    // GET 请求（如搜索）不需要 loading，直接跳转即可
+                    if (!form.hasAttribute('data-no-loading') && form.method.toUpperCase() !== 'GET') {
                         GlobalLoading.show('提交中，请稍候...');
                     }
                 });

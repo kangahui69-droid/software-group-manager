@@ -75,11 +75,10 @@ public class NewsDAO {
         List<News> newsList = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT * FROM news WHERE 1=1");
         List<Object> params = new ArrayList<>();
-        
+
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)");
+            sql.append(" AND (title LIKE ? OR summary LIKE ?)");
             String likeKeyword = "%" + keyword.trim() + "%";
-            params.add(likeKeyword);
             params.add(likeKeyword);
             params.add(likeKeyword);
         }

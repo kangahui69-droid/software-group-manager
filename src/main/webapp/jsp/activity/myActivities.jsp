@@ -143,28 +143,36 @@
             </div>
         </div>
 
-        <!-- 状态说明 -->
+        <!-- 状态说明（折叠） -->
         <div class="card mt-3">
-            <div class="card-header">
-                <h3 class="card-title">状态说明</h3>
+            <div class="card-header" data-bs-toggle="collapse" data-bs-target="#statusHelp" style="cursor: pointer;">
+                <h3 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    状态说明
+                </h3>
+                <div class="card-actions">
+                    <span class="text-muted small">点击展开/收起</span>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <span class="badge bg-warning text-dark me-1">待审核</span>
-                        <span class="text-muted">报名已提交，等待管理员审核</span>
-                    </div>
-                    <div class="col-md-3">
-                        <span class="badge bg-success text-white me-1">已确认</span>
-                        <span class="text-muted">报名审核通过</span>
-                    </div>
-                    <div class="col-md-3">
-                        <span class="badge bg-danger text-white me-1">已驳回</span>
-                        <span class="text-muted">报名未通过审核</span>
-                    </div>
-                    <div class="col-md-3">
-                        <span class="badge bg-secondary text-white me-1">已过期</span>
-                        <span class="text-muted">报名已截止且未处理</span>
+            <div id="statusHelp" class="collapse">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <span class="badge bg-warning text-dark me-1">待审核</span>
+                            <span class="text-muted">报名已提交，等待管理员审核</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-success text-white me-1">已确认</span>
+                            <span class="text-muted">报名审核通过</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-danger text-white me-1">已驳回</span>
+                            <span class="text-muted">报名未通过审核</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-secondary text-white me-1">已过期</span>
+                            <span class="text-muted">报名已截止且未处理</span>
+                        </div>
                     </div>
                 </div>
             </div>

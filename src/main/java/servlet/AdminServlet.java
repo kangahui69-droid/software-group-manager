@@ -304,11 +304,53 @@ public class AdminServlet extends HttpServlet {
         String email = request.getParameter("email");
         String role = request.getParameter("role");
         String statusStr = request.getParameter("status");
-        Integer status = Integer.parseInt(statusStr);
+        Integer status = 1;
+        if (statusStr != null && !statusStr.isEmpty()) {
+            try {
+                status = Integer.parseInt(statusStr);
+            } catch (NumberFormatException e) {
+                status = 1;
+            }
+        }
 
-        // 如果name为空，使用username作为默认值
+        // ===== 必填字段校验 =====
+        if (username == null || username.trim().isEmpty()) {
+            forwardWithUserError(request, response, "学号不能为空", username, name, phone, email, role, statusStr);
+            return;
+        }
+        if (password == null || password.trim().isEmpty()) {
+            forwardWithUserError(request, response, "密码不能为空", username, name, phone, email, role, statusStr);
+            return;
+        }
         if (name == null || name.trim().isEmpty()) {
-            name = username;
+            forwardWithUserError(request, response, "真实姓名不能为空", username, name, phone, email, role, statusStr);
+            return;
+        }
+        if (phone == null || phone.trim().isEmpty()) {
+            forwardWithUserError(request, response, "手机号不能为空", username, name, phone, email, role, statusStr);
+            return;
+        }
+        if (role == null || role.trim().isEmpty()) {
+            forwardWithUserError(request, response, "请选择角色", username, name, phone, email, role, statusStr);
+            return;
+        }
+
+        // ===== 格式校验 =====
+        if (!username.matches("[a-zA-Z0-9]{6,20}")) {
+            forwardWithUserError(request, response, "学号格式不正确，请输入6-20位字母或数字", username, name, phone, email, role, statusStr);
+            return;
+        }
+        if (password.length() < 6 || password.length() > 20) {
+            forwardWithUserError(request, response, "密码长度必须在6-20位之间", username, name, phone, email, role, statusStr);
+            return;
+        }
+        if (!phone.matches("1[3-9]\\d{9}")) {
+            forwardWithUserError(request, response, "手机号格式不正确，请输入11位有效手机号", username, name, phone, email, role, statusStr);
+            return;
+        }
+        if (email != null && !email.trim().isEmpty() && !email.matches("[\\w.-]+@[\\w.-]+\\.\\w+")) {
+            forwardWithUserError(request, response, "邮箱格式不正确", username, name, phone, email, role, statusStr);
+            return;
         }
 
         // 如果email为空，生成一个默认邮箱
@@ -330,14 +372,36 @@ public class AdminServlet extends HttpServlet {
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/admin/api/user");
             } else {
-                request.setAttribute("error", "添加用户失败");
+                request.setAttribute("error", "添加用户失败，该学号可能已存在");
                 showUserList(request, response);
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "添加用户失败: " + e.getMessage());
+            String errorMsg = e.getMessage();
+            if (errorMsg != null && errorMsg.contains("Duplicate")) {
+                request.setAttribute("error", "添加用户失败，该学号已被使用");
+            } else {
+                request.setAttribute("error", "添加用户失败: " + e.getMessage());
+            }
             showUserList(request, response);
         }
+    }
+
+    /**
+     * 转发请求并保留表单数据
+     */
+    private void forwardWithUserError(HttpServletRequest request, HttpServletResponse response,
+                                       String errorMsg, String username, String name,
+                                       String phone, String email, String role, String statusStr)
+            throws ServletException, IOException {
+        request.setAttribute("error", errorMsg);
+        request.setAttribute("username", username);
+        request.setAttribute("name", name);
+        request.setAttribute("phone", phone);
+        request.setAttribute("email", email);
+        request.setAttribute("role", role);
+        request.setAttribute("status", statusStr);
+        request.getRequestDispatcher("/jsp/admin/member/add.jsp").forward(request, response);
     }
 
     private void updateUser(HttpServletRequest request, HttpServletResponse response)
@@ -374,9 +438,10 @@ public class AdminServlet extends HttpServlet {
         String idStr = request.getParameter("id");
         Integer id = Integer.parseInt(idStr);
 
-        boolean success = userDAO.updatePassword(id, "123456");
+        // 重置密码为123456并标记必须修改
+        boolean success = userDAO.resetPassword(id, "123456");
         if (success) {
-            request.setAttribute("success", "密码重置成功，新密码：123456");
+            request.setAttribute("success", "密码已重置为123456（用户首次登录必须修改密码）");
             showUserList(request, response);
         } else {
             request.setAttribute("error", "重置密码失败");
@@ -705,7 +770,11 @@ public class AdminServlet extends HttpServlet {
         // 更新密码
         boolean updated = userDAO.updatePassword(currentUser.getId(), newPassword);
         if (updated) {
-            request.setAttribute("success", "密码修改成功");
+            // 使session失效，防止攻击者继续使用旧session
+            session.invalidate();
+            // 重定向到登录页并显示成功消息
+            response.sendRedirect(request.getContextPath() + "/login.jsp?message=" + java.net.URLEncoder.encode("密码修改成功，请重新登录", "UTF-8"));
+            return;
         } else {
             request.setAttribute("error", "密码修改失败");
         }

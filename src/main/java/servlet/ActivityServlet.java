@@ -9,6 +9,7 @@ import model.Registration;
 import model.User;
 import model.MemberProfile;
 import model.Dictionary;
+import util.AuthHelper;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -35,13 +37,6 @@ public class ActivityServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
-            return;
-        }
-
-        User user = (User) session.getAttribute("user");
         String action = request.getParameter("action");
         if (action == null || action.isEmpty()) {
             action = "list";
@@ -49,75 +44,55 @@ public class ActivityServlet extends HttpServlet {
 
         switch (action) {
             case "list":
-                listActivities(request, response, user);
+                listActivities(request, response, null);
                 break;
             case "detail":
                 showActivityDetail(request, response);
                 break;
             case "create":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    showCreateForm(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                showCreateForm(request, response);
                 break;
             case "edit":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    showEditForm(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                showEditForm(request, response);
                 break;
             case "myActivities":
-                showMyActivities(request, response, user);
+                if (!AuthHelper.checkLogin(request, response)) return;
+                User user1 = AuthHelper.getCurrentUser(request);
+                showMyActivities(request, response, user1);
                 break;
             case "manage":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    showActivityManage(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                showActivityManage(request, response);
                 break;
             case "participants":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    showParticipants(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                showParticipants(request, response);
                 break;
             case "approve":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    approveParticipant(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                approveParticipant(request, response);
                 break;
             case "reject":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    rejectParticipant(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                rejectParticipant(request, response);
                 break;
             case "deleteRegistration":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    deleteRegistration(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                deleteRegistration(request, response);
                 break;
             case "delete":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    deleteActivity(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                deleteActivity(request, response);
                 break;
             case "cancel":
-                cancelRegistration(request, response, user);
+                if (!AuthHelper.checkLogin(request, response)) return;
+                User user2 = AuthHelper.getCurrentUser(request);
+                cancelRegistration(request, response, user2);
                 break;
             default:
-                listActivities(request, response, user);
+                listActivities(request, response, null);
         }
     }
 
@@ -125,12 +100,12 @@ public class ActivityServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+
+        // 检查是否已登录
+        if (!AuthHelper.checkLogin(request, response)) {
             return;
         }
-        User user = (User) session.getAttribute("user");
+        User user = AuthHelper.getCurrentUser(request);
 
         String action = request.getParameter("action");
         if (action == null) {
@@ -140,25 +115,16 @@ public class ActivityServlet extends HttpServlet {
 
         switch (action) {
             case "create":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    createActivity(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                createActivity(request, response);
                 break;
             case "update":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    updateActivity(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                updateActivity(request, response);
                 break;
             case "delete":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    deleteActivity(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                deleteActivity(request, response);
                 break;
             case "register":
                 registerActivity(request, response, user);
@@ -167,39 +133,24 @@ public class ActivityServlet extends HttpServlet {
                 cancelRegistration(request, response, user);
                 break;
             case "approve":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    approveParticipant(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                approveParticipant(request, response);
                 break;
             case "reject":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    rejectParticipant(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                rejectParticipant(request, response);
                 break;
             case "deleteRegistration":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    deleteRegistration(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                deleteRegistration(request, response);
                 break;
             case "batchApprove":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    batchApproveParticipants(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                batchApproveParticipants(request, response);
                 break;
             case "batchReject":
-                if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                    batchRejectParticipants(request, response);
-                } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                }
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                batchRejectParticipants(request, response);
                 break;
             default:
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -207,17 +158,17 @@ public class ActivityServlet extends HttpServlet {
     }
 
     // ==================== Page A: Activity List ====================
-    
+
     private void listActivities(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
         String viewMode = request.getParameter("viewMode");
         String keyword = request.getParameter("keyword");
         String activityType = request.getParameter("activityType");
-        
+
         List<Activity> activities;
-        
-        // 成员访问默认显示所有活动，管理员也显示所有活动
-        if ("ADMIN".equalsIgnoreCase(user.getRole())) {
+
+        // 根据用户角色决定显示内容
+        if (user != null && "ADMIN".equalsIgnoreCase(user.getRole())) {
             // 管理员访问活动管理页面，显示所有活动
             activities = activityDAO.findByConditions(keyword, activityType, null);
         } else {
@@ -230,22 +181,24 @@ public class ActivityServlet extends HttpServlet {
                 activities = activityDAO.findByConditions(keyword, activityType, null);
             }
         }
-        
-        // 检查当前用户已报名的活动
-        for (Activity activity : activities) {
-            boolean hasRegistered = registrationDAO.isRegistered(activity.getId(), user.getId());
-            activity.setRegisteredByCurrentUser(hasRegistered);
-            if (hasRegistered) {
-                activity.setRegistrationOpen(false); // 已报名则不能再报名
+
+        // 检查当前用户已报名的活动（仅对已登录用户）
+        if (user != null) {
+            for (Activity activity : activities) {
+                boolean hasRegistered = registrationDAO.isRegistered(activity.getId(), user.getId());
+                activity.setRegisteredByCurrentUser(hasRegistered);
+                if (hasRegistered) {
+                    activity.setRegistrationOpen(false); // 已报名则不能再报名
+                }
             }
         }
-        
+
         request.setAttribute("activities", activities);
         request.setAttribute("viewMode", viewMode);
         request.setAttribute("keyword", keyword);
         request.setAttribute("activityType", activityType);
-        
-        if ("ADMIN".equalsIgnoreCase(user.getRole())) {
+
+        if (user != null && "ADMIN".equalsIgnoreCase(user.getRole())) {
             request.getRequestDispatcher("/jsp/admin/activity/manage.jsp").forward(request, response);
         } else {
             request.getRequestDispatcher("/jsp/activity/list.jsp").forward(request, response);
@@ -467,45 +420,72 @@ public class ActivityServlet extends HttpServlet {
     }
 
     private void deleteActivity(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Connection conn = null;
         try {
             int id = Integer.parseInt(request.getParameter("id"));
-            
+
             // 检查活动是否可以删除
             // 1. 已确认报名的活动不可删除
             // 2. 已结束的活动不可删除
             // 3. 进行中的活动不可删除
-            
+
             Activity activity = activityDAO.findById(id);
             if (activity == null) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("活动不存在"));
                 return;
             }
-            
+
             // 检查是否有已确认的报名
             int confirmedCount = registrationDAO.getConfirmedCount(id);
             if (confirmedCount > 0) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("该活动已有学生确认参加，无法删除"));
                 return;
             }
-            
+
             // 检查活动状态
             String activityStatus = activity.getStatus();
             if ("completed".equalsIgnoreCase(activityStatus) || "ongoing".equalsIgnoreCase(activityStatus)) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("已结束或进行中的活动无法删除"));
                 return;
             }
-            
+
+            // 获取数据库连接并开启事务
+            conn = util.DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
             // 删除该活动的所有报名记录（包括pending、rejected等）
-            registrationDAO.deleteByActivityId(id);
-            
+            registrationDAO.deleteByActivityId(id, conn);
+
             // 删除活动
-            if (activityDAO.delete(id)) {
+            boolean success = activityDAO.delete(id, conn);
+
+            if (success) {
+                conn.commit();  // 提交事务
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动删除成功"));
             } else {
+                conn.rollback();  // 回滚
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("删除失败"));
             }
         } catch (NumberFormatException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            }
             response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("无效的ID"));
+        } catch (Exception e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            }
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("删除失败：" + e.getMessage()));
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);  // 恢复自动提交
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -590,6 +570,9 @@ public class ActivityServlet extends HttpServlet {
 
     // ==================== Registration Operations ====================
     
+    /**
+     * 报名活动（使用悲观锁保证并发安全）
+     */
     private void registerActivity(HttpServletRequest request, HttpServletResponse response, User user)
             throws IOException {
         String activityIdStr = request.getParameter("activityId");
@@ -598,45 +581,80 @@ public class ActivityServlet extends HttpServlet {
             return;
         }
 
+        java.sql.Connection conn = null;
         try {
             int activityId = Integer.parseInt(activityIdStr);
-            Activity activity = activityDAO.findById(activityId);
+
+            // 获取数据库连接并开启事务
+            conn = util.DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // 使用悲观锁查询活动（锁定活动行，防止并发修改）
+            Activity activity = activityDAO.findByIdForUpdate(activityId, conn);
             if (activity == null) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("活动不存在"));
                 return;
             }
 
             // 检查是否在报名有效期内
             if (!activity.isInRegistrationPeriod()) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("不在报名有效期内"));
                 return;
             }
 
-            // 检查是否已报名
-            if (registrationDAO.isRegistered(activityId, user.getId())) {
+            // 检查是否已报名（使用同一连接查询）
+            String existingStatus = registrationDAO.getRegistrationStatus(activityId, user.getId());
+            if (existingStatus != null) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("您已报名此活动"));
                 return;
             }
 
-            // 报名人数限制检查
+            // 报名人数限制检查（在锁的保护下检查，确保原子性）
+            // 检查 pending + confirmed 总人数
             if (activity.getMaxParticipants() != null && activity.getMaxParticipants() > 0) {
-                int currentCount = registrationDAO.getParticipantCount(activityId, "confirmed");
-                if (currentCount >= activity.getMaxParticipants()) {
-                    response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("活动报名人数已满"));
+                int pendingCount = registrationDAO.getParticipantCount(activityId, "pending", conn);
+                int confirmedCount = registrationDAO.getParticipantCount(activityId, "confirmed", conn);
+                int totalCount = pendingCount + confirmedCount;
+
+                if (totalCount >= activity.getMaxParticipants()) {
+                    conn.rollback();
+                    response.sendRedirect(request.getContextPath() +
+                        "/activity?action=list&error=" +
+                        encode("活动报名人数已满"));
                     return;
                 }
             }
 
-            // 保存报名
-            boolean success = registrationDAO.register(activityId, user.getId());
+            // 保存报名（在锁的保护下插入）
+            boolean success = registrationDAO.register(activityId, user.getId(), conn);
 
             if (success) {
+                // 提交事务
+                conn.commit();
                 response.sendRedirect(request.getContextPath() + "/activity?action=myActivities&success=" + encode("报名成功，请等待审核"));
             } else {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("报名失败"));
             }
         } catch (NumberFormatException e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("无效的活动ID"));
+        } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("报名失败：" + e.getMessage()));
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -670,7 +688,10 @@ public class ActivityServlet extends HttpServlet {
     }
 
     // ==================== Admin Approval Operations ====================
-    
+
+    /**
+     * 审核通过报名（使用悲观锁保证并发安全）
+     */
     private void approveParticipant(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String activityIdStr = request.getParameter("activityId");
         String userIdStr = request.getParameter("userId");
@@ -679,27 +700,35 @@ public class ActivityServlet extends HttpServlet {
             return;
         }
 
+        java.sql.Connection conn = null;
         try {
             int activityId = Integer.parseInt(activityIdStr);
             int userId = Integer.parseInt(userIdStr);
 
-            // 检查活动是否存在
-            Activity activity = activityDAO.findById(activityId);
+            // 获取数据库连接并开启事务
+            conn = util.DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // 使用悲观锁查询活动（锁定活动行，防止并发修改）
+            Activity activity = activityDAO.findByIdForUpdate(activityId, conn);
             if (activity == null) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动不存在"));
                 return;
             }
 
             // 检查活动是否已过期
             if (activity.isRegistrationEnded()) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动已过期，无法审核"));
                 return;
             }
 
-            // 检查人数上限
+            // 检查人数上限（在锁的保护下检查，确保原子性）
             if (activity.getMaxParticipants() != null && activity.getMaxParticipants() > 0) {
                 int currentCount = registrationDAO.getParticipantCount(activityId, "confirmed");
                 if (currentCount >= activity.getMaxParticipants()) {
+                    conn.rollback();
                     response.sendRedirect(request.getContextPath() +
                         "/activity?action=participants&id=" + activityId + "&error=" +
                         encode("审核失败：活动报名人数已满（上限" + activity.getMaxParticipants() + "人）"));
@@ -707,13 +736,34 @@ public class ActivityServlet extends HttpServlet {
                 }
             }
 
-            registrationDAO.updateStatus(activityId, userId, "confirmed", null);
+            // 更新报名状态（在锁的保护下更新）
+            registrationDAO.updateStatus(activityId, userId, "confirmed", null, conn);
+
+            // 提交事务
+            conn.commit();
             response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&success=" + encode("已通过"));
         } catch (NumberFormatException e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("参数格式错误"));
+        } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("审核失败：" + e.getMessage()));
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
+    /**
+     * 驳回报名（使用悲观锁保证并发安全）
+     */
     private void rejectParticipant(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String activityIdStr = request.getParameter("activityId");
         String userIdStr = request.getParameter("userId");
@@ -723,21 +773,52 @@ public class ActivityServlet extends HttpServlet {
             return;
         }
 
+        java.sql.Connection conn = null;
         try {
             int activityId = Integer.parseInt(activityIdStr);
             int userId = Integer.parseInt(userIdStr);
-            
+
+            // 获取数据库连接并开启事务
+            conn = util.DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // 使用悲观锁查询活动（锁定活动行，防止并发修改）
+            Activity activity = activityDAO.findByIdForUpdate(activityId, conn);
+            if (activity == null) {
+                conn.rollback();
+                response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动不存在"));
+                return;
+            }
+
             // 检查活动是否已过期
-            Activity activity = activityDAO.findById(activityId);
-            if (activity != null && activity.isRegistrationEnded()) {
+            if (activity.isRegistrationEnded()) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动已过期，无法审核"));
                 return;
             }
-            
-            registrationDAO.updateStatus(activityId, userId, "rejected", reason);
+
+            // 更新报名状态（在锁的保护下更新）
+            registrationDAO.updateStatus(activityId, userId, "rejected", reason, conn);
+
+            // 提交事务
+            conn.commit();
             response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&success=" + encode("已驳回"));
         } catch (NumberFormatException e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("参数格式错误"));
+        } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("驳回失败：" + e.getMessage()));
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -765,37 +846,54 @@ public class ActivityServlet extends HttpServlet {
         }
     }
 
+    /**
+     * 批量审核通过报名（使用悲观锁保证并发安全）
+     */
     private void batchApproveParticipants(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String activityIdStr = request.getParameter("activityId");
         String[] userIdsStr = request.getParameterValues("userIds");
-        
+
         if (activityIdStr == null || userIdsStr == null || userIdsStr.length == 0) {
             response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("请选择要审核的报名"));
             return;
         }
 
+        java.sql.Connection conn = null;
         try {
             int activityId = Integer.parseInt(activityIdStr);
 
-            // 检查活动是否存在
-            Activity activity = activityDAO.findById(activityId);
+            // 解析用户ID列表
+            List<Integer> userIds = new ArrayList<>();
+            for (String uid : userIdsStr) {
+                userIds.add(Integer.parseInt(uid));
+            }
+
+            // 获取数据库连接并开启事务
+            conn = util.DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // 使用悲观锁查询活动（锁定活动行，防止并发修改）
+            Activity activity = activityDAO.findByIdForUpdate(activityId, conn);
             if (activity == null) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动不存在"));
                 return;
             }
 
             // 检查活动是否已过期
             if (activity.isRegistrationEnded()) {
+                conn.rollback();
                 response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动已过期，无法审核"));
                 return;
             }
 
-            // 检查人数上限
+            // 检查人数上限（在锁的保护下检查，确保原子性）
             if (activity.getMaxParticipants() != null && activity.getMaxParticipants() > 0) {
                 int currentCount = registrationDAO.getParticipantCount(activityId, "confirmed");
                 int availableSlots = activity.getMaxParticipants() - currentCount;
 
                 if (availableSlots <= 0) {
+                    conn.rollback();
                     response.sendRedirect(request.getContextPath() +
                         "/activity?action=participants&id=" + activityId + "&error=" +
                         encode("审核失败：活动报名人数已满（上限" + activity.getMaxParticipants() + "人）"));
@@ -803,54 +901,103 @@ public class ActivityServlet extends HttpServlet {
                 }
 
                 // 如果要审核的人数超过剩余名额，阻止操作
-                if (userIdsStr.length > availableSlots) {
+                if (userIds.size() > availableSlots) {
+                    conn.rollback();
                     response.sendRedirect(request.getContextPath() +
                         "/activity?action=participants&id=" + activityId + "&error=" +
-                        encode("审核失败：剩余名额不足，最多还可通过 " + availableSlots + " 人，当前选择了 " + userIdsStr.length + " 人"));
+                        encode("审核失败：剩余名额不足，最多还可通过 " + availableSlots + " 人，当前选择了 " + userIds.size() + " 人"));
                     return;
                 }
             }
 
-            List<Integer> userIds = new ArrayList<>();
-            for (String uid : userIdsStr) {
-                userIds.add(Integer.parseInt(uid));
-            }
+            // 批量更新报名状态（在锁的保护下更新）
+            registrationDAO.batchUpdateStatus(userIds, activityId, "confirmed", conn);
 
-            registrationDAO.batchUpdateStatus(userIds, activityId, "confirmed");
+            // 提交事务
+            conn.commit();
             response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&success=" + encode("批量通过成功"));
         } catch (NumberFormatException e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("参数格式错误"));
+        } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("批量审核失败：" + e.getMessage()));
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
+    /**
+     * 批量驳回报名（使用悲观锁保证并发安全）
+     */
     private void batchRejectParticipants(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String activityIdStr = request.getParameter("activityId");
         String[] userIdsStr = request.getParameterValues("userIds");
-        
+
         if (activityIdStr == null || userIdsStr == null || userIdsStr.length == 0) {
             response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("请选择要审核的报名"));
             return;
         }
 
+        java.sql.Connection conn = null;
         try {
             int activityId = Integer.parseInt(activityIdStr);
-            
-            // 检查活动是否已过期
-            Activity activity = activityDAO.findById(activityId);
-            if (activity != null && activity.isRegistrationEnded()) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动已过期，无法审核"));
-                return;
-            }
-            
+
+            // 解析用户ID列表
             List<Integer> userIds = new ArrayList<>();
             for (String uid : userIdsStr) {
                 userIds.add(Integer.parseInt(uid));
             }
-            
-            registrationDAO.batchUpdateStatus(userIds, activityId, "rejected");
+
+            // 获取数据库连接并开启事务
+            conn = util.DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // 使用悲观锁查询活动（锁定活动行，防止并发修改）
+            Activity activity = activityDAO.findByIdForUpdate(activityId, conn);
+            if (activity == null) {
+                conn.rollback();
+                response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动不存在"));
+                return;
+            }
+
+            // 检查活动是否已过期
+            if (activity.isRegistrationEnded()) {
+                conn.rollback();
+                response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&error=" + encode("活动已过期，无法审核"));
+                return;
+            }
+
+            // 批量更新报名状态（在锁的保护下更新）
+            registrationDAO.batchUpdateStatus(userIds, activityId, "rejected", conn);
+
+            // 提交事务
+            conn.commit();
             response.sendRedirect(request.getContextPath() + "/activity?action=participants&id=" + activityId + "&success=" + encode("批量驳回成功"));
         } catch (NumberFormatException e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("参数格式错误"));
+        } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("批量驳回失败：" + e.getMessage()));
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
     

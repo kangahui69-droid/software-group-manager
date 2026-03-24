@@ -40,30 +40,7 @@
                                 </div>
                                 <div class="d-flex">
                                     <a href="profile.jsp" class="card-btn">编辑资料</a>
-                                </div>
-                            </div>
-                            
-                            <!-- 快速链接 -->
-                            <div class="card mt-4">
-                                <div class="card-header">
-                                    <h3 class="card-title">快速链接</h3>
-                                </div>
-                                <div class="list-group list-group-flush">
-                                    <a href="profile.jsp" class="list-group-item list-group-item-action d-flex align-items-center">
-                                        <i class="bi bi-person-circle me-3 text-blue"></i> 个人中心
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="list-group-item list-group-item-action d-flex align-items-center">
-                                        <i class="bi bi-calendar-check me-3 text-green"></i> 我的活动
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/project?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
-                                        <i class="bi bi-briefcase me-3 text-orange"></i> 我的项目
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/award?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
-                                        <i class="bi bi-award me-3 text-yellow"></i> 我的奖项
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/resume?action=list" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
-                                        <i class="bi bi-file-earmark-person me-3 text-purple"></i> 我的简历
-                                    </a>
+                                    <a href="${pageContext.request.contextPath}/password-change.jsp" class="card-btn border-start">修改密码</a>
                                 </div>
                             </div>
                         </div>

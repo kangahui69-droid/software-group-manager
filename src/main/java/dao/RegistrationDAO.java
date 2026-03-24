@@ -35,6 +35,30 @@ public class RegistrationDAO {
     }
 
     /**
+     * 报名活动（使用外部传入的连接，支持事务）
+     * @param activityId 活动ID
+     * @param userId 用户ID
+     * @param conn 数据库连接（外部传入，不自动关闭）
+     * @return 是否报名成功
+     */
+    public boolean register(Integer activityId, Integer userId, Connection conn) {
+        String sql = "INSERT INTO activity_participant (activity_id, user_id, status, created_at) " +
+                    "VALUES (?, ?, 'pending', NOW())";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            pstmt.setInt(2, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("报名失败: " + e.getMessage(), e);
+        } finally {
+            closePstmt(pstmt);
+        }
+    }
+
+    /**
      * 取消报名
      */
     public boolean cancelRegistration(Integer activityId, Integer userId) {
@@ -241,6 +265,28 @@ public class RegistrationDAO {
     }
 
     /**
+     * 更新报名状态（使用外部传入的连接，支持事务）
+     */
+    public boolean updateStatus(Integer activityId, Integer userId, String status, String notes, Connection conn) {
+        String sql = "UPDATE activity_participant SET status = ?, notes = ?, updated_at = NOW() " +
+                    "WHERE activity_id = ? AND user_id = ?";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, status);
+            pstmt.setString(2, notes);
+            pstmt.setInt(3, activityId);
+            pstmt.setInt(4, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("更新报名状态失败: " + e.getMessage(), e);
+        } finally {
+            closePstmt(pstmt);
+        }
+    }
+
+    /**
      * 批量更新报名状态
      */
     public int batchUpdateStatus(List<Integer> userIds, Integer activityId, String status) {
@@ -256,7 +302,7 @@ public class RegistrationDAO {
             }
         }
         sql.append(")");
-        
+
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -274,6 +320,40 @@ public class RegistrationDAO {
             closeResources(conn, pstmt, null);
         }
         return 0;
+    }
+
+    /**
+     * 批量更新报名状态（使用外部传入的连接，支持事务）
+     */
+    public int batchUpdateStatus(List<Integer> userIds, Integer activityId, String status, Connection conn) {
+        if (userIds == null || userIds.isEmpty()) {
+            return 0;
+        }
+        StringBuilder sql = new StringBuilder("UPDATE activity_participant SET status = ?, updated_at = NOW() " +
+                                             "WHERE activity_id = ? AND user_id IN (");
+        for (int i = 0; i < userIds.size(); i++) {
+            sql.append("?");
+            if (i < userIds.size() - 1) {
+                sql.append(",");
+            }
+        }
+        sql.append(")");
+
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement(sql.toString());
+            pstmt.setString(1, status);
+            pstmt.setInt(2, activityId);
+            for (int i = 0; i < userIds.size(); i++) {
+                pstmt.setInt(3 + i, userIds.get(i));
+            }
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("批量更新报名状态失败: " + e.getMessage(), e);
+        } finally {
+            closePstmt(pstmt);
+        }
     }
 
     /**
@@ -311,6 +391,42 @@ public class RegistrationDAO {
             e.printStackTrace();
         } finally {
             closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
+
+    /**
+     * 获取活动的报名人数（按状态筛选，使用外部传入的连接，支持事务）
+     * @param activityId 活动ID
+     * @param status 状态（null表示全部，pending/confirmed/rejected等）
+     * @param conn 数据库连接
+     * @return 报名人数
+     */
+    public int getParticipantCount(Integer activityId, String status, Connection conn) {
+        String sql;
+        if (status == null) {
+            sql = "SELECT COUNT(*) FROM activity_participant WHERE activity_id = ?";
+        } else {
+            sql = "SELECT COUNT(*) FROM activity_participant WHERE activity_id = ? AND status = ?";
+        }
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            if (status != null) {
+                pstmt.setString(2, status);
+            }
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("获取报名人数失败: " + e.getMessage(), e);
+        } finally {
+            closeRs(rs);
+            closePstmt(pstmt);
         }
         return 0;
     }
@@ -467,6 +583,49 @@ public class RegistrationDAO {
             return 0;
         } finally {
             closeResources(conn, pstmt, null);
+        }
+    }
+
+    /**
+     * 删除活动的所有报名记录（使用外部传入的连接，支持事务）
+     * @param activityId 活动ID
+     * @param conn 数据库连接
+     * @return 删除的记录数
+     */
+    public int deleteByActivityId(Integer activityId, Connection conn) {
+        String sql = "DELETE FROM activity_participant WHERE activity_id = ?";
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("删除活动报名记录失败: " + e.getMessage(), e);
+        } finally {
+            closePstmt(pstmt);
+        }
+    }
+
+    /**
+     * 关闭ResultSet（不关闭连接，由调用方管理）
+     */
+    private void closeRs(ResultSet rs) {
+        try {
+            if (rs != null) rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 关闭PreparedStatement（不关闭连接，由调用方管理）
+     */
+    private void closePstmt(PreparedStatement pstmt) {
+        try {
+            if (pstmt != null) pstmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 

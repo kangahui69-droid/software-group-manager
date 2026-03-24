@@ -85,13 +85,142 @@ public class LoggingFilter implements Filter {
     }
 
     /**
-     * 构建操作描述
+     * 构建操作描述（增强版 - 提取敏感操作详情）
      */
     private String buildDescription(HttpServletRequest request, String method) {
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
         String fullPath = queryString != null ? uri + "?" + queryString : uri;
+
+        // 提取操作类型和详情
+        String actionDesc = extractActionDescription(request, uri);
+
+        // 构建详细描述
+        if (actionDesc != null && !actionDesc.isEmpty()) {
+            String targetId = request.getParameter("id");
+            String targetInfo = targetId != null ? " [目标ID:" + targetId + "]" : "";
+            return method + " " + actionDesc + targetInfo;
+        }
+
         return method + " " + fullPath;
+    }
+
+    /**
+     * 提取操作描述
+     */
+    private String extractActionDescription(HttpServletRequest request, String uri) {
+        String action = request.getParameter("action");
+
+        // 用户管理相关
+        if (uri.contains("/admin/api/user/reset-password") || (uri.contains("/admin/member/") && "resetPassword".equals(action))) {
+            return "重置用户密码";
+        }
+        if (uri.contains("/admin/api/user/add") || (uri.contains("/admin/member/") && "add".equals(action))) {
+            return "添加新用户";
+        }
+        if (uri.contains("/admin/api/user?action=update") || uri.contains("/admin/api/user/update")) {
+            return "更新用户信息";
+        }
+        if (uri.contains("/admin/api/user?action=delete") || uri.contains("/admin/api/user/delete")) {
+            return "删除用户";
+        }
+        if (uri.contains("/admin/member/") && "update".equals(action)) {
+            return "更新成员信息";
+        }
+        if (uri.contains("/admin/member/") && "delete".equals(action)) {
+            return "删除成员";
+        }
+
+        // 新闻管理相关
+        if (uri.contains("/news") && "create".equals(action)) {
+            return "创建新闻";
+        }
+        if (uri.contains("/news") && "update".equals(action)) {
+            return "更新新闻";
+        }
+        if (uri.contains("/news") && "delete".equals(action)) {
+            return "删除新闻";
+        }
+
+        // 活动管理相关
+        if (uri.contains("/activity") && "create".equals(action)) {
+            return "创建活动";
+        }
+        if (uri.contains("/activity") && "update".equals(action)) {
+            return "更新活动";
+        }
+        if (uri.contains("/activity") && "delete".equals(action)) {
+            return "删除活动";
+        }
+        if (uri.contains("/activity") && "approve".equals(action)) {
+            return "审核通过报名";
+        }
+        if (uri.contains("/activity") && "reject".equals(action)) {
+            return "驳回报名申请";
+        }
+        if (uri.contains("/activity") && "batchApprove".equals(action)) {
+            return "批量审核通过报名";
+        }
+        if (uri.contains("/activity") && "batchReject".equals(action)) {
+            return "批量驳回报名申请";
+        }
+
+        // 项目管理相关
+        if (uri.contains("/project") && "create".equals(action)) {
+            return "创建项目";
+        }
+        if (uri.contains("/project") && "update".equals(action)) {
+            return "更新项目信息";
+        }
+        if (uri.contains("/project") && "delete".equals(action)) {
+            return "删除项目";
+        }
+
+        // 奖项管理相关
+        if (uri.contains("/award") && "approve".equals(action)) {
+            return "审核奖项申请";
+        }
+        if (uri.contains("/award") && "reject".equals(action)) {
+            return "驳回奖项申请";
+        }
+
+        // 招新管理相关
+        if (uri.contains("/admin/recruit") && uri.contains("/approve")) {
+            return "审核通过招新申请";
+        }
+        if (uri.contains("/admin/recruit") && uri.contains("/reject")) {
+            return "驳回招新申请";
+        }
+        if (uri.contains("/recruit/submit") && "POST".equals(request.getMethod())) {
+            return "提交招新申请";
+        }
+
+        // 简历相关
+        if (uri.contains("/resume") && "POST".equals(request.getMethod())) {
+            return "更新简历信息";
+        }
+
+        // 个人资料相关
+        if (uri.contains("/member/profile") || uri.contains("/admin/profile")) {
+            return "更新个人资料";
+        }
+        if (uri.contains("/member/password") || uri.contains("/admin/password")) {
+            return "修改密码";
+        }
+
+        // 文件上传相关
+        if (uri.contains("/upload") || uri.contains("/file")) {
+            String type = request.getParameter("type");
+            if ("avatar".equals(type)) {
+                return "上传头像";
+            } else if ("award".equals(type)) {
+                return "上传奖项图片";
+            } else {
+                return "上传文件";
+            }
+        }
+
+        return null;
     }
 
     /**
