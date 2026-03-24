@@ -40,6 +40,8 @@
         <url-pattern>/award/*</url-pattern>
         <url-pattern>/recruit</url-pattern>
         <url-pattern>/recruit/*</url-pattern>
+        <url-pattern>/study</url-pattern>
+        <url-pattern>/study/*</url-pattern>
     </filter-mapping>
 
     <!-- 操作日志过滤器 -->
