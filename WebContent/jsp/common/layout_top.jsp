@@ -104,6 +104,70 @@
                 .page-content.loading {
                     opacity: 0.7;
                 }
+                
+                /* ========== 消除导航栏与内容之间的空白 ========== */
+                
+                /* 移除 page 容器的内边距 */
+                .page {
+                    padding-top: 0 !important;
+                }
+                
+                /* 确保 navbar 底部无空白 */
+                header.navbar {
+                    margin-bottom: 0 !important;
+                    border-bottom: none !important;
+                }
+                
+                /* 移除 navbar 容器可能存在的内边距 */
+                .navbar .container-xl {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                }
+                
+                /* 移除 page-wrapper 的顶部边距和内边距 */
+                .page-wrapper {
+                    padding-top: 0 !important;
+                    margin-top: 0 !important;
+                }
+                
+                /* 移除 page-header 的顶部边距，使其紧贴导航栏 */
+                .page-header {
+                    margin-top: 0 !important;
+                    padding-top: 0 !important;
+                }
+                
+                /* 确保 page-header 容器无多余间距 */
+                .page-header .container-xl {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                }
+                
+                /* 移除 page-title 的顶部边距 */
+                .page-title {
+                    margin-top: 0 !important;
+                    padding-top: 0 !important;
+                }
+                
+                /* 移除 row 的负边距可能造成的空白 */
+                .page-header .row {
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;
+                }
+                
+                /* 移除 page-body 的顶部内边距 */
+                .page-body {
+                    padding-top: 0 !important;
+                }
+                
+                /* 确保卡片容器紧贴上方 */
+                .page-body .container-xl {
+                    padding-top: 0 !important;
+                }
+                
+                /* 移除 row-cards 可能存在的顶部边距 */
+                .row-cards {
+                    margin-top: 0 !important;
+                }
             </style>
         </head>
 
@@ -121,7 +185,7 @@
                     <jsp:include page="admin_sidebar.jsp" />
                 </c:if>
                 <!-- Sidebar or Top Navbar -->
-                <header class="navbar navbar-expand-md navbar-light d-print-none">
+                <header class="navbar navbar-expand-md navbar-light d-print-none" style="margin-bottom: 0 !important; border-bottom: none !important;">
                     <div class="container-xl">
                         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                             data-bs-target="#navbar-menu">
@@ -340,5 +404,3 @@
                     </div>
                 </header>
                 <div class="page-wrapper">
-
-                </div>
