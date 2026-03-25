@@ -337,13 +337,6 @@
                                                     <span class="nav-link-title">学习中心</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-robot"></i></span>
-                                                    <span class="nav-link-title">AI助手</span>
-                                                </a>
-                                            </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role == 'ADMIN'}">
                                             <li class="nav-item dropdown ${param.active == 'ai' || param.active == 'ai_stats' ? 'active' : ''}">
@@ -403,18 +396,11 @@
                                                     <span class="nav-link-title">报名</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item ${param.active == 'study' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/study">
+                                            <li class="nav-item ${param.active == 'attendance' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/attendance/manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-book"></i></span>
-                                                    <span class="nav-link-title">学习中心</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-robot"></i></span>
-                                                    <span class="nav-link-title">AI助手</span>
+                                                    <span class="nav-link-title">学习管理</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'log' ? 'active' : ''}">

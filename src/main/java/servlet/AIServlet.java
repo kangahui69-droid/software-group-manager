@@ -27,7 +27,7 @@ public class AIServlet extends HttpServlet {
         String action = req.getParameter("action");
 
         if ("chat".equals(action)) {
-            HttpSession session = req.getSession(false);
+            HttpSession session = req.getSession(true);
             String sessionId = (String) session.getAttribute("aiSessionId");
             if (sessionId == null) {
                 sessionId = aiService.generateSessionId();
