@@ -12,29 +12,22 @@
 </head>
 <body>
     <div class="study-page">
-        <!-- 装饰元素 -->
-        <div class="deco deco-1">✦</div>
-        <div class="deco deco-2">✦</div>
-        <div class="deco deco-3">❀</div>
-        <div class="deco deco-4">❀</div>
-        <div class="deco-line deco-line-1"></div>
-        <div class="deco-line deco-line-2"></div>
+        <div class="slogan-container">
+            <div class="slogan-left">好好学习</div>
 
-        <div class="slogan-left">好好学习</div>
-        <div class="slogan-right">天天向上</div>
-        <c:if test="${not empty error}">
-            <div class="alert alert-danger">
-                <i class="icon">&#10060;</i> ${error}
-            </div>
-        </c:if>
+            <div class="study-card">
+            <c:if test="${not empty error}">
+                <div class="alert alert-danger">
+                    <i class="icon">&#10060;</i> ${error}
+                </div>
+            </c:if>
 
-        <c:if test="${not empty autoEnd}">
-            <div class="alert alert-success">
-                <i class="icon">&#10004;</i> ${autoEnd}
-            </div>
-        </c:if>
+            <c:if test="${not empty autoEnd}">
+                <div class="alert alert-success">
+                    <i class="icon">&#10004;</i> ${autoEnd}
+                </div>
+            </c:if>
 
-        <div class="study-card">
             <!-- 日期显示 -->
             <div class="date-header">
                 <div class="date-main">
@@ -199,6 +192,8 @@
                     <span>返回首页</span>
                 </a>
             </div>
+        </div>
+            <div class="slogan-right">天天向上</div>
         </div>
     </div>
 
