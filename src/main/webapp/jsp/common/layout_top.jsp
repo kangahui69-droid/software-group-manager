@@ -252,6 +252,20 @@
                                                     <span class="nav-link-title">活动新闻</span>
                                                 </a>
                                             </li>
+                                            <li class="nav-item ${param.active == 'study' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/study">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-book"></i></span>
+                                                    <span class="nav-link-title">学习中心</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
+                                                </a>
+                                            </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role == 'ADMIN'}">
                                             <li class="nav-item ${param.active == 'news' ? 'active' : ''}">
@@ -294,6 +308,20 @@
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-person-plus-fill"></i></span>
                                                     <span class="nav-link-title">报名管理</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'study' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/study">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-book"></i></span>
+                                                    <span class="nav-link-title">学习中心</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/ai">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-robot"></i></span>
+                                                    <span class="nav-link-title">AI助手</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'log' ? 'active' : ''}">

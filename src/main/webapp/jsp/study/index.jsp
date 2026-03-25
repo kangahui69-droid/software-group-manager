@@ -2,200 +2,226 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>学习中心 - 软件小组</title>
-    <link rel="stylesheet" href="${ctx}/css/study.css">
-</head>
-<body>
-    <div class="study-page">
-        <div class="slogan-container">
-            <div class="slogan-left">好好学习</div>
+<jsp:include page="/jsp/common/layout_top.jsp">
+    <jsp:param name="title" value="学习中心"/>
+    <jsp:param name="active" value="study"/>
+</jsp:include>
 
-            <div class="study-card">
-            <c:if test="${not empty error}">
-                <div class="alert alert-danger">
-                    <i class="icon">&#10060;</i> ${error}
-                </div>
-            </c:if>
+            <div class="page-wrapper">
+                <div class="page-body">
+                    <div class="container-xl">
+                        <!-- 页面标题 -->
+                        <div class="page-header d-print-none">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h2 class="page-title">
+                                        <i class="bi bi-book me-2"></i>学习中心
+                                    </h2>
+                                    <div class="text-muted mt-1">
+                                        <fmt:formatDate value="${nowDate}" pattern="yyyy年MM月dd日 EEEE"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-            <c:if test="${not empty autoEnd}">
-                <div class="alert alert-success">
-                    <i class="icon">&#10004;</i> ${autoEnd}
-                </div>
-            </c:if>
+                        <!-- 提示信息 -->
+                        <c:if test="${not empty error}">
+                            <div class="alert alert-danger alert-dismissible">
+                                <i class="bi bi-exclamation-circle me-2"></i>${error}
+                            </div>
+                        </c:if>
+                        <c:if test="${not empty autoEnd}">
+                            <div class="alert alert-success alert-dismissible">
+                                <i class="bi bi-check-circle me-2"></i>${autoEnd}
+                            </div>
+                        </c:if>
 
-            <!-- 日期显示 -->
-            <div class="date-header">
-                <div class="date-main">
-                    <span class="day"><fmt:formatDate value="${nowDate}" pattern="dd"/></span>
-                    <div class="date-info">
-                        <span class="year-month"><fmt:formatDate value="${nowDate}" pattern="yyyy年MM月"/></span>
-                        <span class="weekday"><fmt:formatDate value="${nowDate}" pattern="EEEE"/></span>
+                        <div class="row row-cards">
+                            <!-- 学习状态卡片 -->
+                            <div class="col-lg-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">学习状态</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <!-- 用户信息 -->
+                                            <div class="col-auto">
+                                                <span class="avatar avatar-lg" style="background: #11998e;">
+                                                    ${not empty currentUser.name ? currentUser.name.charAt(0) : currentUser.username.charAt(0)}
+                                                </span>
+                                            </div>
+                                            <div class="col">
+                                                <h4 class="mb-1">${currentUser.name}</h4>
+                                                <div class="text-muted">
+                                                    ${currentUser.role == 'MEMBER' ? '成员' : '管理员'}
+                                                </div>
+                                            </div>
+                                            <!-- 学习状态 -->
+                                            <div class="col-auto text-end">
+                                                <c:choose>
+                                                    <c:when test="${not empty activeSession}">
+                                                        <div class="badge bg-green">学习中</div>
+                                                        <div class="text-muted mt-1">
+                                                            <i class="bi bi-clock me-1"></i>
+                                                            <fmt:formatDate value="${activeSession.checkInTime}" pattern="HH:mm:ss"/> 开始
+                                                        </div>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <div class="badge bg-secondary">空闲中</div>
+                                                        <div class="text-muted mt-1">准备开始学习</div>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                        </div>
+
+                                        <!-- 当前学习时长 -->
+                                        <c:if test="${not empty activeSession}">
+                                            <div class="progress mt-3" style="height: 8px;">
+                                                <div class="progress-bar bg-green" style="width: 100%"></div>
+                                            </div>
+                                            <div class="mt-2 text-center">
+                                                <span class="h3 text-green" id="currentDuration">计算中...</span>
+                                            </div>
+                                        </c:if>
+
+                                        <!-- 操作按钮 -->
+                                        <div class="mt-4">
+                                            <c:choose>
+                                                <c:when test="${not empty activeSession}">
+                                                    <button class="btn btn-danger w-100" id="btnEndStudy" onclick="endStudy()">
+                                                        <i class="bi bi-stop-fill me-2"></i>结束学习
+                                                    </button>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <button class="btn btn-green w-100" id="btnStartStudy" onclick="startStudy()">
+                                                        <i class="bi bi-play-fill me-2"></i>开始学习
+                                                    </button>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 学习统计 -->
+                                <div class="row mt-3">
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="h1 text-blue mb-1">${todayDuration}</div>
+                                                <div class="text-muted">今日学习(分钟)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="h1 text-green mb-1">${completedToday}</div>
+                                                <div class="text-muted">今日次数</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="h1 text-purple mb-1">${weekDuration}</div>
+                                                <div class="text-muted">本周学习(分钟)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="h1 text-orange mb-1">${consecutiveDays}</div>
+                                                <div class="text-muted">连续学习(天)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 侧边栏 -->
+                            <div class="col-lg-4">
+                                <!-- 学习规则 -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="bi bi-info-circle me-1"></i>学习规则
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <h5 class="mb-2">签到规则</h5>
+                                        <ul class="list-unstyled text-muted mb-3">
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>白天可随时开始学习</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>18:00 强制签退</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>18:30-19:00 = 早到</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>19:00-19:30 = 正常</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-orange me-2"></i>19:30后 = 迟到</li>
+                                        </ul>
+                                        <h5 class="mb-2">签退规则</h5>
+                                        <ul class="list-unstyled text-muted">
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>21:30前签退 = 早退</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>21:30后签退 = 正常</li>
+                                            <li class="mb-1"><i class="bi bi-x-circle text-red me-2"></i>22:00 系统自动结束</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- 快捷链接 -->
+                                <div class="card mt-3">
+                                    <div class="card-body">
+                                        <a href="${ctx}/study/list" class="btn btn-outline-primary w-100 mb-2">
+                                            <i class="bi bi-list-ul me-2"></i>学习记录
+                                        </a>
+                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="showRules()">
+                                            <i class="bi bi-question-circle me-2"></i>详细规则
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 学习规则弹窗 -->
+                        <div id="rulesModal" class="modal modal-blur fade" style="display: none;" tabindex="-1">
+                            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">学习规则</h5>
+                                        <button type="button" class="btn-close" onclick="closeRules()"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <h6>签到规则：</h6>
+                                        <ul class="mb-3">
+                                            <li>白天可随时开始学习</li>
+                                            <li>18:00 强制签退（如在学习中）</li>
+                                            <li>18:30 - 19:00 签到 = 早到</li>
+                                            <li>19:00 - 19:30 签到 = 正常</li>
+                                            <li>19:30 后签到 = 迟到</li>
+                                        </ul>
+                                        <h6>签退规则：</h6>
+                                        <ul class="mb-0">
+                                            <li>21:30 前签退 = 早退</li>
+                                            <li>21:30 后签退 = 正常</li>
+                                            <li>22:00 系统自动结束学习</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <script>
+                            function showRules() {
+                                var modal = new bootstrap.Modal(document.getElementById('rulesModal'));
+                                modal.show();
+                            }
+                            function closeRules() {
+                                var modal = bootstrap.Modal.getInstance(document.getElementById('rulesModal'));
+                                if (modal) modal.hide();
+                            }
+                        </script>
                     </div>
                 </div>
             </div>
-
-            <!-- 用户信息 -->
-            <div class="user-section">
-                <div class="user-avatar">
-                    <img src="${ctx}/file/avatar/${currentUser.id}"
-                         onerror="this.src='${ctx}/images/avatar/default-avatar.svg'"
-                         alt="头像">
-                </div>
-                <div class="user-details">
-                    <span class="user-name">${currentUser.name}</span>
-                    <span class="user-role">${currentUser.role == 'MEMBER' ? '成员' : '管理员'}</span>
-                </div>
-            </div>
-
-            <!-- 学习状态 -->
-            <div class="status-section">
-                <c:choose>
-                    <c:when test="${not empty activeSession}">
-                        <div class="status-active">
-                            <div class="status-icon studying">&#128218;</div>
-                            <div class="status-text">
-                                <span class="status-label">正在进行学习</span>
-                                <span class="status-time">开始时间: <fmt:formatDate value="${activeSession.checkInTime}" pattern="HH:mm:ss"/></span>
-                                <span class="status-duration" id="currentDuration">已学习: 计算中...</span>
-                            </div>
-                        </div>
-                    </c:when>
-                    <c:otherwise>
-                        <div class="status-idle">
-                            <div class="status-icon idle">&#128152;</div>
-                            <div class="status-text">
-                                <span class="status-label">准备开始学习</span>
-                                <span class="status-time">点击下方按钮开始计时</span>
-                            </div>
-                        </div>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-
-            <!-- 今日学习时长 -->
-            <div class="duration-section">
-                <div class="duration-item">
-                    <span class="duration-label">今日学习时长</span>
-                    <span class="duration-value">
-                        <c:choose>
-                            <c:when test="${todayDuration > 0}">
-                                ${todayDuration} 分钟
-                            </c:when>
-                            <c:otherwise>
-                                <span style="font-size: 16px; color: #999;">今日还未学习</span>
-                            </c:otherwise>
-                        </c:choose>
-                    </span>
-                </div>
-                <div class="duration-item">
-                    <span class="duration-label">学习时段</span>
-                    <span class="duration-value time-range">19:00 - 22:00</span>
-                </div>
-            </div>
-
-            <!-- 统计信息 -->
-            <div class="today-stats">
-                <div class="stat-row">
-                    <span class="stat-label">今日学习次数:</span>
-                    <span class="stat-value">${completedToday} 次</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">本周学习时长:</span>
-                    <span class="stat-value">${weekDuration} 分钟</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">连续学习:</span>
-                    <span class="stat-value">${consecutiveDays} 天</span>
-                </div>
-            </div>
-
-            <!-- 操作按钮 -->
-            <div class="action-section">
-                <c:choose>
-                    <c:when test="${not empty activeSession}">
-                        <button class="btn btn-study btn-end" id="btnEndStudy" onclick="endStudy()">
-                            <span class="btn-icon">&#9209;</span>
-                            <span class="btn-text">结束学习</span>
-                        </button>
-                    </c:when>
-                    <c:otherwise>
-                        <button class="btn btn-study btn-start" id="btnStartStudy" onclick="startStudy()">
-                            <span class="btn-icon">&#9654;</span>
-                            <span class="btn-text">开始学习</span>
-                        </button>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-
-            <!-- 温馨提示 -->
-            <div class="tips-section">
-                <h4>&#128161; 学习提醒</h4>
-                <ul>
-                    <li>可多次学习，系统会自动累计时长</li>
-                    <li><a href="javascript:void(0)" onclick="showRules()" style="color: #11998e; text-decoration: underline;">点击查看学习规则</a></li>
-                </ul>
-            </div>
-
-            <!-- 学习规则弹窗 -->
-            <div id="rulesModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-                <div class="modal-content" style="background: #fff; margin: 10% auto; padding: 25px; border-radius: 12px; max-width: 400px; position: relative;">
-                    <span onclick="closeRules()" style="position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #999;">&times;</span>
-                    <h3 style="margin: 0 0 15px; color: #333; text-align: center;">学习规则</h3>
-                    <div style="text-align: left; color: #666; font-size: 14px; line-height: 1.8;">
-                        <p><strong>签到规则：</strong></p>
-                        <ul style="margin: 10px 0 15px 20px;">
-                            <li>白天可随时开始学习</li>
-                            <li>18:00 强制签退（如在学习中）</li>
-                            <li>18:30 - 19:00 签到 = 早到</li>
-                            <li>19:00 - 19:30 签到 = 正常</li>
-                            <li>19:30 后签到 = 迟到</li>
-                        </ul>
-                        <p><strong>签退规则：</strong></p>
-                        <ul style="margin: 10px 0 15px 20px;">
-                            <li>21:30 前签退 = 早退</li>
-                            <li>21:30 后签退 = 正常</li>
-                            <li>22:00 系统自动结束学习</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <script>
-                function showRules() {
-                    document.getElementById('rulesModal').style.display = 'block';
-                }
-                function closeRules() {
-                    document.getElementById('rulesModal').style.display = 'none';
-                }
-                // 点击弹窗外部关闭
-                window.onclick = function(event) {
-                    var modal = document.getElementById('rulesModal');
-                    if (event.target == modal) {
-                        modal.style.display = 'none';
-                    }
-                }
-            </script>
-
-            <!-- 底部链接 -->
-            <div class="footer-links">
-                <a href="${ctx}/study/list" class="link-item">
-                    <span class="link-icon">&#128203;</span>
-                    <span>学习记录</span>
-                </a>
-                <a href="${ctx}/index.jsp" class="link-item">
-                    <span class="link-icon">&#127968;</span>
-                    <span>返回首页</span>
-                </a>
-            </div>
-        </div>
-            <div class="slogan-right">天天向上</div>
-        </div>
-    </div>
 
     <script>
         var ctx = '${ctx}';
@@ -203,7 +229,6 @@
 
         <c:if test="${not empty activeSession}">
             checkInTime = new Date('<fmt:formatDate value="${activeSession.checkInTime}" pattern="yyyy-MM-dd HH:mm:ss"/>').getTime();
-            // 每秒更新当前学习时长
             setInterval(updateCurrentDuration, 1000);
         </c:if>
 
@@ -227,7 +252,7 @@
 
             var el = document.getElementById('currentDuration');
             if (el) {
-                el.textContent = '已学习: ' + text;
+                el.textContent = text;
             }
         }
 
@@ -238,7 +263,7 @@
             if (!confirm('确定要开始学习吗？')) return;
 
             btn.disabled = true;
-            btn.querySelector('.btn-text').textContent = '开始中...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>开始中...';
 
             fetch(ctx + '/study', {
                 method: 'POST',
@@ -255,14 +280,14 @@
                 } else {
                     alert(data.message || '开始学习失败');
                     btn.disabled = false;
-                    btn.querySelector('.btn-text').textContent = '开始学习';
+                    btn.innerHTML = '<i class="bi bi-play-fill me-2"></i>开始学习';
                 }
             })
             .catch(function(error) {
                 console.error('错误:', error);
                 alert('网络异常，请重试');
                 btn.disabled = false;
-                btn.querySelector('.btn-text').textContent = '开始学习';
+                btn.innerHTML = '<i class="bi bi-play-fill me-2"></i>开始学习';
             });
         }
 
@@ -273,7 +298,7 @@
             if (!confirm('确定要结束学习吗？')) return;
 
             btn.disabled = true;
-            btn.querySelector('.btn-text').textContent = '结束中...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>结束中...';
 
             fetch(ctx + '/study', {
                 method: 'POST',
@@ -294,16 +319,16 @@
                 } else {
                     alert(data.message || '结束学习失败');
                     btn.disabled = false;
-                    btn.querySelector('.btn-text').textContent = '结束学习';
+                    btn.innerHTML = '<i class="bi bi-stop-fill me-2"></i>结束学习';
                 }
             })
             .catch(function(error) {
                 console.error('错误:', error);
                 alert('网络异常，请重试');
                 btn.disabled = false;
-                btn.querySelector('.btn-text').textContent = '结束学习';
+                btn.innerHTML = '<i class="bi bi-stop-fill me-2"></i>结束学习';
             });
         }
     </script>
-</body>
-</html>
+
+<jsp:include page="/jsp/common/layout_bottom.jsp"/>
