@@ -185,6 +185,29 @@
                     </div>
                 </a>
             </div>
+            <div class="col-sm-6 col-lg-3">
+                <a href="<%= contextPath %>/study/manage" class="card card-link">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">学习管理</div>
+                        </div>
+                        <div class="mt-4 d-flex align-items-center">
+                            <div class="me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-green" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="h2">学习统计</h3>
+                                <p class="text-muted">查看成员学习时长记录</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 </div>
