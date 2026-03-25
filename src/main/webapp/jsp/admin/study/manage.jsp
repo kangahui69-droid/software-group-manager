@@ -218,7 +218,7 @@
             </div>
 
             <div class="back-link">
-                <a href="${ctx}/admin/index.jsp">&larr; 返回管理员首页</a>
+                <a href="${ctx}/admin/dashboard">&larr; 返回管理员首页</a>
             </div>
         </div>
     </div>
