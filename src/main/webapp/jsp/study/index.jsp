@@ -152,11 +152,11 @@
                                     <div class="card-body">
                                         <h5 class="mb-2">签到规则</h5>
                                         <ul class="list-unstyled text-muted mb-3">
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>白天可随时开始学习</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>6:00-22:00 可随时开始学习</li>
                                             <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>18:00 强制签退</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>18:30-19:00 = 早到</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>19:00-19:30 = 正常</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-orange me-2"></i>19:30后 = 迟到</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>6:00-18:00 = 早到</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>18:30-19:00 = 正常</li>
+                                            <li class="mb-1"><i class="bi bi-check2 text-orange me-2"></i>19:00后 = 迟到</li>
                                         </ul>
                                         <h5 class="mb-2">签退规则</h5>
                                         <ul class="list-unstyled text-muted">
@@ -192,11 +192,11 @@
                                     <div class="modal-body">
                                         <h6>签到规则：</h6>
                                         <ul class="mb-3">
-                                            <li>白天可随时开始学习</li>
+                                            <li>6:00 - 22:00 可随时开始学习</li>
                                             <li>18:00 强制签退（如在学习中）</li>
-                                            <li>18:30 - 19:00 签到 = 早到</li>
-                                            <li>19:00 - 19:30 签到 = 正常</li>
-                                            <li>19:30 后签到 = 迟到</li>
+                                            <li>6:00 - 18:00 签到 = 早到</li>
+                                            <li>18:30 - 19:00 签到 = 正常</li>
+                                            <li>19:00 后签到 = 迟到</li>
                                         </ul>
                                         <h6>签退规则：</h6>
                                         <ul class="mb-0">

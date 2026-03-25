@@ -208,7 +208,7 @@
                                                 <c:choose>
                                                     <c:when test="${att.checkOutStatus == 'NORMAL'}">正常</c:when>
                                                     <c:when test="${att.checkOutStatus == 'EARLY'}">早退</c:when>
-                                                    <c:when test="${att.checkOutStatus == 'LEAVE'}">请假</c:otherwise>
+                                                    <c:when test="${att.checkOutStatus == 'LEAVE'}">请假</c:when>
                                                     <c:otherwise>未签退</c:otherwise>
                                                 </c:choose>
                                             </span>

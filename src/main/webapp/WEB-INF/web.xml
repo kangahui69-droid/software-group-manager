@@ -269,6 +269,7 @@
     <servlet-mapping>
         <servlet-name>AIServlet</servlet-name>
         <url-pattern>/ai</url-pattern>
+        <url-pattern>/ai/*</url-pattern>
     </servlet-mapping>
 
     <!-- 用户资料Servlet -->
@@ -284,17 +285,6 @@
     <servlet-mapping>
         <servlet-name>ProfileServlet</servlet-name>
         <url-pattern>/member/profile/*</url-pattern>
-    </servlet-mapping>
-
-    <!-- AI助手Servlet -->
-    <servlet>
-        <servlet-name>AIServlet</servlet-name>
-        <servlet-class>servlet.AIServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AIServlet</servlet-name>
-        <url-pattern>/ai</url-pattern>
-        <url-pattern>/ai/*</url-pattern>
     </servlet-mapping>
 
     <!-- 默认首页 -->

@@ -1,0 +1,1012 @@
+================================================================================
+         高校软件小组管理系统 - AI助手知识库文档
+================================================================================
+
+版本：v1.1（整合版）
+日期：2026-03-24
+用途：作为大模型（AI助手）的知识背景，了解本系统并回答用户问题
+说明：包含项目完整知识库及角色权限差异化服务设计
+
+================================================================================
+                              第一章：项目概述
+================================================================================
+
+1.1 项目基本信息
+--------------------------------------------------------------------------------
+项目名称：高校软件小组管理系统
+英文名：Software Group Management System
+技术栈：Java 1.8 + Maven + Servlet + JSP + JDBC + MySQL
+架构模式：MVC（Model-View-Controller）
+Web容器：Apache Tomcat 9.0+
+
+1.2 项目定位
+--------------------------------------------------------------------------------
+专为高校软件小组设计的综合性管理平台，用于管理小组成员、活动、奖项、
+项目、招新等日常事务。
+
+1.3 用户角色
+--------------------------------------------------------------------------------
+| 角色   | 说明                    | 识别方式                      | 权限范围              |
+|--------|-------------------------|------------------------------|----------------------|
+| ADMIN  | 管理员                  | session.user.role = "ADMIN"  | 全部管理功能            |
+| MEMBER | 小组成员                | session.user.role = "MEMBER" | 个人档案、奖项、活动等  |
+| GUEST  | 游客（未登录）          | 无session或session为空        | 浏览公开信息、提交报名  |
+| TEACHER| 教师（预留）            | 暂未开放功能                  |                      |
+
+================================================================================
+                              第二章：技术架构
+================================================================================
+
+2.1 目录结构
+--------------------------------------------------------------------------------
+Software_group/
+├── src/main/java/              # Java源代码
+│   ├── config/                 # 配置类（Config, ConfigManager）
+│   ├── dao/                    # 数据访问层（18个DAO）
+│   ├── filter/                 # Servlet过滤器（认证、编码、日志）
+│   ├── model/                  # 实体类（与数据库表对应）
+│   ├── servlet/                # Servlet控制器（20个Servlet）
+│   ├── service/                # 服务层（暂无）
+│   └── util/                   # 工具类（DBUtil, DESUtil等）
+├── src/main/resources/         # 配置文件
+│   └── config.properties       # 主配置文件
+├── src/main/webapp/            # Web资源（等同于WebContent）
+├── WebContent/                 # Web资源开发目录
+├── docs/                       # 项目文档
+├── database/                   # 数据库备份SQL
+├── lib/                        # 依赖库
+└── pom.xml                     # Maven配置
+
+2.2 核心配置文件
+--------------------------------------------------------------------------------
+配置文件：src/main/resources/config.properties
+
+主要配置项：
+- 数据库连接：db.url, db.username, db.password
+- DES加密密钥：des.key（默认 "([^&%gasie_%^"）
+- HikariCP连接池：hikaricp.maximumPoolSize等
+- 文件上传限制：upload.maxFileSize（默认10MB）
+- 会话超时：session.timeout（默认30分钟）
+
+配置类：src/main/java/config/Config.java
+- 通过 Config.getProperty(key) 获取配置
+- 通过 Config.getDesKey() 获取DES密钥
+
+2.3 数据库配置
+--------------------------------------------------------------------------------
+默认配置：
+- URL: jdbc:mysql://localhost:3306/software_group
+- 用户名: root
+- 密码: （用户本地密码）
+
+连接池：HikariCP
+- 最大连接数: 10
+- 最小空闲: 5
+- 连接超时: 30秒
+
+2.4 安全机制
+--------------------------------------------------------------------------------
+密码加密：DES加密（使用Config中的des.key）
+SQL防护：使用PreparedStatement防止SQL注入
+XSS防护：使用Jsoup进行HTML净化
+会话管理：HttpSession，30分钟超时
+
+================================================================================
+                              第三章：数据库结构
+================================================================================
+
+3.1 核心表结构
+--------------------------------------------------------------------------------
+
+【user表】用户表
+- id: 主键
+- username: 用户名（学号，用于登录）
+- password: 密码（DES加密存储）
+- name: 姓名（创建后不可修改）
+- email: 邮箱
+- phone: 电话
+- role: 角色（ADMIN/MEMBER/TEACHER/GUEST）
+- status: 状态（1-启用，0-禁用）
+- created_at: 创建时间
+
+【member_profile表】成员档案
+- id: 主键
+- user_id: 关联user表
+- student_id: 学号（唯一，创建后不可修改）
+- major: 专业
+- grade: 年级
+- birthday: 生日
+- gender: 性别
+- introduction: 个人介绍
+- skills: 技能
+- github: GitHub地址
+- blog: 博客地址
+- avatar_file_id: 头像文件ID
+
+【admin_profile表】管理员档案
+- id: 主键
+- user_id: 关联user表
+- title: 职称
+- department: 部门
+- education: 学历
+- research_area: 研究领域
+- bio: 个人简介
+- avatar_file_id: 头像文件ID
+
+【news表】新闻表
+- id: 主键
+- title: 标题
+- type: 类型（award-获奖新闻/activity-活动新闻/notice-通知公告）
+- content_path: 内容HTML文件路径
+- summary: 摘要
+- author_id: 作者ID
+- status: 状态（1-发布，0-下线）
+- created_at: 创建时间
+
+【activity表】活动表
+- id: 主键
+- name: 活动名称
+- activity_type: 活动类型（LECTURE/SEMINAR/TEA_PARTY/PROJECT_INTRO等）
+- activity_start_time: 活动开始时间
+- activity_end_time: 活动结束时间
+- location: 活动地点
+- organizers: 组织人
+- contact_info: 联系方式
+- registration_start_time: 报名开始时间
+- registration_end_time: 报名截止时间
+- max_participants: 最大参与人数
+- status: 活动状态（upcoming/ongoing/completed/canceled）
+- deleted: 软删除标志
+
+【activity_participant表】活动报名表
+- activity_id: 活动ID
+- user_id: 用户ID
+- status: 报名状态（pending/confirmed/rejected/expired）
+- notes: 备注
+- deleted: 软删除标志
+
+【award表】奖项表
+- id: 主键
+- name: 奖项名称
+- competition: 比赛名称
+- year: 获奖年份
+- competition_time: 比赛时间
+- competition_location: 比赛地点
+- award_type: 奖项类型（个人/团队）
+- award_category: 奖项类别
+- award_level: 奖项等级（关联dictionary表）
+- competition_level: 比赛等级（关联dictionary表）
+- team_name: 团队名称
+- award_status: 审核状态（PENDING/APPROVED/REJECTED）
+- created_by: 创建人
+- approved_by: 审批人
+- deleted: 软删除标志
+
+【award_member表】奖项成员关联表
+- award_id: 奖项ID
+- member_id: 成员ID
+
+【award_image表】奖项图片表
+- id: 主键
+- award_id: 奖项ID
+- member_id: 上传成员ID
+- file_storage_id: 文件存储ID
+- is_main: 是否为主图
+
+【project表】项目表
+- id: 主键
+- name: 项目名称
+- description: 项目描述
+- category: 项目类别
+- year: 年份
+- leader_id: 负责人ID
+- status: 项目状态（pending/approved/in_progress/completed/canceled/rejected）
+- expected_start_date: 期望开始日期
+- expected_end_date: 期望结束日期
+- actual_start_date: 实际开始日期
+- actual_end_date: 实际结束日期
+- budget: 预算
+- repo_url: 代码仓库地址
+- doc_url: 文档地址
+- approved_by: 审批人
+- deleted: 软删除标志
+
+【project_member表】项目成员表
+- project_id: 项目ID
+- user_id: 用户ID
+- role: 角色（leader/member）
+
+【project_plan表】项目计划表
+- id: 主键
+- project_id: 项目ID
+- title: 计划标题
+- description: 计划描述
+- start_date: 开始日期
+- end_date: 结束日期
+- order_index: 排序
+
+【project_progress表】项目进度表
+- id: 主键
+- project_id: 项目ID
+- plan_id: 关联计划ID
+- title: 进度标题
+- description: 进度描述
+- completion_rate: 完成百分比（0-100）
+- created_by: 创建人
+
+【project_history表】项目历史表
+- id: 主键
+- project_id: 项目ID
+- operation_type: 操作类型
+- operator_id: 操作人ID
+- description: 描述
+- old_value: 旧值
+- new_value: 新值
+
+【recruit_application表】招新申请表
+- id: 主键
+- name: 姓名
+- student_id: 学号
+- major: 专业
+- grade: 年级
+- phone: 电话
+- email: 邮箱
+- reason: 报名理由
+- status: 状态（1-待处理/2-已通过/0-已拒绝）
+
+【file_storage表】文件存储表
+- id: 主键
+- create_by: 创建人ID
+- original_name: 原始文件名
+- stored_name: 存储文件名
+- file_path: 文件路径
+- file_type: 文件类型
+- file_size: 文件大小
+- category: 文件分类
+- status: 状态（1-正常，0-已删除）
+
+【operation_log表】操作日志表
+- id: 主键
+- user_id: 用户ID
+- username: 用户名
+- operation: 操作名称
+- module: 模块
+- description: 描述
+- ip_address: IP地址
+- user_agent: 用户代理
+- created_at: 创建时间
+
+【dictionary表】字典表
+- id: 主键
+- code: 字典编码
+- name: 字典名称
+- type: 字典类型（如award_level、competition_level等）
+- sort_order: 排序
+- status: 状态
+
+3.2 状态值说明
+--------------------------------------------------------------------------------
+【用户状态】user.status
+- 1: 启用（正常）
+- 0: 禁用
+
+【用户角色】user.role
+- ADMIN: 管理员
+- MEMBER: 小组成员
+- TEACHER: 教师（预留）
+- GUEST: 游客
+
+【招新申请状态】recruit_application.status
+- 1: 待处理
+- 2: 已通过
+- 0: 已拒绝
+
+【奖项状态】award.award_status
+- PENDING: 待审核
+- APPROVED: 已通过
+- REJECTED: 已拒绝
+
+【项目状态】project.status
+- PENDING: 待审核
+- APPROVED: 已通过
+- IN_PROGRESS: 进行中
+- COMPLETED: 已完成
+- CANCELED: 已取消
+- REJECTED: 已拒绝
+
+【活动状态】activity.status
+- upcoming: 即将开始
+- ongoing: 进行中
+- completed: 已结束
+- canceled: 已取消
+
+【活动类型】activity.activity_type
+- LECTURE: 讲座
+- SEMINAR: 座谈
+- TEA_PARTY: 茶话会
+- PROJECT_INTRO: 项目介绍会
+- WORKSHOP: 工作坊
+- COMPETITION: 竞赛
+- TRAINING: 培训
+- TEAM_BUILDING: 团建
+- OTHER: 其他
+
+【报名状态】activity_participant.status
+- pending: 待审核
+- confirmed: 已确认
+- rejected: 已驳回
+- expired: 已过期
+
+================================================================================
+                              第四章：功能模块
+================================================================================
+
+4.1 登录模块
+--------------------------------------------------------------------------------
+入口：/login.jsp 或 /login
+Servlet：LoginServlet
+
+登录流程：
+1. 用户提交 username + password
+2. LoginServlet 调用 UserDAO.findByUsernameAndPassword()
+3. 密码使用DES加密比对
+4. 登录成功：创建Session，重定向到对应角色的主页
+   - ADMIN -> /admin/dashboard
+   - MEMBER -> /member/index.jsp
+5. 登录失败：返回登录页，显示错误信息
+
+会话信息：
+- session.setAttribute("user", User对象)
+- session.setAttribute("username", 用户名)
+- session.setAttribute("role", 角色)
+
+4.2 新闻管理模块
+--------------------------------------------------------------------------------
+Servlet：NewsServlet
+URL模式：/news, /news/*
+
+主要功能：
+- list: 新闻列表（支持按type筛选）
+- detail: 新闻详情
+- manage: 管理列表（管理员）
+- create: 创建新闻（管理员）
+- edit: 编辑新闻（管理员）
+- delete: 删除新闻（管理员）
+
+新闻类型：
+- award: 获奖新闻
+- activity: 活动新闻
+- notice: 通知公告
+
+4.3 活动管理模块
+--------------------------------------------------------------------------------
+Servlet：ActivityServlet
+URL模式：/activity/*
+
+主要功能：
+- list: 活动列表
+- detail: 活动详情
+- create: 创建活动（管理员）
+- edit: 编辑活动（管理员）
+- delete: 删除活动（管理员）
+- register: 报名参加
+- cancel: 取消报名
+
+报名规则：
+- 报名时间：registration_start_time 到 registration_end_time
+- 活动进行中：status=ongoing 时停止报名
+- 人数限制：不超过 max_participants
+
+4.4 奖项管理模块
+--------------------------------------------------------------------------------
+Servlet：AwardServlet
+URL模式：/award, /award/*
+
+主要功能：
+- list: 奖项列表（成员查看自己提交的）
+- submit: 提交奖项申请（成员）
+- approveList: 待审核列表（管理员）
+- approveDetail: 审核详情（管理员）
+- approve: 审核通过（管理员）
+- reject: 审核拒绝（管理员）
+
+奖项状态流转：
+PENDING（待审核）-> APPROVED（已通过）
+                -> REJECTED（已拒绝）
+
+4.5 项目管理模块
+--------------------------------------------------------------------------------
+Servlet：ProjectServlet
+URL模式：/project/*
+
+主要功能：
+- list: 项目列表（公开项目+个人项目）
+- create: 创建项目（成员）
+- detail: 项目详情
+- edit: 编辑项目（负责人/管理员）
+- approve: 审核通过（管理员）
+- reject: 审核拒绝（管理员）
+- workspace: 项目工作区（仅成员）
+
+项目状态流转：
+PENDING -> APPROVED -> IN_PROGRESS -> COMPLETED
+   ↓         ↓
+REJECTED   CANCELED
+
+年度限制：每人每年最多3个项目
+
+4.6 招新管理模块
+--------------------------------------------------------------------------------
+Servlet：RecruitServlet
+URL模式：/recruit/*, /admin/recruit/*
+
+主要功能：
+- apply: 报名表单（游客）
+- submit: 提交报名（游客）
+- success: 报名成功
+- manage: 报名管理（管理员）
+- review: 审核报名（管理员）
+- approve: 同意报名（管理员）
+- reject: 拒绝报名（管理员）
+
+审核通过后自动创建：
+- user表记录（用户名=学号，密码默认123456）
+- member_profile表记录
+
+4.7 成员管理模块
+--------------------------------------------------------------------------------
+Servlet：MemberServlet
+URL模式：/admin/member/*, /member/*
+
+主要功能：
+- list: 成员列表（管理员）
+- view: 查看成员详情
+- edit: 编辑成员资料（本人/管理员）
+- profile: 个人资料页面
+
+4.8 日志管理模块
+--------------------------------------------------------------------------------
+Servlet：LogServlet
+URL模式：/admin/log/*
+
+主要功能：
+- list: 日志列表（管理员）
+- 支持按用户、操作类型、时间范围筛选
+
+================================================================================
+                              第五章：Servlet与路由
+================================================================================
+
+5.1 Servlet清单
+--------------------------------------------------------------------------------
+| Servlet                | URL模式              | 功能说明              |
+|------------------------|---------------------|---------------------|
+| LoginServlet           | /login              | 登录                |
+| LogoutServlet          | /logout             | 登出                |
+| NewsServlet            | /news, /news/*      | 新闻管理             |
+| ActivityServlet        | /activity/*         | 活动管理             |
+| AwardServlet           | /award, /award/*    | 奖项管理             |
+| ProjectServlet         | /project/*          | 项目管理             |
+| RecruitServlet         | /recruit/*          | 招新管理             |
+| MemberServlet          | /admin/member/*     | 成员管理             |
+| AdminServlet          | /admin/api/*        | 管理员API           |
+| LogServlet            | /admin/log/*        | 日志管理             |
+| ProfileServlet        | /member/profile/*   | 个人资料             |
+| PasswordServlet       | /password           | 密码修改             |
+| FileUploadServlet     | /upload             | 文件上传             |
+| FileDownloadServlet   | /download/*         | 文件下载             |
+| FileStorageServlet    | /file               | 文件存储管理         |
+| AvatarUploadServlet   | /upload-avatar      | 头像上传             |
+| ResumeServlet         | /resume/*           | 简历管理             |
+| ResumeSkillServlet    | /resume/skill/*     | 简历技能管理         |
+| ResumeEducationServlet| /resume/education/* | 简历教育经历管理     |
+| ResumeProjectServlet   | /resume/project/*   | 简历项目经历管理     |
+| ResumeAwardServlet    | /resume/award/*    | 简历奖项经历管理     |
+| CSRFTokenServlet      | /csrf-token         | CSRF令牌            |
+
+5.2 Filter清单
+--------------------------------------------------------------------------------
+| Filter                     | 拦截路径           | 功能                  |
+|----------------------------|-------------------|----------------------|
+| CharacterEncodingFilter    | /*                | UTF-8编码            |
+| LoggingFilter             | /*                | 操作日志记录          |
+| AuthFilter                | /member/*, /admin/* | 权限验证            |
+| SecurityFilter            | /*                | 安全过滤             |
+
+================================================================================
+                              第六章：页面路径
+================================================================================
+
+6.1 公开页面
+--------------------------------------------------------------------------------
+- /login.jsp                    - 登录页面
+- /index.jsp                    - 首页
+- /news?type=award             - 获奖新闻列表
+- /news?type=activity          - 活动新闻列表
+- /news?type=notice            - 通知公告列表
+- /recruit/apply.jsp            - 招新报名表单
+- /recruit/success.jsp          - 报名成功页面
+
+6.2 管理员页面
+--------------------------------------------------------------------------------
+- /admin/index.jsp              - 管理后台首页
+- /admin/dashboard             - 管理仪表盘
+- /admin/profile.jsp            - 管理员资料
+- /admin/password-change.jsp    - 修改密码
+- /admin/edit-profile.jsp       - 编辑资料
+- /admin/member/list            - 成员列表
+- /admin/recruit/manage         - 招新管理
+- /admin/log/list               - 日志管理
+
+6.3 成员页面
+--------------------------------------------------------------------------------
+- /member/index.jsp             - 成员首页
+- /member/profile.jsp           - 我的资料
+- /member/password-change.jsp   - 修改密码
+- /member/award/list            - 我的奖项
+- /member/project/list          - 我的项目
+- /member/activity/list         - 我的活动
+
+6.4 JSP公共组件
+--------------------------------------------------------------------------------
+- /jsp/common/layout_top.jsp    - 页面头部
+- /jsp/common/layout_bottom.jsp - 页面底部
+- /jsp/common/admin_sidebar.jsp - 管理员侧边栏
+
+================================================================================
+                              第七章：业务规则
+================================================================================
+
+7.1 用户注册与登录
+--------------------------------------------------------------------------------
+- 用户名（学号）和姓名创建后不可修改
+- 密码使用DES加密存储
+- 登录失败3次后账户可能被锁定
+- 会话超时30分钟
+
+7.2 招新流程
+--------------------------------------------------------------------------------
+1. 游客填写报名表（姓名、学号、专业、年级、手机、邮箱、报名理由）
+2. 管理员审核报名申请
+3. 审核通过后：
+   - 自动创建用户账号（用户名=学号，密码默认123456）
+   - 自动创建成员档案
+   - 发送通知
+
+7.3 奖项申报流程
+--------------------------------------------------------------------------------
+1. 成员提交奖项申请（比赛名称、时间、地点、奖项名称、等级等）
+2. 上传奖项证书图片
+3. 管理员审核
+4. 审核通过后公开显示
+
+7.4 项目管理规则
+--------------------------------------------------------------------------------
+- 每人每年最多创建3个项目
+- 项目需管理员审批后才能公开
+- 只有项目负责人可添加成员
+- 审批通过的项目才能进入工作区
+
+7.5 活动报名规则
+--------------------------------------------------------------------------------
+- 报名时间窗口：registration_start_time 到 registration_end_time
+- 活动进行中停止报名
+- 报名人数不超过最大限制
+- 可取消报名（待审核状态）
+
+7.6 软删除规则
+--------------------------------------------------------------------------------
+以下表使用软删除（deleted字段）：
+- activity: deleted=1 表示已删除
+- activity_participant: deleted=1 表示已取消
+- award: deleted=1 表示已删除
+- project: deleted=1 表示已删除
+- file_storage: status=0 表示已删除
+
+================================================================================
+                              第八章：常见操作FAQ
+================================================================================
+
+8.1 登录问题
+--------------------------------------------------------------------------------
+Q: 忘记密码怎么办？
+A: 联系管理员重置密码，默认密码为123456
+
+Q: 登录显示"用户名或密码错误"
+A: 1. 检查用户名是否正确（学号）
+   2. 检查密码是否正确
+   3. 联系管理员确认账户状态
+
+Q: 账户被锁定怎么办？
+A: 联系管理员解锁账户
+
+8.2 成员操作
+--------------------------------------------------------------------------------
+Q: 如何修改个人信息？
+A: 登录后进入"个人中心" -> "个人信息" -> 点击"编辑"
+
+Q: 如何提交奖项？
+A: 登录后进入"我的奖项" -> 点击"提交奖项" -> 填写表单 -> 上传证书 -> 提交
+
+Q: 如何报名参加活动？
+A: 进入活动列表 -> 选择活动 -> 点击"报名" -> 确认报名
+
+Q: 如何创建项目？
+A: 登录后进入"我的项目" -> 点击"创建项目" -> 填写项目信息 -> 提交等待审核
+
+8.3 管理员操作
+--------------------------------------------------------------------------------
+Q: 如何发布新闻？
+A: 进入"新闻管理" -> 点击"发布新闻" -> 填写标题、内容、类型 -> 保存
+
+Q: 如何审核奖项申请？
+A: 进入"奖项管理" -> 点击"待审核" -> 查看详情 -> 点击"通过"或"拒绝"
+
+Q: 如何处理招新报名？
+A: 进入"报名管理" -> 查看待处理申请 -> 点击"审核" -> 同意创建账号或拒绝
+
+Q: 如何重置成员密码？
+A: 进入"用户管理" -> 选择用户 -> 点击"重置密码"
+
+8.4 技术问题
+--------------------------------------------------------------------------------
+Q: 上传文件大小限制是多少？
+A: 默认最大10MB，可在config.properties中修改upload.maxFileSize
+
+Q: 支持哪些文件格式？
+A: 通常支持：jpg、png、pdf、doc、docx、xls、xlsx等
+
+Q: 会话超时时间是多久？
+A: 默认30分钟无操作后超时
+
+================================================================================
+                              第九章：默认账号
+================================================================================
+
+管理员账号：
+- 用户名：admin
+- 密码：admin123
+
+成员账号（示例）：
+- 用户名：member1
+- 密码：123456
+
+招新通过后自动创建的账号：
+- 用户名：学号
+- 密码：123456（默认）
+
+================================================================================
+                              第十章：开发规范
+================================================================================
+
+10.1 代码规范
+--------------------------------------------------------------------------------
+- 包名：小写（dao, servlet, model等）
+- 类名：PascalCase（UserDAO, LoginServlet等）
+- 方法名：camelCase（findById, doPost等）
+- 变量名：camelCase，有意义命名
+
+10.2 Servlet编写规范
+--------------------------------------------------------------------------------
+- 继承HttpServlet
+- doGet处理查询和页面展示
+- doPost处理数据提交
+- 使用request.getParameter()获取参数
+- 使用request.setAttribute()传递数据
+- 使用request.getRequestDispatcher().forward()转发
+- 使用response.sendRedirect()重定向
+
+10.3 DAO编写规范
+--------------------------------------------------------------------------------
+- 使用PreparedStatement防止SQL注入
+- 正确关闭数据库资源（Connection, PreparedStatement, ResultSet）
+- 使用try-catch-finally处理异常
+- 返回null表示未找到
+
+10.4 JSP编写规范
+--------------------------------------------------------------------------------
+- 使用JSTL标签（<c:if>, <c:forEach>等）
+- 使用EL表达式获取属性（${user.username}）
+- 避免在JSP中写Java代码
+- 引用公共组件（layout_top.jsp, layout_bottom.jsp）
+
+10.5 安全规范
+--------------------------------------------------------------------------------
+- 用户输入必须验证
+- 密码必须加密存储
+- SQL使用参数化查询
+- 输出到页面的内容需转义
+
+================================================================================
+           第十一章：AI助手角色权限差异化服务（重要）
+================================================================================
+
+11.1 需求说明
+--------------------------------------------------------------------------------
+AI助手根据用户身份（ADMIN/MEMBER/GUEST）解锁对应的访问权限，
+提供该角色可用的操作指引和回答。
+
+11.2 差异化服务需求
+--------------------------------------------------------------------------------
+不同角色应看到/操作不同的功能：
+
+【管理员(ADMIN)】
+- 可访问所有管理功能
+- AI助手应提供管理操作指引
+- 可查看系统数据统计
+
+【成员(MEMBER)】
+- 可访问个人中心
+- 可提交奖项、报名活动、创建项目
+- AI助手应提供成员操作指引
+
+【游客(GUEST)】
+- 仅可浏览公开新闻和活动
+- 可提交招新报名
+- AI助手应提供基础FAQ和报名指引
+
+11.3 技术实现方案
+--------------------------------------------------------------------------------
+
+【前端传参方案】
+在调用AI助手时，通过请求参数传递当前用户身份：
+
+方式1：URL参数传递
+    /ai/chat?message=如何发布新闻&role=${sessionScope.user.role}
+
+方式2：隐藏表单字段
+    <input type="hidden" name="userRole" value="${sessionScope.user.role}">
+
+方式3：前端JavaScript获取
+    const userRole = '${sessionScope.user.role}';
+
+【后端获取用户身份】
+在AIServlet中获取用户身份：
+
+    // 方式1：从Session获取
+    HttpSession session = request.getSession(false);
+    String userRole = "GUEST";
+    if (session != null && session.getAttribute("user") != null) {
+        User user = (User) session.getAttribute("user");
+        userRole = user.getRole();  // ADMIN/MEMBER
+    }
+
+    // 方式2：从请求参数获取
+    String roleParam = request.getParameter("userRole");
+    if (roleParam != null && !roleParam.isEmpty()) {
+        userRole = roleParam;
+    }
+
+11.4 提示词设计
+--------------------------------------------------------------------------------
+
+【基础提示词（所有角色适用）】
+"你是高校软件小组管理系统的AI助手。
+ 你需要根据用户的身份（管理员/成员/游客）提供精准的回答。
+ 只回答与系统操作相关的问题，不要回答无关的问题。"
+
+【管理员专属提示词】
+"当前用户是【管理员】，你可以提供以下操作指引：
+ - 新闻管理：发布、编辑、删除新闻
+ - 奖项审核：查看、审批、拒绝奖项申请
+ - 活动管理：创建、编辑、取消活动
+ - 项目管理：审批、监管所有项目
+ - 成员管理：查看、编辑、重置密码
+ - 招新审核：处理报名申请
+ - 日志查看：查看操作日志
+ - 数据统计：查看系统数据仪表盘"
+
+【成员专属提示词】
+"当前用户是【小组成员】，你可以提供以下操作指引：
+ - 个人资料：查看、编辑个人资料
+ - 奖项管理：提交、查看自己的奖项申请
+ - 活动报名：查看、报名、取消活动
+ - 项目管理：创建项目、申请加入项目、管理我的项目
+ - 简历管理：编辑个人简历
+ - 修改密码：修改登录密码"
+
+【游客专属提示词】
+"当前用户是【游客】（未登录），你可以提供以下信息：
+ - 浏览公开的新闻、活动信息
+ - 查看已通过审核的项目
+ - 提交招新报名申请
+ - 登录已有账号
+ 如需更多功能，请先登录或注册账号。"
+
+11.5 功能访问权限速查表
+--------------------------------------------------------------------------------
+
+┌─────────────────┬────────┬────────┬────────┐
+│ 功能             │ ADMIN  │ MEMBER │ GUEST  │
+├─────────────────┼────────┼────────┼────────┤
+│ 浏览新闻         │  ✓     │   ✓    │   ✓    │
+│ 浏览活动         │  ✓     │   ✓    │   ✓    │
+│ 活动报名         │  ✓     │   ✓    │   ✗    │
+│ 提交奖项申请     │  ✓     │   ✓    │   ✗    │
+│ 创建项目         │  ✓     │   ✓    │   ✗    │
+│ 申请加入项目     │  ✓     │   ✓    │   ✗    │
+│ 新闻管理         │  ✓     │   ✗    │   ✗    │
+│ 奖项审核         │  ✓     │   ✗    │   ✗    │
+│ 活动管理         │  ✓     │   ✗    │   ✗    │
+│ 项目审批         │  ✓     │   ✗    │   ✗    │
+│ 成员管理         │  ✓     │   ✗    │   ✗    │
+│ 招新审核         │  ✓     │   ✗    │   ✗    │
+│ 操作日志         │  ✓     │   ✗    │   ✗    │
+│ 数据统计         │  ✓     │   ✗    │   ✗    │
+│ 招新报名         │  ✓     │   ✓    │   ✓    │
+└─────────────────┴────────┴────────┴────────┘
+
+11.6 AI回答差异化示例
+--------------------------------------------------------------------------------
+
+【问题：如何管理新闻？】
+
+→ ADMIN回答：
+  "作为管理员，您可以这样管理新闻：
+   1. 进入'新闻管理'页面
+   2. 点击'发布新闻'创建新新闻
+   3. 填写标题、内容、选择类型（获奖/活动/通知）
+   4. 点击保存发布
+   5. 已发布的新闻可以在列表中编辑或删除"
+
+→ MEMBER回答：
+  "新闻管理是管理员功能，您作为成员无法访问。
+   您可以浏览已发布的新闻，如有问题请联系管理员。"
+
+→ GUEST回答：
+  "您目前是游客身份，无法管理新闻。
+   您可以浏览已发布的新闻。如需管理新闻，请先以管理员身份登录。"
+
+【问题：如何报名参加活动？】
+
+→ ADMIN/MEMBER回答：
+  "您好！报名参加活动的步骤如下：
+   1. 进入'活动列表'页面
+   2. 找到想参加的活动，点击'查看详情'
+   3. 确认报名时间是否在开放期内
+   4. 点击'立即报名'按钮
+   5. 等待管理员审核通过后即报名成功"
+
+→ GUEST回答：
+  "您好！报名参加活动需要先登录账号。
+   如果您还没有账号，可以：
+   1. 点击'招新报名'提交入会申请
+   2. 等待审核通过后获得登录账号
+   3. 登录后再报名参加活动"
+
+11.7 代码实现示例
+--------------------------------------------------------------------------------
+
+【AIServlet获取身份】
+
+    public class AIServlet extends HttpServlet {
+
+        @Override
+        protected void doPost(HttpServletRequest request, HttpServletResponse response)
+                throws ServletException, IOException {
+            request.setCharacterEncoding("UTF-8");
+
+            // 获取用户身份
+            String userRole = getUserRole(request);
+
+            // 获取用户问题
+            String question = request.getParameter("message");
+
+            // 构建提示词
+            String systemPrompt = buildSystemPrompt(userRole);
+
+            // 调用AI服务
+            String aiResponse = aiService.getResponse(systemPrompt, question);
+
+            // 返回响应
+            response.setContentType("application/json;charset=UTF-8");
+            PrintWriter out = response.getWriter();
+            out.print("{\"response\":\"" + aiResponse + "\",\"role\":\"" + userRole + "\"}");
+        }
+
+        private String getUserRole(HttpServletRequest request) {
+            // 优先从请求参数获取
+            String roleParam = request.getParameter("userRole");
+            if (roleParam != null && !roleParam.isEmpty()) {
+                return roleParam;
+            }
+
+            // 其次从Session获取
+            HttpSession session = request.getSession(false);
+            if (session != null && session.getAttribute("user") != null) {
+                User user = (User) session.getAttribute("user");
+                return user.getRole();
+            }
+
+            // 默认为游客
+            return "GUEST";
+        }
+
+        private String buildSystemPrompt(String userRole) {
+            String basePrompt = "你是高校软件小组管理系统的AI助手。";
+
+            switch (userRole) {
+                case "ADMIN":
+                    return basePrompt +
+                        "当前用户是【管理员】，可使用全部管理功能。\n" +
+                        "管理员功能包括：新闻管理、奖项审核、活动管理、项目审批、" +
+                        "成员管理、招新审核、操作日志、数据统计等。\n" +
+                        "请提供专业的管理操作指导。";
+
+                case "MEMBER":
+                    return basePrompt +
+                        "当前用户是【小组成员】。\n" +
+                        "成员功能包括：个人资料管理、奖项申报、活动报名、" +
+                        "项目管理、简历编辑、密码修改等。\n" +
+                        "请提供简洁的成员操作指导。";
+
+                default:
+                    return basePrompt +
+                        "当前用户是【游客】（未登录）。\n" +
+                        "游客可浏览公开新闻、活动，提交招新报名。\n" +
+                        "请引导用户了解系统，提示注册登录方式。";
+            }
+        }
+    }
+
+【前端调用示例】
+
+    // 获取当前用户角色
+    const userRole = '${sessionScope.user.role}' || 'GUEST';
+
+    // 发送问题给AI
+    async function askAI(question) {
+        const response = await fetch('/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `message=${encodeURIComponent(question)}&userRole=${userRole}`
+        });
+        const data = await response.json();
+        return data.response;
+    }
+
+11.8 实施步骤
+--------------------------------------------------------------------------------
+
+第一步：后端身份获取
+1. 修改AIServlet，添加getUserRole()方法
+2. 实现从Session获取用户身份逻辑
+3. 添加userRole参数接收
+
+第二步：提示词设计
+1. 设计三种角色的差异化提示词
+2. 实现buildSystemPrompt()方法
+3. 测试各角色的AI回答差异
+
+第三步：前端集成
+1. 在AI聊天页面获取当前用户角色
+2. 调用API时传递角色参数
+3. 根据角色显示不同的引导信息
+
+第四步：FAQ角色筛选
+1. 设计角色专属的FAQ列表
+2. 根据用户角色过滤显示的FAQ
+3. 管理员看到管理类FAQ
+4. 成员看到使用类FAQ
+
+11.9 注意事项
+--------------------------------------------------------------------------------
+
+【安全考虑】
+- 角色参数可以被伪造，后端必须从Session验证真实身份
+- AI返回的操作指引需与用户实际权限匹配
+- 敏感操作（如删除数据）需二次验证
+
+【体验优化】
+- 在聊天界面显示当前用户身份（如"您好，管理员"）
+- 游客首次访问时提示登录的好处
+- 成员看到专属功能推荐
+
+【降级方案】
+- 如果无法获取身份，默认按游客处理
+- AI服务不可用时显示预设的FAQ列表
+- 提供联系管理员的备用方式
+
+================================================================================
+                              文档结束
+================================================================================

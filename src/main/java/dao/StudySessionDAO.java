@@ -168,11 +168,14 @@ public class StudySessionDAO {
                      "SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_sessions, " +
                      "SUM(duration) as total_duration, " +
                      "AVG(duration) as avg_duration " +
-                     "FROM study_session WHERE user_id = ?");
+                     "FROM study_session WHERE 1=1");
 
         List<Object> params = new ArrayList<>();
-        params.add(userId);
 
+        if (userId != null) {
+            sql.append(" AND user_id = ?");
+            params.add(userId);
+        }
         if (startDate != null) {
             sql.append(" AND session_date >= ?");
             params.add(new java.sql.Date(startDate.getTime()));
@@ -310,10 +313,13 @@ public class StudySessionDAO {
      * 获取记录总数
      */
     public int getTotalCount(Integer userId, java.util.Date startDate, java.util.Date endDate) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM study_session WHERE user_id = ?");
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM study_session WHERE 1=1");
         List<Object> params = new ArrayList<>();
-        params.add(userId);
 
+        if (userId != null) {
+            sql.append(" AND user_id = ?");
+            params.add(userId);
+        }
         if (startDate != null) {
             sql.append(" AND session_date >= ?");
             params.add(new java.sql.Date(startDate.getTime()));

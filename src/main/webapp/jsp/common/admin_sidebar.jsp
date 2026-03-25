@@ -7,7 +7,7 @@
         <div class="offcanvas-body">
             <div class="row row-cards text-center">
                 <div class="col-6 mb-3">
-                    <a href="${pageContext.request.contextPath}/admin/index.jsp" class="card card-link card-body p-3">
+                    <a href="${pageContext.request.contextPath}/admin/dashboard" class="card card-link card-body p-3">
                         <div class="mb-2">
                             <i class="bi bi-speedometer2 h2 text-primary"></i>
                         </div>

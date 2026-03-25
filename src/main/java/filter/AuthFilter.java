@@ -32,6 +32,8 @@ public class AuthFilter implements Filter {
         // ===== 公开路径白名单：不需要登录即可访问 =====
         // 允许访问的公开路径
         boolean isPublicPath =
+                // AI助手（公开，游客可访问但权限受限）
+                requestURI.contains("/ai") ||
                 // 招新申请相关（公开）
                 requestURI.contains("/recruit/apply") ||
                 requestURI.endsWith(contextPath + "/recruit") ||

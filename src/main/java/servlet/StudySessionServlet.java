@@ -169,8 +169,20 @@ public class StudySessionServlet extends HttpServlet {
             String userIdStr = req.getParameter("userId");
             String pageStr = req.getParameter("page");
 
-            Date startDate = startDateStr != null && !startDateStr.isEmpty() ? sdf.parse(startDateStr) : null;
-            Date endDate = endDateStr != null && !endDateStr.isEmpty() ? sdf.parse(endDateStr) : null;
+            // 默认显示今日记录
+            Calendar today = Calendar.getInstance();
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+            Date defaultStart = today.getTime();
+            today.set(Calendar.HOUR_OF_DAY, 23);
+            today.set(Calendar.MINUTE, 59);
+            today.set(Calendar.SECOND, 59);
+            Date defaultEnd = today.getTime();
+
+            Date startDate = startDateStr != null && !startDateStr.isEmpty() ? sdf.parse(startDateStr) : defaultStart;
+            Date endDate = endDateStr != null && !endDateStr.isEmpty() ? sdf.parse(endDateStr) : defaultEnd;
             Integer userId = userIdStr != null && !userIdStr.isEmpty() ? Integer.parseInt(userIdStr) : null;
             int page = pageStr != null ? Integer.parseInt(pageStr) : 1;
             int pageSize = 30;
@@ -186,9 +198,13 @@ public class StudySessionServlet extends HttpServlet {
             // 获取所有成员列表（用于下拉选择）
             List<User> userList = userDAO.findAll();
 
+            // 格式化日期用于前端显示
+            String displayStartDate = startDateStr != null ? startDateStr : sdf.format(startDate);
+            String displayEndDate = endDateStr != null ? endDateStr : sdf.format(endDate);
+
             req.setAttribute("sessionList", list);
-            req.setAttribute("startDate", startDateStr);
-            req.setAttribute("endDate", endDateStr);
+            req.setAttribute("startDate", displayStartDate);
+            req.setAttribute("endDate", displayEndDate);
             req.setAttribute("selectedUserId", userIdStr);
             req.setAttribute("currentPage", page);
             req.setAttribute("totalPages", totalPages);
@@ -227,23 +243,13 @@ public class StudySessionServlet extends HttpServlet {
                 return;
             }
 
-            // 18点强制签退后，需要等到18:30才能开始学习
-            if (hour < 18 || (hour == 18 && minute < 30)) {
-                resp.setContentType("application/json;charset=UTF-8");
-                resp.getWriter().write("{\"success\":false,\"message\":\"请在18:30后再开始学习\"}");
-                return;
-            }
-
-            // 判断签到状态
-            String checkStatus = "NORMAL"; // 正常
-            if (hour >= 18 && hour < 19) {
-                // 18:30-19:00 算早到
+            // 判断签到状态（根据实际签到时间判定）
+            String checkStatus = "NORMAL"; // 默认正常
+            if (hour >= 6 && hour < 18) {
+                // 6:00-18:00 之间开始算早到
                 checkStatus = "EARLY";
-            } else if (hour == 19 && minute < 30) {
-                // 19:00-19:30 正常
-                checkStatus = "NORMAL";
-            } else if ((hour == 19 && minute >= 30) || (hour > 19 && hour < 22)) {
-                // 19:30后到22:00前算迟到
+            } else if (hour >= 19 || (hour == 18 && minute >= 30)) {
+                // 18:30之后算迟到
                 checkStatus = "LATE";
             }
 

@@ -186,7 +186,7 @@
                 </a>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <a href="<%= contextPath %>/study/manage" class="card card-link">
+                <a href="<%= contextPath %>/attendance/manage" class="card card-link">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="subheader">学习管理</div>
@@ -201,8 +201,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="h2">学习统计</h3>
-                                <p class="text-muted">查看成员学习时长记录</p>
+                                <h3 class="h2">考勤管理</h3>
+                                <p class="text-muted">查看成员签到签退记录</p>
                             </div>
                         </div>
                     </div>
