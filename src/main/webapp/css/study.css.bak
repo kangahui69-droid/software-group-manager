@@ -7,20 +7,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     padding: 20px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
 }
 
-.slogan-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 40px;
-    width: 100%;
-}
-
 .slogan-left, .slogan-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 48px;
     font-weight: bold;
     color: #fff;
@@ -28,20 +24,53 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     letter-spacing: 14px;
     text-shadow: 0 0 20px rgba(255,255,255,0.5), 2px 2px 4px rgba(0,0,0,0.2);
     font-family: "KaiTi", "STKaiti", "Microsoft YaHei", serif;
-    padding: 20px 15px;
+    padding: 20px 12px;
     border: 3px solid rgba(255,255,255,0.7);
     border-radius: 15px;
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(5px);
-    width: 60px;
-    text-align: center;
-    flex-shrink: 0;
+}
+
+.slogan-left {
+    left: 20px;
+}
+
+.slogan-right {
+    right: 20px;
+}
+
+/* 装饰元素 */
+.deco {
+    position: absolute;
+    color: rgba(255,255,255,0.6);
+    font-size: 24px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.deco-1 { top: 15%; left: 15%; animation-delay: 0s; }
+.deco-2 { top: 20%; right: 15%; animation-delay: 1s; }
+.deco-3 { bottom: 20%; left: 10%; animation-delay: 0.5s; }
+.deco-4 { bottom: 15%; right: 10%; animation-delay: 1.5s; }
+
+.deco-line {
+    position: absolute;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+}
+
+.deco-line-1 { top: 30%; left: 5%; right: 5%; }
+.deco-line-2 { bottom: 30%; left: 5%; right: 5%; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(-10px); opacity: 1; }
 }
 
 .slogan-left::before {
     content: "☀";
     display: block;
     font-size: 20px;
+    text-align: center;
     margin-bottom: 10px;
 }
 
@@ -49,7 +78,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     content: "🌙";
     display: block;
     font-size: 20px;
+    text-align: center;
     margin-bottom: 10px;
+}
+
+@media (max-width: 600px) {
+    .slogan-left, .slogan-right {
+        font-size: 28px;
+        letter-spacing: 8px;
+        padding: 10px 8px;
+    }
+    .slogan-left {
+        left: 5px;
+    }
+    .slogan-right {
+        right: 5px;
+    }
+    .slogan-left::before, .slogan-right::before {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
 }
 
 .study-card {
@@ -59,24 +107,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     width: 100%;
     max-width: 420px;
     overflow: hidden;
-    flex-shrink: 0;
-}
-
-@media (max-width: 900px) {
-    .slogan-container {
-        flex-direction: column;
-        gap: 20px;
-    }
-    .slogan-left, .slogan-right {
-        font-size: 28px;
-        letter-spacing: 8px;
-        padding: 10px 20px;
-        writing-mode: horizontal-tb;
-        width: auto;
-    }
-    .slogan-left::before, .slogan-right::before {
-        display: none;
-    }
+    margin-top: 20px;
 }
 
 .alert { margin: 15px 15px 0; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
