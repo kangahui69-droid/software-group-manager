@@ -40,6 +40,10 @@
         <url-pattern>/award/*</url-pattern>
         <url-pattern>/recruit</url-pattern>
         <url-pattern>/recruit/*</url-pattern>
+        <url-pattern>/study</url-pattern>
+        <url-pattern>/study/*</url-pattern>
+        <url-pattern>/ai</url-pattern>
+        <url-pattern>/ai/*</url-pattern>
     </filter-mapping>
 
     <!-- 操作日志过滤器 -->
@@ -280,6 +284,17 @@
     <servlet-mapping>
         <servlet-name>ProfileServlet</servlet-name>
         <url-pattern>/member/profile/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- AI助手Servlet -->
+    <servlet>
+        <servlet-name>AIServlet</servlet-name>
+        <servlet-class>servlet.AIServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AIServlet</servlet-name>
+        <url-pattern>/ai</url-pattern>
+        <url-pattern>/ai/*</url-pattern>
     </servlet-mapping>
 
     <!-- 默认首页 -->

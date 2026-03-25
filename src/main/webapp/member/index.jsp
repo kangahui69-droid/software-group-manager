@@ -114,6 +114,23 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-12 col-sm-6">
+                                    <div class="card card-sm">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col-auto">
+                                                    <span class="bg-purple text-white avatar"><i
+                                                            class="bi bi-clock-history"></i></span>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="font-weight-medium">学习中心</div>
+                                                    <div class="text-muted"><a href="${pageContext.request.contextPath}/study"
+                                                            class="text-reset">开始学习计时</a></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
