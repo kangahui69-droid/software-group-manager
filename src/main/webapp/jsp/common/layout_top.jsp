@@ -396,8 +396,8 @@
                                                     <span class="nav-link-title">报名</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item ${param.active == 'attendance' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/attendance/manage">
+                                            <li class="nav-item ${param.active == 'study' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/study/manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-book"></i></span>
                                                     <span class="nav-link-title">学习管理</span>
