@@ -39,6 +39,9 @@ public class AuthFilter implements Filter {
                 requestURI.endsWith(contextPath + "/recruit") ||
                 requestURI.endsWith(contextPath + "/recruit/") ||
                 requestURI.contains("/recruit/success") ||
+                requestURI.contains("/recruit/submit") ||
+                // 管理端招新管理页面（需要管理员权限，但通过AuthFilter后不重定向到登录页）
+                requestURI.contains("/admin/recruit") ||
                 // 新闻列表查看（公开）
                 requestURI.contains("/news/list") ||
                 requestURI.contains("/news?type=notice") ||

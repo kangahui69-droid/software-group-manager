@@ -1,10 +1,18 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
     <jsp:include page="../common/layout_top.jsp">
         <jsp:param name="title" value="报名成功" />
     </jsp:include>
 
     <div class="page-body">
         <div class="container-xl d-flex flex-column justify-content-center">
+            <!-- 成功信息显示 -->
+            <c:if test="${not empty success}">
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    ${success}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </c:if>
             <div class="empty">
                 <div class="empty-icon">
                     <i class="bi bi-check-circle text-success h1"></i>
