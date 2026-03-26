@@ -54,6 +54,22 @@ public class StudySessionDAO {
     }
 
     /**
+     * 结束用户今日进行中的学习时段（用于退出登录时自动签退）
+     */
+    public int endStudyForUser(Integer userId) throws SQLException {
+        String sql = "UPDATE study_session SET check_out_time = NOW(), " +
+                     "duration = TIMESTAMPDIFF(MINUTE, check_in_time, NOW()), " +
+                     "status = 'COMPLETED' WHERE user_id = ? AND session_date = CURDATE() AND status = 'ACTIVE'";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            return ps.executeUpdate();
+        }
+    }
+
+    /**
      * 获取今日进行中的学习时段
      */
     public StudySession getTodayActiveSession(Integer userId) throws SQLException {
