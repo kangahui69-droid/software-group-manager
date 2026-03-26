@@ -60,25 +60,16 @@ public class StudySessionServlet extends HttpServlet {
             // 获取今日进行中的学习时段
             StudySession activeSession = studyDAO.getTodayActiveSession(currentUser.getId());
 
-            // 检查是否需要自动结束（22:00自动结束）
+            // 检查是否需要自动结束（22:00自动结束，不影响后续签到）
             Calendar now = Calendar.getInstance();
             int hour = now.get(Calendar.HOUR_OF_DAY);
             if (activeSession != null && hour >= 22) {
                 studyDAO.endStudy(activeSession.getId());
                 activeSession = null; // 刷新状态
-                req.setAttribute("autoEnd", "学习时间已结束，系统已自动帮您签退");
             }
 
             // 重新获取时段（可能刚才被自动结束）
             activeSession = studyDAO.getTodayActiveSession(currentUser.getId());
-
-            // 检查6点强制签退要求
-            // 如果18点时还有进行中的学习时段，必须强制签退
-            if (activeSession != null && hour >= 18) {
-                studyDAO.endStudy(activeSession.getId());
-                activeSession = null;
-                req.setAttribute("autoEnd", "已达到18:00，系统已强制帮您签退");
-            }
 
             // 获取今日学习时长（只统计已完成的）
             Integer todayDuration = studyDAO.getTodayDuration(currentUser.getId());
@@ -248,8 +239,11 @@ public class StudySessionServlet extends HttpServlet {
             if (hour >= 6 && hour < 18) {
                 // 6:00-18:00 之间开始算早到
                 checkStatus = "EARLY";
-            } else if (hour >= 19 || (hour == 18 && minute >= 30)) {
-                // 18:30之后算迟到
+            } else if (hour >= 18 && hour < 19) {
+                // 18:00-19:00 之间开始算正常
+                checkStatus = "NORMAL";
+            } else if (hour >= 19) {
+                // 19:00之后算迟到
                 checkStatus = "LATE";
             }
 
