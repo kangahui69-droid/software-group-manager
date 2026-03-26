@@ -132,7 +132,7 @@ public class RecruitServlet extends HttpServlet {
     private void handlePublicSubmit(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         RecruitApplication app = extractFromRequest(request);
-        
+
         // 验证必填字段：姓名、学号、专业
         String errorMsg = validateRequiredFields(app);
         if (errorMsg != null) {
@@ -140,18 +140,21 @@ public class RecruitServlet extends HttpServlet {
             request.getRequestDispatcher("/jsp/recruit/apply.jsp").forward(request, response);
             return;
         }
-        
+
         app.setStatus(1); // 待处理
 
         if (recruitDAO.insert(app)) {
-            response.sendRedirect(request.getContextPath() + "/recruit/success");
+            // 成功：设置成功提示并转发到成功页面
+            request.setAttribute("success", "报名提交成功！请等待审核结果。");
+            request.getRequestDispatcher("/jsp/recruit/success.jsp").forward(request, response);
         } else {
+            // 失败：设置错误提示并返回报名页面
             request.setAttribute("error", "提交申请失败，请稍后重试。");
             request.getRequestDispatcher("/jsp/recruit/apply.jsp").forward(request, response);
         }
     }
     
-    // 验证必填字段（姓名、学号、专业）
+    // 验证必填字段（姓名、学号、专业、邮箱）
     private String validateRequiredFields(RecruitApplication app) {
         if (app.getName() == null || app.getName().trim().isEmpty()) {
             return "请填写姓名";
@@ -161,6 +164,9 @@ public class RecruitServlet extends HttpServlet {
         }
         if (app.getMajor() == null || app.getMajor().trim().isEmpty()) {
             return "请填写专业";
+        }
+        if (app.getEmail() == null || app.getEmail().trim().isEmpty()) {
+            return "请填写邮箱";
         }
         return null;
     }
@@ -287,21 +293,25 @@ public class RecruitServlet extends HttpServlet {
                     app.setStatus(2);
                     recruitDAO.update(app);
                 } else {
-                    // Check if email already exists
-                    boolean emailExists = userDAO.existsByEmail(app.getEmail());
-                    
+                    // Check if email already exists (only if email is not empty)
+                    boolean emailExists = false;
+                    if (app.getEmail() != null && !app.getEmail().trim().isEmpty()) {
+                        emailExists = userDAO.existsByEmail(app.getEmail());
+                    }
+
                     if (emailExists) {
                         request.setAttribute("error", "申请失败：该邮箱已被其他用户使用");
                         listApplications(request, response);
                         return;
                     }
-                    
+
                     // Create new user - must set name from application
                     model.User user = new model.User();
                     user.setUsername(app.getStudentId());
                     user.setPassword("123456");
                     user.setName(app.getName()); // FIX: Set name from application
-                    user.setEmail(app.getEmail());
+                    // 如果邮箱为空，设置为 null
+                    user.setEmail((app.getEmail() != null && !app.getEmail().trim().isEmpty()) ? app.getEmail() : null);
                     user.setPhone(app.getPhone());
                     user.setRole("MEMBER");
                     user.setStatus(1);

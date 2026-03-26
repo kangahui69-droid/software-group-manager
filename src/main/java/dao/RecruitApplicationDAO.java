@@ -27,7 +27,9 @@ public class RecruitApplicationDAO {
             pstmt.setString(3, application.getMajor());
             pstmt.setString(4, application.getGrade());
             pstmt.setString(5, application.getPhone());
-            pstmt.setString(6, application.getEmail());
+            // 如果邮箱为空或空字符串，设置为null，避免唯一约束冲突
+            String email = application.getEmail();
+            pstmt.setString(6, (email != null && !email.trim().isEmpty()) ? email : null);
             pstmt.setString(7, application.getReason());
             pstmt.setInt(8, application.getStatus() != null ? application.getStatus() : 1);
 
