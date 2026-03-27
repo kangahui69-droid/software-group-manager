@@ -1355,7 +1355,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'admin','sEVTxpZ/OQykR2QyQb9BWw==','张三2','admin@hsu.com2','13800138032','ADMIN',1,'2025-12-21 14:17:28','2026-02-18 01:43:20'),(2,'member1','Bkj4xIPxGT0=','NewTest','newtest@test.com','222222222','MEMBER',1,'2025-12-21 14:17:28','2026-02-23 07:31:10'),(3,'12445','qlkkHyFnxfg=','测试用户2','dfsgs@hsu.edu.cn','18725533292','MEMBER',1,'2026-01-21 07:01:10','2026-02-21 11:05:37'),(22,'12445235','qlkkHyFnxfg=','Unknown','dfsgs_1@hsu.edu.cn','18725533292','MEMBER',1,'2026-01-21 08:40:42','2026-01-21 08:40:42'),(23,'testuser123','test','测试用户','test@test.com','13900000000','MEMBER',1,'2026-02-15 13:58:58','2026-02-15 13:58:58'),(24,'FINAL21771164883','qlkkHyFnxfg=','���ղ���2','final2@test.com','13600000000','MEMBER',1,'2026-02-18 01:36:59','2026-02-18 01:36:59'),(25,'REJECTTEST1771164573','qlkkHyFnxfg=','�ܾ�����','reject@test.com','13900000000','MEMBER',1,'2026-02-18 01:48:09','2026-02-18 01:48:09'),(26,'TEST1771163081','qlkkHyFnxfg=','����ͬѧ','testTEST1771163081@test.com','13800138000','MEMBER',0,'2026-02-18 08:16:37','2026-02-23 07:04:49'),(27,'22406032001','RerBXm1xrJqSBMIE9v69ZQ==','康阿辉','3508008752@QQ.COM','18297382246','MEMBER',1,'2026-03-10 13:32:36','2026-03-20 06:04:22'),(28,'22506031033','qlkkHyFnxfg=','刘鸣燕','','18055196731','MEMBER',1,'2026-03-10 13:45:53','2026-03-10 13:45:53');
+INSERT INTO `user` VALUES (1,'admin','RerBXm1xrJqSBMIE9v69ZQ==','张三2','admin@hsu.com2','13800138032','ADMIN',1,'2025-12-21 14:17:28','2026-02-18 01:43:20'),(2,'member1','Bkj4xIPxGT0=','NewTest','newtest@test.com','222222222','MEMBER',1,'2025-12-21 14:17:28','2026-02-23 07:31:10'),(3,'12445','qlkkHyFnxfg=','测试用户2','dfsgs@hsu.edu.cn','18725533292','MEMBER',1,'2026-01-21 07:01:10','2026-02-21 11:05:37'),(22,'12445235','qlkkHyFnxfg=','Unknown','dfsgs_1@hsu.edu.cn','18725533292','MEMBER',1,'2026-01-21 08:40:42','2026-01-21 08:40:42'),(23,'testuser123','test','测试用户','test@test.com','13900000000','MEMBER',1,'2026-02-15 13:58:58','2026-02-15 13:58:58'),(24,'FINAL21771164883','qlkkHyFnxfg=','���ղ���2','final2@test.com','13600000000','MEMBER',1,'2026-02-18 01:36:59','2026-02-18 01:36:59'),(25,'REJECTTEST1771164573','qlkkHyFnxfg=','�ܾ�����','reject@test.com','13900000000','MEMBER',1,'2026-02-18 01:48:09','2026-02-18 01:48:09'),(26,'TEST1771163081','qlkkHyFnxfg=','����ͬѧ','testTEST1771163081@test.com','13800138000','MEMBER',0,'2026-02-18 08:16:37','2026-02-23 07:04:49'),(27,'22406032001','RerBXm1xrJqSBMIE9v69ZQ==','康阿辉','3508008752@QQ.COM','18297382246','MEMBER',1,'2026-03-10 13:32:36','2026-03-20 06:04:22'),(28,'22506031033','qlkkHyFnxfg=','刘鸣燕','','18055196731','MEMBER',1,'2026-03-10 13:45:53','2026-03-10 13:45:53');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1369,3 +1369,33 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-03-26 17:47:18
+
+--
+-- Table structure for table `problem_report`
+--
+
+DROP TABLE IF EXISTS `problem_report`;
+/*!40101 SET @saved_cs_client = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `problem_report` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '问题ID',
+  `title` varchar(200) NOT NULL COMMENT '问题标题',
+  `content` text NOT NULL COMMENT '问题描述',
+  `reporter_name` varchar(100) DEFAULT NULL COMMENT '报告者姓名（游客可填）',
+  `reporter_contact` varchar(100) DEFAULT NULL COMMENT '联系方式（游客可填）',
+  `reporter_type` enum('GUEST','MEMBER','ADMIN') NOT NULL DEFAULT 'GUEST' COMMENT '报告者类型',
+  `user_id` int DEFAULT NULL COMMENT '关联用户ID（如果是成员/管理员）',
+  `category` enum('VERIFIED','UNVERIFIED','INVALID') NOT NULL DEFAULT 'UNVERIFIED' COMMENT '问题分类：VERIFIED-属实，UNVERIFIED-待验证，INVALID-不属实',
+  `status` enum('PENDING','SOLVING','SOLVED','UNSOLVED') DEFAULT 'PENDING' COMMENT '状态：PENDING-待处理，SOLVING-正在解决，SOLVED-已解决，UNSOLVED-未解决（仅属实问题有状态）',
+  `admin_comment` text DEFAULT NULL COMMENT '管理员备注/回复',
+  `handled_by` int DEFAULT NULL COMMENT '处理人ID',
+  `handled_at` datetime DEFAULT NULL COMMENT '处理时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_category` (`category`),
+  KEY `idx_status` (`status`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问题反馈表';
+/*!40101 SET character_set_client = @saved_cs_client */;

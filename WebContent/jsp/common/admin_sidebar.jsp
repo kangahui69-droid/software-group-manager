@@ -7,7 +7,7 @@
         <div class="offcanvas-body">
             <div class="row row-cards text-center">
                 <div class="col-6 mb-3">
-                    <a href="${pageContext.request.contextPath}/admin/index.jsp" class="card card-link card-body p-3">
+                    <a href="${pageContext.request.contextPath}/admin/dashboard" class="card card-link card-body p-3">
                         <div class="mb-2">
                             <i class="bi bi-speedometer2 h2 text-primary"></i>
                         </div>
@@ -78,6 +78,22 @@
                             <i class="bi bi-journal-text h2 text-secondary"></i>
                         </div>
                         <div class="text-truncate">操作日志</div>
+                    </a>
+                </div>
+                <div class="col-6 mb-3">
+                    <a href="${pageContext.request.contextPath}/attendance/manage" class="card card-link card-body p-3">
+                        <div class="mb-2">
+                            <i class="bi bi-clock-history h2 text-pink"></i>
+                        </div>
+                        <div class="text-truncate">考勤管理</div>
+                    </a>
+                </div>
+                <div class="col-6 mb-3">
+                    <a href="${pageContext.request.contextPath}/problem?action=list" class="card card-link card-body p-3">
+                        <div class="mb-2">
+                            <i class="bi bi-exclamation-triangle h2 text-orange"></i>
+                        </div>
+                        <div class="text-truncate">问题反馈</div>
                     </a>
                 </div>
             </div>

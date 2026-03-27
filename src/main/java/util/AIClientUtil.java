@@ -8,6 +8,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.util.EntityUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -65,6 +66,90 @@ public class AIClientUtil {
         }
     }
 
+    public void chatStream(String systemPrompt, String userMessage, javax.servlet.http.HttpServletResponse response) throws Exception {
+        response.setContentType("text/event-stream;charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Connection", "keep-alive");
+        response.setHeader("Access-Control-Allow-Origin", "*");
+
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(createMessage("system", systemPrompt));
+        messages.add(createMessage("user", userMessage));
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        requestBody.put("stream", true);
+
+        HttpPost request = new HttpPost(apiUrl);
+        request.setHeader("Authorization", "Bearer " + apiKey);
+        request.setHeader("Content-Type", "application/json");
+        request.setEntity(new StringEntity(gson.toJson(requestBody), StandardCharsets.UTF_8));
+
+        CloseableHttpClient client = HttpClients.custom()
+                .setRedirectStrategy(new LaxRedirectStrategy())
+                .build();
+
+        try {
+            HttpResponse httpResponse = client.execute(request);
+            int statusCode = httpResponse.getStatusLine().getStatusCode();
+            
+            if (statusCode != 200) {
+                String errorBody = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);
+                response.getWriter().write("data: [ERROR] " + statusCode + " - " + errorBody + "\n\n");
+                response.getWriter().flush();
+                return;
+            }
+
+            java.io.InputStream inputStream = httpResponse.getEntity().getContent();
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(inputStream, StandardCharsets.UTF_8));
+
+            String line;
+            String fullContent = "";
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("data: ")) {
+                    String data = line.substring(6);
+                    if ("[DONE]".equals(data)) {
+                        break;
+                    }
+                    try {
+                        Map<String, Object> respMap = gson.fromJson(data, Map.class);
+                        if (respMap != null && respMap.containsKey("choices")) {
+                            List<Map<String, Object>> choices = (List<Map<String, Object>>) respMap.get("choices");
+                            if (choices != null && !choices.isEmpty()) {
+                                Map<String, Object> choice = choices.get(0);
+                                if (choice.containsKey("delta")) {
+                                    Map<String, Object> delta = (Map<String, Object>) choice.get("delta");
+                                    if (delta != null && delta.containsKey("content")) {
+                                        String content = (String) delta.get("content");
+                                        fullContent += content;
+                                        response.getWriter().write("data: " + escapeForSSE(content) + "\n\n");
+                                        response.getWriter().flush();
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // 忽略解析错误，继续读取
+                    }
+                }
+            }
+            response.getWriter().write("data: [DONE]\n\n");
+            response.getWriter().flush();
+        } finally {
+            client.close();
+        }
+    }
+
+    private String escapeForSSE(String text) {
+        return text.replace("\\", "\\\\")
+                   .replace("\n", "\\n")
+                   .replace("\r", "\\r")
+                   .replace("\t", "\\t");
+    }
+
     private String chatWithMinimax(String systemPrompt, String userMessage) throws Exception {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(createMessage("system", systemPrompt));
@@ -79,36 +164,49 @@ public class AIClientUtil {
         request.setHeader("Content-Type", "application/json");
         request.setEntity(new StringEntity(gson.toJson(requestBody), StandardCharsets.UTF_8));
         
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+        CloseableHttpClient client = HttpClients.custom()
+                .setRedirectStrategy(new LaxRedirectStrategy())
+                .build();
+        
+        try {
             HttpResponse response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
             String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            System.out.println("[AIClient] MiniMax response status: " + statusCode);
             System.out.println("[AIClient] MiniMax response: " + responseBody);
             
-            Map<String, Object> respMap = gson.fromJson(responseBody, Map.class);
+            if (statusCode != 200) {
+                return "MiniMax服务错误: HTTP " + statusCode + " - " + responseBody;
+            }
             
-            if (respMap.containsKey("choices")) {
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) respMap.get("choices");
-                if (choices != null && !choices.isEmpty()) {
-                    Map<String, Object> choice = choices.get(0);
-                    if (choice.containsKey("message")) {
-                        Map<String, Object> message = (Map<String, Object>) choice.get("message");
-                        return (String) message.get("content");
+            if (responseBody.trim().startsWith("{")) {
+                Map<String, Object> respMap = gson.fromJson(responseBody, Map.class);
+                
+                if (respMap.containsKey("choices")) {
+                    List<Map<String, Object>> choices = (List<Map<String, Object>>) respMap.get("choices");
+                    if (choices != null && !choices.isEmpty()) {
+                        Map<String, Object> choice = choices.get(0);
+                        if (choice.containsKey("message")) {
+                            Map<String, Object> message = (Map<String, Object>) choice.get("message");
+                            return (String) message.get("content");
+                        }
                     }
                 }
-            }
-            
-            if (respMap.containsKey("base_resp")) {
-                Map<String, Object> baseResp = (Map<String, Object>) respMap.get("base_resp");
-                if (baseResp.containsKey("status_msg")) {
-                    return "MiniMax服务错误: " + baseResp.get("status_msg");
+                
+                if (respMap.containsKey("error")) {
+                    Object error = respMap.get("error");
+                    if (error instanceof Map) {
+                        Map<String, Object> errorMap = (Map<String, Object>) error;
+                        return "MiniMax服务错误: " + (errorMap.get("message") != null ? errorMap.get("message") : errorMap.toString());
+                    }
+                    return "MiniMax服务错误: " + error.toString();
                 }
             }
             
-            if (respMap.containsKey("error")) {
-                return "MiniMax错误: " + respMap.get("error");
-            }
+            return responseBody;
+        } finally {
+            client.close();
         }
-        return "抱歉，无法获取AI回复。";
     }
 
     private String chatWithWenxin(String systemPrompt, String userMessage) throws Exception {

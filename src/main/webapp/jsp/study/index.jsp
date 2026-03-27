@@ -182,7 +182,7 @@
                         </div>
 
                         <!-- 学习规则弹窗 -->
-                        <div id="rulesModal" class="modal modal-blur fade" style="display: none;" tabindex="-1">
+                        <dialog id="rulesModal" class="modal modal-blur fade">
                             <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
@@ -207,16 +207,14 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </dialog>
 
                         <script>
                             function showRules() {
-                                var modal = new bootstrap.Modal(document.getElementById('rulesModal'));
-                                modal.show();
+                                document.getElementById('rulesModal').showModal();
                             }
                             function closeRules() {
-                                var modal = bootstrap.Modal.getInstance(document.getElementById('rulesModal'));
-                                if (modal) modal.hide();
+                                document.getElementById('rulesModal').close();
                             }
                         </script>
                     </div>

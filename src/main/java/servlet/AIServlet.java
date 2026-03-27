@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import model.AIMessage;
 import model.User;
 import service.AIService;
+import util.AIClientUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -67,8 +68,41 @@ public class AIServlet extends HttpServlet {
 
         if ("send".equals(action)) {
             sendMessage(req, resp);
+        } else if ("sendStream".equals(action)) {
+            sendMessageStream(req, resp);
         } else if ("clear".equals(action)) {
             clearConversation(req, resp);
+        }
+    }
+
+    private void sendMessageStream(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String message = req.getParameter("message");
+        String sessionId = req.getParameter("session_id");
+
+        if (message == null || message.trim().isEmpty()) {
+            resp.setContentType("text/event-stream;charset=UTF-8");
+            resp.getWriter().write("data: [ERROR] 消息不能为空\n\n");
+            return;
+        }
+
+        HttpSession session = req.getSession(false);
+        User user = null;
+        if (session != null && session.getAttribute("user") != null) {
+            user = (User) session.getAttribute("user");
+        }
+
+        String userRole = user != null ? user.getRole() : "GUEST";
+        String systemPrompt = aiService.buildSystemPrompt(userRole);
+        String context = aiService.buildContext(message, userRole);
+        String fullPrompt = systemPrompt + "\n\n" + context;
+
+        try {
+            AIClientUtil aiClient = AIClientUtil.getInstance();
+            aiClient.chatStream(fullPrompt, message, resp);
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.setContentType("text/event-stream;charset=UTF-8");
+            resp.getWriter().write("data: [ERROR] " + e.getMessage() + "\n\n");
         }
     }
 

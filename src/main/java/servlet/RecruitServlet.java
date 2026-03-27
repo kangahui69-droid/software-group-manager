@@ -122,7 +122,7 @@ public class RecruitServlet extends HttpServlet {
             return;
         }
 
-        if ("/submit".equals(pathInfo)) {
+        if ("/submit".equals(pathInfo) || "/recruit/submit".equals(servletPath)) {
             handlePublicSubmit(request, response);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
