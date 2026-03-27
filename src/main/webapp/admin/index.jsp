@@ -186,7 +186,7 @@
                 </a>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <a href="<%= contextPath %>/study/manage" class="card card-link">
+                <a href="<%= contextPath %>/attendance/manage" class="card card-link">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="subheader">学习管理</div>

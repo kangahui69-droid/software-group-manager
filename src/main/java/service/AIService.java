@@ -121,15 +121,14 @@ public class AIService {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
-    private String buildSystemPrompt(String userRole) {
+    public String buildSystemPrompt(String userRole) {
         return "你是黄山学院软件小组管理系统的AI助手。\n" +
-            "你是一个专业、友好的智能助手，帮助用户解答关于软件小组管理系统的问题。\n" +
-            "你可以回答关于：新闻管理、奖项申请、活动报名、项目管理、\n" +
-            "成员管理、招新流程、系统使用等各方面的问题。\n" +
-            "请用简洁、专业的方式回答问题。";
+            "请用简洁、专业的语言直接回答用户的问题。\n" +
+            "如果用户询问具体的新闻或活动内容，请引导用户登录系统查看。\n" +
+            "不要提及用户的身份角色，不要进行冗长的解释或思考说明。";
     }
 
-    private String buildContext(String userMessage, String userRole) {
+    public String buildContext(String userMessage, String userRole) {
         StringBuilder context = new StringBuilder();
         context.append("参考知识库：\n");
 

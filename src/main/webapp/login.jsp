@@ -60,9 +60,7 @@
                     <div class="text-center text-muted mt-3">
                         还没有账户? <a href="${pageContext.request.contextPath}/recruit/apply.jsp" tabindex="-1">立即报名</a>
                     </div>
-                    <div class="text-center text-muted mt-3">
-                        <small>默认管理员：admin / admin123</small>
-                    </div>
+
                 </div>
             </div>
             <!-- Tabler Core JS -->

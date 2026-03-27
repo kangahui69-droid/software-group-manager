@@ -23,14 +23,6 @@
                     </a>
                 </div>
                 <div class="col-6 mb-3">
-                    <a href="${pageContext.request.contextPath}/ai?action=statistics" class="card card-link card-body p-3">
-                        <div class="mb-2">
-                            <i class="bi bi-graph-up h2 text-warning"></i>
-                        </div>
-                        <div class="text-truncate">AI统计</div>
-                    </a>
-                </div>
-                <div class="col-6 mb-3">
                     <a href="${pageContext.request.contextPath}/news?action=manage"
                         class="card card-link card-body p-3">
                         <div class="mb-2">
@@ -86,6 +78,22 @@
                             <i class="bi bi-journal-text h2 text-secondary"></i>
                         </div>
                         <div class="text-truncate">操作日志</div>
+                    </a>
+                </div>
+                <div class="col-6 mb-3">
+                    <a href="${pageContext.request.contextPath}/attendance/manage" class="card card-link card-body p-3">
+                        <div class="mb-2">
+                            <i class="bi bi-clock-history h2 text-pink"></i>
+                        </div>
+                        <div class="text-truncate">考勤管理</div>
+                    </a>
+                </div>
+                <div class="col-6 mb-3">
+                    <a href="${pageContext.request.contextPath}/problem?action=list" class="card card-link card-body p-3">
+                        <div class="mb-2">
+                            <i class="bi bi-exclamation-triangle h2 text-orange"></i>
+                        </div>
+                        <div class="text-truncate">问题反馈</div>
                     </a>
                 </div>
             </div>

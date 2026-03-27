@@ -299,6 +299,14 @@
                                                     <span class="nav-link-title">招新报名</span>
                                                 </a>
                                             </li>
+                                            <li class="nav-item ${param.active == 'problem' ? 'active' : ''}">
+                                                <a class="nav-link"
+                                                    href="${pageContext.request.contextPath}/problem-report.jsp">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-exclamation-triangle"></i></span>
+                                                    <span class="nav-link-title">问题反馈</span>
+                                                </a>
+                                            </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role != 'ADMIN'}">
                                             <li class="nav-item ${param.active == 'ai' ? 'active' : ''}">
@@ -328,6 +336,20 @@
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-calendar-event"></i></span>
                                                     <span class="nav-link-title">活动新闻</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'study' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/study">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-book"></i></span>
+                                                    <span class="nav-link-title">学习中心</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'problem' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/member/problem">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-exclamation-triangle"></i></span>
+                                                    <span class="nav-link-title">问题反馈</span>
                                                 </a>
                                             </li>
                                         </c:when>
@@ -394,6 +416,20 @@
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-journal-text"></i></span>
                                                     <span class="nav-link-title">日志</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'attendance' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/attendance/manage">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-clock-history"></i></span>
+                                                    <span class="nav-link-title">考勤</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'problem' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/admin/problem">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-gear"></i></span>
+                                                    <span class="nav-link-title">问题管理</span>
                                                 </a>
                                             </li>
                                         </c:when>

@@ -54,7 +54,11 @@ public class AuthFilter implements Filter {
                 requestURI.contains("/news?action=detail") ||
                 // 主页（公开）
                 requestURI.endsWith(contextPath + "/index.jsp") ||
-                requestURI.endsWith(contextPath + "/");
+                requestURI.endsWith(contextPath + "/") ||
+                // 问题反馈页面（公开，游客可提交）
+                requestURI.endsWith(contextPath + "/problem-report.jsp") ||
+                requestURI.equals(contextPath + "/problem") ||
+                requestURI.startsWith(contextPath + "/problem?");
 
         // 如果是公开路径，直接放行
         if (isPublicPath) {

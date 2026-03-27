@@ -1,7 +1,9 @@
 package servlet;
 
 import dao.AttendanceDAO;
+import dao.StudySessionDAO;
 import model.Attendance;
+import model.StudySession;
 import model.User;
 import util.AuthHelper;
 
@@ -16,6 +18,7 @@ import java.util.*;
 public class AttendanceServlet extends HttpServlet {
 
     private AttendanceDAO attendanceDAO = new AttendanceDAO();
+    private StudySessionDAO studyDAO = new StudySessionDAO();
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
     @Override
@@ -182,6 +185,8 @@ public class AttendanceServlet extends HttpServlet {
             String endDateStr = req.getParameter("endDate");
             String userIdStr = req.getParameter("userId");
             String pageStr = req.getParameter("page");
+            String tab = req.getParameter("tab");
+            if (tab == null) tab = "attendance";
 
             Date startDate = startDateStr != null && !startDateStr.isEmpty() ? sdf.parse(startDateStr) : null;
             Date endDate = endDateStr != null && !endDateStr.isEmpty() ? sdf.parse(endDateStr) : null;
@@ -190,14 +195,19 @@ public class AttendanceServlet extends HttpServlet {
             int pageSize = 30;
             int offset = (page - 1) * pageSize;
 
-            List<Attendance> list = attendanceDAO.getAllAttendance(startDate, endDate, userId, offset, pageSize);
+            List<Attendance> attendanceList = attendanceDAO.getAllAttendance(startDate, endDate, userId, offset, pageSize);
+            List<StudySession> sessionList = studyDAO.getAllSessions(startDate, endDate, userId, offset, pageSize);
+            Map<String, Object> sessionStats = studyDAO.getStatistics(userId, startDate, endDate);
 
-            req.setAttribute("attendanceList", list);
+            req.setAttribute("attendanceList", attendanceList);
+            req.setAttribute("sessionList", sessionList);
+            req.setAttribute("sessionStats", sessionStats);
             req.setAttribute("startDate", startDateStr);
             req.setAttribute("endDate", endDateStr);
             req.setAttribute("selectedUserId", userIdStr);
             req.setAttribute("currentPage", page);
             req.setAttribute("currentUser", currentUser);
+            req.setAttribute("activeTab", tab);
 
             req.getRequestDispatcher("/jsp/admin/attendance/manage.jsp").forward(req, resp);
         } catch (Exception e) {

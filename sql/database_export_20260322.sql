@@ -2608,7 +2608,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `phone`, `role`, `status`, `created_at`, `updated_at`) VALUES (1,'admin','sEVTxpZ/OQykR2QyQb9BWw==','张三2','admin@hsu.com2','13800138032','ADMIN',1,'2025-12-21 14:17:28','2026-02-18 01:43:20');
+INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `phone`, `role`, `status`, `created_at`, `updated_at`) VALUES (1,'admin','RerBXm1xrJqSBMIE9v69ZQ==','张三2','admin@hsu.com2','13800138032','ADMIN',1,'2025-12-21 14:17:28','2026-02-18 01:43:20');
 INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `phone`, `role`, `status`, `created_at`, `updated_at`) VALUES (2,'member1','Bkj4xIPxGT0=','NewTest','newtest@test.com','222222222','MEMBER',1,'2025-12-21 14:17:28','2026-02-23 07:31:10');
 INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `phone`, `role`, `status`, `created_at`, `updated_at`) VALUES (3,'12445','qlkkHyFnxfg=','测试用户2','dfsgs@hsu.edu.cn','18725533292','MEMBER',1,'2026-01-21 07:01:10','2026-02-21 11:05:37');
 INSERT INTO `user` (`id`, `username`, `password`, `name`, `email`, `phone`, `role`, `status`, `created_at`, `updated_at`) VALUES (22,'12445235','qlkkHyFnxfg=','Unknown','dfsgs_1@hsu.edu.cn','18725533292','MEMBER',1,'2026-01-21 08:40:42','2026-01-21 08:40:42');

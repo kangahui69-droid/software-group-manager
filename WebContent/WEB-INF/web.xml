@@ -62,7 +62,7 @@
         <filter-class>filter.SecurityFilter</filter-class>
         <init-param>
             <param-name>excludeUrls</param-name>
-            <param-value>/login,/logout,/csrf-token</param-value>
+            <param-value>/login,/logout,/csrf-token,/problem-report.jsp,/problem,/member/problem</param-value>
         </init-param>
     </filter>
     <filter-mapping>
@@ -285,6 +285,38 @@
     <servlet-mapping>
         <servlet-name>ProfileServlet</servlet-name>
         <url-pattern>/member/profile/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- 问题反馈Servlet -->
+    <servlet>
+        <servlet-name>ProblemReportServlet</servlet-name>
+        <servlet-class>servlet.ProblemReportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProblemReportServlet</servlet-name>
+        <url-pattern>/problem</url-pattern>
+    </servlet-mapping>
+
+    <!-- 成员问题反馈Servlet -->
+    <servlet>
+        <servlet-name>MemberProblemServlet</servlet-name>
+        <servlet-class>servlet.MemberProblemServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MemberProblemServlet</servlet-name>
+        <url-pattern>/member/problem</url-pattern>
+        <url-pattern>/member/problem/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- 问题管理Servlet -->
+    <servlet>
+        <servlet-name>ProblemManagementServlet</servlet-name>
+        <servlet-class>servlet.ProblemManagementServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProblemManagementServlet</servlet-name>
+        <url-pattern>/admin/problem</url-pattern>
+        <url-pattern>/admin/problem/*</url-pattern>
     </servlet-mapping>
 
     <!-- 默认首页 -->
