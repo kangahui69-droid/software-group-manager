@@ -95,7 +95,7 @@
                                     <span class="input-group-text">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                     </span>
-                                    <input type="date" class="form-control" name="expectedStartDate" id="expectedStartDate" min="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
+                                    <input type="date" class="form-control" name="expectedStartDate">
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -104,7 +104,7 @@
                                     <span class="input-group-text">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                     </span>
-                                    <input type="date" class="form-control" name="expectedEndDate" id="expectedEndDate">
+                                    <input type="date" class="form-control" name="expectedEndDate">
                                 </div>
                             </div>
                         </div>
@@ -142,37 +142,3 @@
 </div>
 
 <jsp:include page="../../jsp/common/layout_bottom.jsp" />
-<script>
-    // 日期验证逻辑
-    document.addEventListener('DOMContentLoaded', function() {
-        var startDateInput = document.getElementById('expectedStartDate');
-        var endDateInput = document.getElementById('expectedEndDate');
-        
-        // 当开始时间改变时，更新结束时间的最小值
-        startDateInput.addEventListener('change', function() {
-            if (this.value) {
-                endDateInput.min = this.value;
-                // 如果结束时间早于开始时间，清空结束时间
-                if (endDateInput.value && endDateInput.value < this.value) {
-                    endDateInput.value = '';
-                }
-            } else {
-                endDateInput.removeAttribute('min');
-            }
-        });
-        
-        // 表单提交验证
-        document.querySelector('form').addEventListener('submit', function(e) {
-            var startDate = startDateInput.value;
-            var endDate = endDateInput.value;
-            
-            if (startDate && endDate) {
-                if (endDate < startDate) {
-                    alert('期望结束时间不能早于期望开始时间');
-                    e.preventDefault();
-                    return false;
-                }
-            }
-        });
-    });
-</script>

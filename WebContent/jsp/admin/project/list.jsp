@@ -38,9 +38,6 @@
                             <option value="">全部</option>
                             <option value="pending" ${status == 'pending' ? 'selected' : ''}>待审核</option>
                             <option value="approved" ${status == 'approved' ? 'selected' : ''}>已通过</option>
-                            <option value="in_progress" ${status == 'in_progress' ? 'selected' : ''}>进行中</option>
-                            <option value="completed" ${status == 'completed' ? 'selected' : ''}>已完成</option>
-                            <option value="canceled" ${status == 'canceled' ? 'selected' : ''}>已取消</option>
                             <option value="rejected" ${status == 'rejected' ? 'selected' : ''}>已拒绝</option>
                         </select>
                     </div>

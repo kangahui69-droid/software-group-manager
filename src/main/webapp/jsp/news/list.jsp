@@ -1,8 +1,23 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+        <%-- 根据新闻类型设置导航激活状态和页面标题 --%>
+        <%
+            String newsType = request.getParameter("type");
+            String activeNav = "notice";
+            String pageTitle = "通知公告";
+            if ("award".equals(newsType)) {
+                activeNav = "award";
+                pageTitle = "获奖新闻";
+            } else if ("activity".equals(newsType)) {
+                activeNav = "activity";
+                pageTitle = "活动新闻";
+            }
+            request.setAttribute("activeNav", activeNav);
+            request.setAttribute("pageTitle", pageTitle);
+        %>
         <jsp:include page="../common/layout_top.jsp">
-            <jsp:param name="title" value="新闻动态" />
-            <jsp:param name="active" value="${param.type}" />
+            <jsp:param name="title" value="${pageTitle}" />
+            <jsp:param name="active" value="${activeNav}" />
         </jsp:include>
 
         <div class="page-wrapper">
@@ -11,7 +26,7 @@
                     <div class="row g-2 align-items-center">
                         <div class="col">
                             <h2 class="page-title">
-                                新闻动态
+                                ${pageTitle}
                             </h2>
                         </div>
                     </div>

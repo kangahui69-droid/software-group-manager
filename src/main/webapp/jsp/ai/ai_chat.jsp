@@ -284,27 +284,31 @@
 
         addMessage('user', message);
         document.getElementById('messageInput').value = '';
-        showTyping(true);
-
+        
         var sessionId = document.getElementById('sessionId').value;
-
+        var messagesDiv = document.getElementById('chatMessages');
+        
+        var assistantMsgDiv = createAssistantMessage();
+        messagesDiv.appendChild(assistantMsgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+        var assistantContentDiv = assistantMsgDiv.querySelector('.message-content');
+        
         fetch('${pageContext.request.contextPath}/ai?action=send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'message=' + encodeURIComponent(message) + '&session_id=' + encodeURIComponent(sessionId)
         })
-        .then(res => res.json())
+        .then(response => response.json())
         .then(data => {
-            showTyping(false);
             if (data.success) {
-                addMessage('assistant', data.response);
+                assistantContentDiv.innerHTML = data.response.replace(/\n/g, '<br>');
             } else {
-                addMessage('assistant', '抱歉，发生了错误：' + (data.error || '未知错误'));
+                assistantContentDiv.innerHTML = '<span class="text-danger">' + (data.error || '回复失败') + '</span>';
             }
         })
         .catch(err => {
-            showTyping(false);
-            addMessage('assistant', '网络错误，请稍后重试。');
+            assistantContentDiv.innerHTML = '<span class="text-danger">网络错误，请稍后重试。</span>';
             console.error(err);
         });
     });
@@ -330,13 +334,19 @@
         messagesDiv.appendChild(msgDiv);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
-
-    function showTyping(show) {
-        document.getElementById('typingIndicator').style.display = show ? 'block' : 'none';
-        if (show) {
-            var messagesDiv = document.getElementById('chatMessages');
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+    
+    function createAssistantMessage() {
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'message assistant';
+        
+        var time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        var roleBadge = '<span class="role-badge" style="background: #667eea; color: white;"><i class="bi bi-robot me-1"></i>AI助手</span>';
+        
+        msgDiv.innerHTML = roleBadge + 
+                          '<div class="message-content"><span class="text-muted">正在输入...</span></div>' +
+                          '<div class="message-time"><i class="bi bi-robot me-1"></i>AI助手 · ' + time + '</div>';
+        
+        return msgDiv;
     }
 
     document.getElementById('messageInput').addEventListener('keydown', function(e) {

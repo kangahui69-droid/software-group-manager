@@ -294,43 +294,17 @@
         
         var assistantContentDiv = assistantMsgDiv.querySelector('.message-content');
         
-        fetch('${pageContext.request.contextPath}/ai?action=sendStream', {
+        fetch('${pageContext.request.contextPath}/ai?action=send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'message=' + encodeURIComponent(message) + '&session_id=' + encodeURIComponent(sessionId)
         })
-        .then(async response => {
-            if (!response.ok) {
-                throw new Error('网络错误');
-            }
-            
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let fullContent = '';
-            
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
-                
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = line.slice(6);
-                        if (data === '[DONE]') {
-                            break;
-                        }
-                        if (data.startsWith('[ERROR]')) {
-                            assistantContentDiv.innerHTML = '<span class="text-danger">' + data.slice(7) + '</span>';
-                            return;
-                        }
-                        
-                        fullContent += data;
-                        assistantContentDiv.innerHTML = fullContent.replace(/\n/g, '<br>');
-                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                    }
-                }
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                assistantContentDiv.innerHTML = data.response.replace(/\n/g, '<br>');
+            } else {
+                assistantContentDiv.innerHTML = '<span class="text-danger">' + (data.error || '回复失败') + '</span>';
             }
         })
         .catch(err => {

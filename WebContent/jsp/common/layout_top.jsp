@@ -377,7 +377,7 @@
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'activity' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/activity/list">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/activity?action=manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-calendar-check"></i></span>
                                                     <span class="nav-link-title">活动</span>
@@ -421,8 +421,8 @@
                                             <li class="nav-item ${param.active == 'attendance' ? 'active' : ''}">
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/attendance/manage">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-clock-history"></i></span>
-                                                    <span class="nav-link-title">考勤</span>
+                                                            class="bi bi-book"></i></span>
+                                                    <span class="nav-link-title">学习管理</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'problem' ? 'active' : ''}">

@@ -32,14 +32,9 @@
                         <h3 class="card-title">活动信息</h3>
                     </div>
                     <div class="card-body">
-                        <c:if test="${not empty param.error}">
+                        <c:if test="${not empty error}">
                             <div class="alert alert-danger">
-                                ${param.error}
-                            </div>
-                        </c:if>
-                        <c:if test="${not empty param.success}">
-                            <div class="alert alert-success">
-                                ${param.success}
+                                ${error}
                             </div>
                         </c:if>
                         
@@ -96,16 +91,15 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">开始时间</label>
-                                    <input type="datetime-local" class="form-control" name="activityStartTime" id="activityStartTime"
-                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd HH:mm' />"
-                                           min="<%= new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date()) %>">
+                                    <input type="datetime-local" class="form-control" name="activityStartTime" 
+                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd HH:mm' />">
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">结束时间</label>
-                                    <input type="datetime-local" class="form-control" name="activityEndTime" id="activityEndTime"
+                                    <input type="datetime-local" class="form-control" name="activityEndTime" 
                                            value="<fmt:formatDate value='${activity.activityEndTime}' pattern='yyyy-MM-dd HH:mm' />">
                                 </div>
                             </div>
@@ -115,16 +109,15 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">报名开始时间</label>
-                                    <input type="datetime-local" class="form-control" name="registrationStartTime" id="registrationStartTime"
-                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd HH:mm' />"
-                                           min="<%= new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date()) %>">
+                                    <input type="datetime-local" class="form-control" name="registrationStartTime" 
+                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd HH:mm' />">
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">报名截止时间</label>
-                                    <input type="datetime-local" class="form-control" name="registrationEndTime" id="registrationEndTime"
+                                    <input type="datetime-local" class="form-control" name="registrationEndTime" 
                                            value="<fmt:formatDate value='${activity.registrationEndTime}' pattern='yyyy-MM-dd HH:mm' />">
                                 </div>
                             </div>
@@ -151,22 +144,11 @@
                         <div class="mb-3">
                             <label class="form-label required">活动状态</label>
                             <select class="form-select" name="status" required>
-                                <%-- 新建活动：只允许选择"即将开始"或"进行中" --%>
-                                <c:if test="${empty activity}">
-                                    <option value="upcoming" selected>即将开始</option>
-                                    <option value="ongoing">进行中</option>
-                                </c:if>
-                                <%-- 编辑活动：显示所有状态 --%>
-                                <c:if test="${not empty activity}">
-                                    <option value="upcoming" ${activity.status eq 'upcoming' ? 'selected' : ''}>即将开始</option>
-                                    <option value="ongoing" ${activity.status eq 'ongoing' ? 'selected' : ''}>进行中</option>
-                                    <option value="completed" ${activity.status eq 'completed' ? 'selected' : ''}>已结束</option>
-                                    <option value="canceled" ${activity.status eq 'canceled' ? 'selected' : ''}>已取消</option>
-                                </c:if>
+                                <option value="upcoming" ${empty activity or activity.status eq 'upcoming' ? 'selected' : ''}>即将开始</option>
+                                <option value="ongoing" ${activity.status eq 'ongoing' ? 'selected' : ''}>进行中</option>
+                                <option value="completed" ${activity.status eq 'completed' ? 'selected' : ''}>已结束</option>
+                                <option value="canceled" ${activity.status eq 'canceled' ? 'selected' : ''}>已取消</option>
                             </select>
-                            <c:if test="${empty activity}">
-                                <small class="text-muted">新建活动时只能选择"即将开始"或"进行中"</small>
-                            </c:if>
                         </div>
                     </div>
                     <div class="card-footer text-end">
@@ -236,118 +218,4 @@
         }
     }
 })();
-
-// 显示错误提示的辅助函数
-function showFieldError(message) {
-    // 移除已存在的错误提示
-    var existingError = document.querySelector('.field-error-alert');
-    if (existingError) {
-        existingError.remove();
-    }
-
-    // 创建错误提示元素
-    var errorDiv = document.createElement('div');
-    errorDiv.className = 'alert alert-danger field-error-alert';
-    errorDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ' + message;
-
-    // 插入到表单顶部
-    var cardBody = document.querySelector('.card-body');
-    var firstChild = cardBody.firstChild;
-    cardBody.insertBefore(errorDiv, firstChild);
-
-    // 滚动到顶部
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // 3秒后自动移除
-    setTimeout(function() {
-        if (errorDiv.parentNode) {
-            errorDiv.remove();
-        }
-    }, 5000);
-}
-
-// 日期验证逻辑
-document.addEventListener('DOMContentLoaded', function() {
-    var activityStartInput = document.getElementById('activityStartTime');
-    var activityEndInput = document.getElementById('activityEndTime');
-    var regStartInput = document.getElementById('registrationStartTime');
-    var regEndInput = document.getElementById('registrationEndTime');
-
-    // 当活动时间改变时，更新结束时间的最小值
-    activityStartInput.addEventListener('change', function() {
-        if (this.value) {
-            activityEndInput.min = this.value;
-            // 如果结束时间早于开始时间，清空结束时间
-            if (activityEndInput.value && activityEndInput.value < this.value) {
-                activityEndInput.value = '';
-                showFieldError('报名截止时间已重置，请重新选择早于活动开始时间的时间');
-            }
-        } else {
-            activityEndInput.removeAttribute('min');
-        }
-    });
-
-    // 当报名开始时间改变时，更新报名结束时间的最小值
-    regStartInput.addEventListener('change', function() {
-        if (this.value) {
-            regEndInput.min = this.value;
-            // 如果报名结束时间早于开始时间，清空结束时间
-            if (regEndInput.value && regEndInput.value < this.value) {
-                regEndInput.value = '';
-            }
-        } else {
-            regEndInput.removeAttribute('min');
-        }
-    });
-
-    // 当活动时间确定后，限制报名截止时间必须早于活动开始时间
-    activityStartInput.addEventListener('change', function() {
-        if (this.value) {
-            // 报名截止时间必须早于活动开始时间（严格小于）
-            regEndInput.max = this.value;
-            // 如果当前报名截止时间晚于或等于活动开始时间，清空报名截止时间
-            if (regEndInput.value && regEndInput.value >= this.value) {
-                regEndInput.value = '';
-                showFieldError('报名截止时间已重置，请重新选择早于活动开始时间的时间');
-            }
-        } else {
-            regEndInput.removeAttribute('max');
-        }
-    });
-
-    // 表单提交验证
-    document.querySelector('form').addEventListener('submit', function(e) {
-        var activityStart = activityStartInput.value;
-        var activityEnd = activityEndInput.value;
-        var regStart = regStartInput.value;
-        var regEnd = regEndInput.value;
-
-        // 验证活动结束时间
-        if (activityStart && activityEnd) {
-            if (activityEnd <= activityStart) {
-                showFieldError('活动结束时间必须晚于开始时间');
-                e.preventDefault();
-                return false;
-            }
-        }
-
-        // 验证报名结束时间
-        if (regStart && regEnd) {
-            if (regEnd <= regStart) {
-                showFieldError('报名截止时间必须晚于报名开始时间');
-                e.preventDefault();
-                return false;
-            }
-        }
-
-        // 验证报名截止时间必须早于活动开始时间（严格小于）
-        if (regEnd && activityStart) {
-            if (regEnd >= activityStart) {
-                showFieldError('报名截止时间必须早于活动开始时间');
-                e.preventDefault();
-                return false;
-            }
-        }
-    });
-});
 </script>

@@ -141,6 +141,23 @@ public class ProblemManagementDAO {
         return report;
     }
 
+    public boolean delete(Integer reportId) {
+        String sql = "DELETE FROM problem_management WHERE report_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, reportId);
+            return pstmt.executeUpdate() >= 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return false;
+    }
+
     private void closeResources(Connection conn, PreparedStatement pstmt, ResultSet rs) {
         try {
             if (rs != null) rs.close();
