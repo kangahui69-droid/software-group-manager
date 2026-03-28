@@ -201,8 +201,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="h2">考勤管理</h3>
-                                <p class="text-muted">查看成员签到签退记录</p>
+                                <h3 class="h2">学习管理</h3>
+                                <p class="text-muted">查看成员学习时长记录</p>
                             </div>
                         </div>
                     </div>

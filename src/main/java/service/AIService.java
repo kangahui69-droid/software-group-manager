@@ -54,7 +54,7 @@ public class AIService {
         String context = buildContext(userMessage, userRole);
         String fullPrompt = systemPrompt + "\n\n" + context;
 
-        String aiResponse = aiClient.chat(fullPrompt, userMessage);
+        String aiResponse = aiClient.chat(systemPrompt, fullPrompt);
 
         AIMessage assistantMsg = new AIMessage();
         assistantMsg.setConversationId(conversation.getId());
@@ -125,7 +125,8 @@ public class AIService {
         return "你是黄山学院软件小组管理系统的AI助手。\n" +
             "请用简洁、专业的语言直接回答用户的问题。\n" +
             "如果用户询问具体的新闻或活动内容，请引导用户登录系统查看。\n" +
-            "不要提及用户的身份角色，不要进行冗长的解释或思考说明。";
+            "不要提及用户的身份角色，不要进行冗长的解释或思考说明。\n" +
+            "重要：只输出最终答案，不要包含任何思考过程、推理步骤或内心独白。";
     }
 
     public String buildContext(String userMessage, String userRole) {

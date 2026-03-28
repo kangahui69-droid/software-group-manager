@@ -19,13 +19,12 @@
                 <jsp:param name="title" value="我的奖项" />
             </jsp:include>
             <div class="container-xl">
-                <%-- 成功提示 --%>
-                <c:if test="${not empty param.success}">
-                    <div class="alert alert-success alert-dismissible" role="alert">
-                        ${param.success}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <h1>我的奖项</h1>
+                <% if ("submit_success".equals(request.getParameter("message"))) { %>
+                    <div class="alert alert-success" role="alert">
+                        提交成功！
                     </div>
-                </c:if>
+                    <% } %>
                         
                         <div class="row row-cards">
                             <!-- 左侧：奖项列表 -->

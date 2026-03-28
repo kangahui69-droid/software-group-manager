@@ -149,26 +149,6 @@
             </div>
         </c:if>
         
-        <!-- 人数上限提示 -->
-        <c:if test="${activity.maxParticipants != null && activity.maxParticipants > 0}">
-            <c:set var="confirmedCount" value="0" />
-            <c:forEach var="r" items="${registrations}">
-                <c:if test="${r.status == 'confirmed'}"><c:set var="confirmedCount" value="${confirmedCount + 1}" /></c:if>
-            </c:forEach>
-            <c:set var="availableSlots" value="${activity.maxParticipants - confirmedCount}" />
-            <div class="alert ${availableSlots > 0 ? 'alert-info' : 'alert-danger'}">
-                <strong>人数限制：</strong>已确认 ${confirmedCount} / ${activity.maxParticipants} 人
-                <c:choose>
-                    <c:when test="${availableSlots > 0}">
-                        （还可通过 <span class="badge bg-primary">${availableSlots}</span> 人）
-                    </c:when>
-                    <c:otherwise>
-                        <span class="text-danger fw-bold">（已满员，无法再通过报名）</span>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-        </c:if>
-
         <!-- 已过期提示 -->
         <c:if test="${activity.registrationEnded}">
             <div class="alert alert-warning">
@@ -213,8 +193,6 @@
                                 <th>姓名</th>
                                 <th>学号</th>
                                 <th>专业</th>
-                                <th>班级</th>
-                                <th>手机号</th>
                                 <th>报名时间</th>
                                 <th>状态</th>
                                 <th>操作</th>
@@ -231,8 +209,6 @@
                                     <td>${r.userName}</td>
                                     <td class="text-muted">${r.studentId}</td>
                                     <td class="text-muted">${r.major}</td>
-                                    <td class="text-muted">${r.grade}</td>
-                                    <td class="text-muted">${r.phone}</td>
                                     <td class="text-muted">
                                         <fmt:formatDate value="${r.createdAt}" pattern="yyyy-MM-dd HH:mm" />
                                     </td>
@@ -274,7 +250,7 @@
                             </c:forEach>
                             <c:if test="${empty registrations}">
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted">暂无报名人员</td>
+                                    <td colspan="7" class="text-center text-muted">暂无报名人员</td>
                                 </tr>
                             </c:if>
                         </tbody>

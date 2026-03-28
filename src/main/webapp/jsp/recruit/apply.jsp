@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
     <jsp:include page="../common/layout_top.jsp">
         <jsp:param name="title" value="招新报名" />
         <jsp:param name="active" value="recruit" />
@@ -18,6 +19,13 @@
 
     <div class="page-body">
         <div class="container-xl">
+            <!-- 错误信息显示 -->
+            <c:if test="${not empty error}">
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    ${error}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </c:if>
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <form action="${pageContext.request.contextPath}/recruit/submit" method="POST" class="card">
@@ -55,8 +63,8 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">邮箱</label>
-                                        <input type="email" class="form-control" name="email" placeholder="可选填">
+                                        <label class="form-label required">邮箱</label>
+                                        <input type="email" class="form-control" name="email" placeholder="请输入邮箱" required>
                                     </div>
                                 </div>
                             </div>

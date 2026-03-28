@@ -48,7 +48,7 @@
                     </a>
                 </div>
                 <div class="col-6 mb-3">
-                    <a href="${pageContext.request.contextPath}/activity/list" class="card card-link card-body p-3">
+                    <a href="${pageContext.request.contextPath}/activity?action=manage" class="card card-link card-body p-3">
                         <div class="mb-2">
                             <i class="bi bi-calendar-check h2 text-green"></i>
                         </div>
@@ -83,13 +83,13 @@
                 <div class="col-6 mb-3">
                     <a href="${pageContext.request.contextPath}/attendance/manage" class="card card-link card-body p-3">
                         <div class="mb-2">
-                            <i class="bi bi-clock-history h2 text-pink"></i>
+                            <i class="bi bi-book h2 text-pink"></i>
                         </div>
-                        <div class="text-truncate">考勤管理</div>
+                        <div class="text-truncate">学习管理</div>
                     </a>
                 </div>
                 <div class="col-6 mb-3">
-                    <a href="${pageContext.request.contextPath}/problem?action=list" class="card card-link card-body p-3">
+                    <a href="${pageContext.request.contextPath}/admin/problem" class="card card-link card-body p-3">
                         <div class="mb-2">
                             <i class="bi bi-exclamation-triangle h2 text-orange"></i>
                         </div>

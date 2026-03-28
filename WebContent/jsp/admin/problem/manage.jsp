@@ -106,6 +106,7 @@
                                                         <td><fmt:formatDate value="${report.createdAt}" pattern="yyyy-MM-dd HH:mm"/></td>
                                                         <td>
                                                             <button class="btn btn-sm btn-primary" onclick="showDetail(${report.id})">查看</button>
+                                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})">删除</button>
                                                         </td>
                                                     </tr>
                                                 </c:forEach>
@@ -156,6 +157,7 @@
                                                         <td><fmt:formatDate value="${report.createdAt}" pattern="yyyy-MM-dd HH:mm"/></td>
                                                         <td>
                                                             <button class="btn btn-sm btn-primary" onclick="showDetail(${report.id})">查看</button>
+                                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})">删除</button>
                                                         </td>
                                                     </tr>
                                                 </c:forEach>
@@ -206,6 +208,7 @@
                                                         <td><fmt:formatDate value="${report.createdAt}" pattern="yyyy-MM-dd HH:mm"/></td>
                                                         <td>
                                                             <button class="btn btn-sm btn-primary" onclick="showDetail(${report.id})">查看</button>
+                                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})">删除</button>
                                                         </td>
                                                     </tr>
                                                 </c:forEach>
@@ -356,6 +359,30 @@ function escapeHtml(text) {
     var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function deleteReport(id) {
+    if (!confirm('确定要删除这条问题反馈吗？此操作不可恢复。')) {
+        return;
+    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '${pageContext.request.contextPath}/admin/problem', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                alert(data.message);
+                if (data.success) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                alert('删除失败: ' + e.message);
+            }
+        }
+    };
+    xhr.send('action=delete&id=' + id);
 }
 </script>
 

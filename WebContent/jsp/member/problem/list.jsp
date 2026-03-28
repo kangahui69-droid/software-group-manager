@@ -115,47 +115,43 @@
     </div>
 </div>
 
-<dialog id="detailModal" class="modal modal-blur fade">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">问题详情</h5>
-                <button type="button" class="btn-close" onclick="closeDetailModal()"></button>
-            </div>
-            <div class="modal-body" id="modalContent"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
-            </div>
+<dialog id="detailModal" style="border:1px solid #ddd;border-radius:8px;padding:0;max-width:700px;width:90%;">
+    <div class="modal-content" style="border:none;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #eee;">
+            <h5 class="modal-title">问题详情</h5>
+            <button type="button" class="btn-close" onclick="closeDetailModal()">×</button>
+        </div>
+        <div class="modal-body" id="modalContent" style="padding:15px;"></div>
+        <div class="modal-footer" style="padding:15px;border-top:1px solid #eee;">
+            <button type="button" class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
         </div>
     </div>
 </dialog>
 
-<dialog id="submitModal" class="modal modal-blur fade">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">提交问题反馈</h5>
-                <button type="button" class="btn-close" onclick="closeSubmitModal()"></button>
-            </div>
-            <form id="submitForm">
-                <div class="modal-body">
-                    <div id="submitErrorAlert" class="alert alert-danger" style="display: none;" role="alert"></div>
-                    <div id="submitSuccessAlert" class="alert alert-success" style="display: none;" role="alert"></div>
-                    <div class="mb-3">
-                        <label class="form-label required">问题标题</label>
-                        <input type="text" name="title" class="form-control" placeholder="请简要描述您的问题" required maxlength="200">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label required">问题详情</label>
-                        <textarea name="content" class="form-control" rows="5" placeholder="请详细描述您遇到的问题" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeSubmitModal()">取消</button>
-                    <button type="submit" class="btn btn-primary">提交</button>
-                </div>
-            </form>
+<dialog id="submitModal" style="border:1px solid #ddd;border-radius:8px;padding:0;max-width:500px;width:90%;">
+    <div class="modal-content" style="border:none;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #eee;">
+            <h5 class="modal-title">提交问题反馈</h5>
+            <button type="button" class="btn-close" onclick="closeSubmitModal()">×</button>
         </div>
+        <form id="submitForm">
+            <div class="modal-body" style="padding:15px;">
+                <div id="submitErrorAlert" class="alert alert-danger" style="display: none;"></div>
+                <div id="submitSuccessAlert" class="alert alert-success" style="display: none;"></div>
+                <div class="mb-3">
+                    <label class="form-label required">问题标题</label>
+                    <input type="text" name="title" class="form-control" placeholder="请简要描述您的问题" required maxlength="200">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label required">问题详情</label>
+                    <textarea name="content" class="form-control" rows="5" placeholder="请详细描述您遇到的问题" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:15px;border-top:1px solid #eee;">
+                <button type="button" class="btn btn-secondary" onclick="closeSubmitModal()">取消</button>
+                <button type="submit" class="btn btn-primary">提交</button>
+            </div>
+        </form>
     </div>
 </dialog>
 

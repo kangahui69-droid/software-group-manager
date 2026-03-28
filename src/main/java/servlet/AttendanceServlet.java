@@ -2,6 +2,7 @@ package servlet;
 
 import dao.AttendanceDAO;
 import dao.StudySessionDAO;
+import dao.UserDAO;
 import model.Attendance;
 import model.StudySession;
 import model.User;
@@ -19,6 +20,7 @@ public class AttendanceServlet extends HttpServlet {
 
     private AttendanceDAO attendanceDAO = new AttendanceDAO();
     private StudySessionDAO studyDAO = new StudySessionDAO();
+    private UserDAO userDAO = new UserDAO();
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
     @Override
@@ -172,7 +174,7 @@ public class AttendanceServlet extends HttpServlet {
         }
     }
 
-    // 管理后台 - 考勤管理
+    // 管理后台 - 学习管理
     private void showManage(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         User currentUser = AuthHelper.getCurrentUser(req);
         if (currentUser == null || !"ADMIN".equals(currentUser.getRole())) {
@@ -185,8 +187,6 @@ public class AttendanceServlet extends HttpServlet {
             String endDateStr = req.getParameter("endDate");
             String userIdStr = req.getParameter("userId");
             String pageStr = req.getParameter("page");
-            String tab = req.getParameter("tab");
-            if (tab == null) tab = "attendance";
 
             Date startDate = startDateStr != null && !startDateStr.isEmpty() ? sdf.parse(startDateStr) : null;
             Date endDate = endDateStr != null && !endDateStr.isEmpty() ? sdf.parse(endDateStr) : null;
@@ -195,24 +195,23 @@ public class AttendanceServlet extends HttpServlet {
             int pageSize = 30;
             int offset = (page - 1) * pageSize;
 
-            List<Attendance> attendanceList = attendanceDAO.getAllAttendance(startDate, endDate, userId, offset, pageSize);
             List<StudySession> sessionList = studyDAO.getAllSessions(startDate, endDate, userId, offset, pageSize);
             Map<String, Object> sessionStats = studyDAO.getStatistics(userId, startDate, endDate);
+            List<User> memberList = userDAO.findByConditions(null, "MEMBER", null);
 
-            req.setAttribute("attendanceList", attendanceList);
             req.setAttribute("sessionList", sessionList);
             req.setAttribute("sessionStats", sessionStats);
+            req.setAttribute("memberList", memberList);
             req.setAttribute("startDate", startDateStr);
             req.setAttribute("endDate", endDateStr);
             req.setAttribute("selectedUserId", userIdStr);
             req.setAttribute("currentPage", page);
             req.setAttribute("currentUser", currentUser);
-            req.setAttribute("activeTab", tab);
 
             req.getRequestDispatcher("/jsp/admin/attendance/manage.jsp").forward(req, resp);
         } catch (Exception e) {
             e.printStackTrace();
-            req.setAttribute("error", "获取考勤记录失败: " + e.getMessage());
+            req.setAttribute("error", "获取学习记录失败: " + e.getMessage());
             req.getRequestDispatcher("/jsp/admin/attendance/manage.jsp").forward(req, resp);
         }
     }

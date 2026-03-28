@@ -2,6 +2,7 @@ package servlet;
 
 import com.google.gson.Gson;
 import dao.ProblemManagementDAO;
+import dao.ProblemReportDAO;
 import model.ProblemReport;
 import model.User;
 import util.HtmlSanitizer;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 public class ProblemManagementServlet extends HttpServlet {
     private ProblemManagementDAO problemManagementDAO = new ProblemManagementDAO();
+    private ProblemReportDAO problemReportDAO = new ProblemReportDAO();
     private Gson gson = new Gson();
 
     @Override
@@ -211,7 +213,8 @@ public class ProblemManagementServlet extends HttpServlet {
 
         try {
             int id = Integer.parseInt(idStr);
-            boolean success = problemManagementDAO.updateCategoryAndStatus(id, null, null, null, null);
+            problemManagementDAO.delete(id);
+            boolean success = problemReportDAO.delete(id);
             if (success) {
                 sendJsonResponse(response, true, "删除成功");
             } else {
