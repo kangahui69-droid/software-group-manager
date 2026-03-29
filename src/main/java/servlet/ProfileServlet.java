@@ -276,16 +276,14 @@ public class ProfileServlet extends HttpServlet {
                 // 更新session中的用户信息
                 User updatedUser = userDAO.findById(currentUser.getId());
                 session.setAttribute("user", updatedUser);
-                request.setAttribute("success", "资料更新成功");
+                // 刷新session中的memberProfile，确保头像ID是最新的
+                MemberProfile updatedProfile = memberProfileDAO.findByUserId(currentUser.getId());
+                session.setAttribute("memberProfile", updatedProfile);
+                response.sendRedirect(request.getContextPath() + "/member/profile.jsp?success=1");
             } else {
                 request.setAttribute("error", "资料更新失败");
+                request.getRequestDispatcher("/member/edit-profile.jsp").forward(request, response);
             }
-
-            // 重新查询档案信息并更新session
-            MemberProfile updatedProfile = memberProfileDAO.findByUserId(currentUser.getId());
-            session.setAttribute("memberProfile", updatedProfile);
-            request.setAttribute("memberProfile", updatedProfile);
-            request.getRequestDispatcher("/member/edit-profile.jsp").forward(request, response);
 
         } catch (Exception e) {
             e.printStackTrace();

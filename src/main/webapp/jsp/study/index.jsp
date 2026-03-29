@@ -182,30 +182,28 @@
                         </div>
 
                         <!-- 学习规则弹窗 -->
-                        <dialog id="rulesModal" class="modal modal-blur fade">
-                            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">学习规则</h5>
-                                        <button type="button" class="btn-close" onclick="closeRules()"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <h6>签到规则：</h6>
-                                        <ul class="mb-3">
-                                            <li>6:00 - 22:00 可随时开始学习</li>
-                                            <li>18:00 强制签退（如在学习中）</li>
-                                            <li>6:00 - 18:00 签到 = 早到</li>
-                                            <li>18:00 - 19:00 签到 = 正常</li>
-                                            <li>19:00 后签到 = 迟到</li>
-                                        </ul>
-                                        <h6>签退规则：</h6>
-                                        <ul class="mb-0">
-                                            <li>21:30 前签退 = 早退</li>
-                                            <li>21:30 后签退 = 正常</li>
-                                            <li>22:00 系统自动结束学习</li>
-                                        </ul>
-                                    </div>
-                                </div>
+                        <dialog id="rulesModal" style="border:1px solid #ccc;border-radius:8px;padding:20px;min-width:350px;max-width:500px;">
+                            <div style="text-align:center;">
+                                <h5 class="mb-3">学习规则</h5>
+                            </div>
+                            <div style="text-align:left;">
+                                <h6>签到规则：</h6>
+                                <ul class="mb-3">
+                                    <li>6:00 - 22:00 可随时开始学习</li>
+                                    <li>18:00 强制签退（如在学习中）</li>
+                                    <li>6:00 - 18:00 签到 = 早到</li>
+                                    <li>18:00 - 19:00 签到 = 正常</li>
+                                    <li>19:00 后签到 = 迟到</li>
+                                </ul>
+                                <h6>签退规则：</h6>
+                                <ul class="mb-0">
+                                    <li>21:30 前签退 = 早退</li>
+                                    <li>21:30 后签退 = 正常</li>
+                                    <li>22:00 系统自动结束学习</li>
+                                </ul>
+                            </div>
+                            <div style="text-align:right;margin-top:15px;">
+                                <button type="button" class="btn btn-secondary" onclick="closeRules()">关闭</button>
                             </div>
                         </dialog>
 

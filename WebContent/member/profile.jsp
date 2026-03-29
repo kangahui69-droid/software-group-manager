@@ -34,6 +34,13 @@
     <jsp:param name="title" value="个人中心" />
 </jsp:include>
 
+<c:if test="${param.success == '1'}">
+    <div class="alert alert-success alert-dismissible" style="margin: 20px;">
+        <i class="bi bi-check-circle me-2"></i>资料更新成功！
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</c:if>
+
 <div class="container-xl">
     <div class="row">
         <div class="col-lg-4">

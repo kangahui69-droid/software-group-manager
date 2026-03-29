@@ -52,6 +52,8 @@ public class AIServlet extends HttpServlet {
             getChatHistory(req, resp);
         } else if ("statistics".equals(action)) {
             showStatistics(req, resp);
+        } else if ("init".equals(action)) {
+            initAI(req, resp);
         } else {
             resp.sendRedirect(req.getContextPath() + "/ai?action=chat");
         }
@@ -156,6 +158,22 @@ public class AIServlet extends HttpServlet {
 
         PrintWriter out = resp.getWriter();
         out.print(gson.toJson(result));
+    }
+
+    private void initAI(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        HttpSession session = req.getSession(false);
+        User user = null;
+        if (session != null && session.getAttribute("user") != null) {
+            user = (User) session.getAttribute("user");
+        }
+        
+        String userRole = user != null ? user.getRole() : "GUEST";
+        String sessionId = req.getParameter("session_id");
+        
+        aiService.initConversation(sessionId, user);
+        
+        resp.setContentType("application/json;charset=UTF-8");
+        resp.getWriter().write("{\"success\":true}");
     }
 
     private void showStatistics(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

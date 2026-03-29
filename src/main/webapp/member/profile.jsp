@@ -34,6 +34,13 @@
     <jsp:param name="title" value="个人中心" />
 </jsp:include>
 
+<c:if test="${param.success == '1'}">
+    <div class="alert alert-success alert-dismissible" style="margin: 20px;">
+        <i class="bi bi-check-circle me-2"></i>资料更新成功！
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</c:if>
+
 <div class="container-xl">
     <div class="row">
         <div class="col-lg-4">
@@ -46,23 +53,15 @@
                             <c:choose>
                                 <%-- 情况1：有头像文件 --%>
                                 <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
-                                    <img id="avatarPreview"
-                                         src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
+                                    <img src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
                                          alt="用户头像"
                                          class="rounded-circle"
                                          width="150"
-                                         height="150"
-                                         onerror="this.style.display='none'; document.getElementById('avatarInitial').style.display='flex';">
-                                    <div id="avatarInitial"
-                                         class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
-                                         style="width: 150px; height: 150px; font-size: 60px; font-weight: bold; display: none;">
-                                        ${not empty user.name ? user.name.charAt(0) : '用'}
-                                    </div>
+                                         height="150">
                                 </c:when>
                                 <%-- 情况2：无头像，显示姓名首字 --%>
                                 <c:otherwise>
-                                    <div id="avatarPreview"
-                                         class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
                                          style="width: 150px; height: 150px; font-size: 60px; font-weight: bold;">
                                         ${not empty user.name ? user.name.charAt(0) : '用'}
                                     </div>
@@ -71,18 +70,19 @@
                         </div>
                         <div class="mt-3">
                             <h4>${user.username}</h4>
-                            <p class="text-muted font-size-sm">${user.role}</p>
                             <p class="text-muted font-size-sm">
                                 <c:choose>
-                                    <c:when test="${user.userType eq 'TEACHER'}">
-                                        教师
-                                    </c:when>
-                                    <c:when test="${user.userType eq 'STUDENT'}">
-                                        学生
-                                    </c:when>
-                                    <c:otherwise>
-                                        其他
-                                    </c:otherwise>
+                                    <c:when test="${user.role eq 'ADMIN'}">管理员</c:when>
+                                    <c:when test="${user.role eq 'MEMBER'}">成员</c:when>
+                                    <c:when test="${user.role eq 'TEACHER'}">教师</c:when>
+                                    <c:otherwise>${user.role}</c:otherwise>
+                                </c:choose>
+                            </p>
+                            <p class="text-muted font-size-sm">
+                                <c:choose>
+                                    <c:when test="${user.userType eq 'TEACHER'}">教师身份</c:when>
+                                    <c:when test="${user.userType eq 'STUDENT'}">学生身份</c:when>
+                                    <c:otherwise>其他身份</c:otherwise>
                                 </c:choose>
                             </p>
                             <div class="mt-3">
@@ -165,7 +165,8 @@
                                 <span class="input-group-text">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                                 </span>
-                                <input type="text" class="form-control" value="${user.role}" readonly>
+                                <input type="text" class="form-control" 
+                                    value="<c:choose><c:when test='${user.role eq \"ADMIN\"}'>管理员</c:when><c:when test='${user.role eq \"MEMBER\"}'>成员</c:when><c:when test='${user.role eq \"TEACHER\"}'>教师</c:when><c:otherwise>${user.role}</c:otherwise></c:choose>" readonly>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -211,15 +212,6 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                                 </span>
                                 <input type="text" class="form-control" value="${birthdayDisplay}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">姓名</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="8" r="4"></circle><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${user.name}" readonly>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">

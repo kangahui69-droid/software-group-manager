@@ -42,8 +42,8 @@
 </jsp:include>
 
 <!-- Quill.js 富文本编辑器 -->
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<link href="https://cdn.staticfile.org/quill/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.staticfile.org/quill/1.3.6/quill.min.js"></script>
 
 <div class="container-xl">
     <div class="row">
@@ -252,11 +252,13 @@
 
                         <!-- 操作按钮 -->
                         <div class="d-flex justify-content-between">
-                            <a href="${pageContext.request.contextPath}/member/password-change.jsp"
-                                class="btn btn-outline-secondary">修改密码</a>
                             <div>
-                                <a href="${pageContext.request.contextPath}/member/profile.jsp"
-                                    class="btn btn-secondary me-2">取消</a>
+                                <a href="${pageContext.request.contextPath}/member/password-change.jsp"
+                                    class="btn btn-outline-secondary">修改密码</a>
+                                <a href="${pageContext.request.contextPath}/member/index.jsp"
+                                    class="btn btn-outline-secondary ms-2">返回个人中心</a>
+                            </div>
+                            <div>
                                 <button type="submit" class="btn btn-primary">保存修改</button>
                             </div>
                         </div>

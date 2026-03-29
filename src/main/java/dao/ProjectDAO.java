@@ -83,7 +83,7 @@ public class ProjectDAO {
         List<Object> params = new ArrayList<>();
         
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (p.name LIKE ? OR p.description LIKE ? OR p.team_name LIKE ?)");
+            sql.append(" AND (p.name LIKE ? OR p.description LIKE ? OR u.name LIKE ?)");
             String likeKeyword = "%" + keyword.trim() + "%";
             params.add(likeKeyword);
             params.add(likeKeyword);

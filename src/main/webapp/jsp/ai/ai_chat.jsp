@@ -212,37 +212,7 @@
                         <i class="bi bi-robot me-1"></i>AI助手
                     </span>
                     <div class="message-content">
-                        <c:choose>
-                            <c:when test="${userRole == 'ADMIN'}">
-                                您好，管理员！我是AI助手，专门为您提供系统管理方面的帮助。<br><br>
-                                我可以帮您解答以下问题：<br>
-                                • 如何发布和管理新闻<br>
-                                • 如何审核奖项、项目、招新申请<br>
-                                • 如何创建和管理活动<br>
-                                • 如何管理成员和重置密码<br>
-                                • 如何查看系统日志和统计数据<br><br>
-                                <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
-                            </c:when>
-                            <c:when test="${userRole == 'MEMBER'}">
-                                您好，成员！我是AI助手，很高兴为您服务。<br><br>
-                                我可以帮您解答以下问题：<br>
-                                • 如何修改个人资料<br>
-                                • 如何提交奖项申请<br>
-                                • 如何报名参加活动<br>
-                                • 如何创建和管理项目<br>
-                                • 如何编辑个人简历<br><br>
-                                <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
-                            </c:when>
-                            <c:otherwise>
-                                您好！我是AI助手，很高兴为您服务。<br><br>
-                                我可以帮您了解以下信息：<br>
-                                • 软件小组简介和最新动态<br>
-                                • 查看新闻和活动信息<br>
-                                • 如何提交招新报名加入我们<br>
-                                • 注册登录相关问题<br><br>
-                                <span class="text-muted">请选择一个快捷问题或直接输入您的问题</span>
-                            </c:otherwise>
-                        </c:choose>
+                        您好！有什么可以帮您？
                     </div>
                     <div class="message-time"><i class="bi bi-robot me-1"></i>AI助手 · 刚刚</div>
                 </div>
@@ -277,6 +247,11 @@
     </div>
 
     <script>
+    window.onload = function() {
+        var sessionId = document.getElementById('sessionId').value;
+        fetch('${pageContext.request.contextPath}/ai?action=init&session_id=' + sessionId, { method: 'POST' });
+    };
+    
     document.getElementById('chatForm').addEventListener('submit', function(e) {
         e.preventDefault();
         var message = document.getElementById('messageInput').value.trim();

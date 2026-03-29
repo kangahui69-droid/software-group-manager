@@ -3,7 +3,7 @@
 <% User user=(User) session.getAttribute("user"); if (user==null) {
     response.sendRedirect(request.getContextPath() + "/login.jsp" ); return; } %>
 <jsp:include page="../jsp/common/layout_top.jsp">
-    <jsp:param name="title" value="成员中心" />
+    <jsp:param name="title" value="个人中心" />
 </jsp:include>
 
 <div class="page-header d-print-none">
@@ -11,7 +11,7 @@
         <div class="row g-2 align-items-center">
             <div class="col">
                 <h2 class="page-title">
-                    成员中心
+                    个人中心
                 </h2>
             </div>
         </div>
@@ -38,7 +38,7 @@
                         </div>
                     </div>
                     <div class="d-flex">
-                        <a href="profile.jsp" class="card-btn">编辑资料</a>
+                        <a href="profile.jsp" class="card-btn">查看个人资料</a>
                     </div>
                 </div>
                 
