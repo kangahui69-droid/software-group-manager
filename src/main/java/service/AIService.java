@@ -121,17 +121,38 @@ public class AIService {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+    public void initConversation(String sessionId, User user) {
+        AIConversation conversation = conversationDAO.findBySessionId(sessionId);
+        if (conversation == null) {
+            conversation = new AIConversation();
+            conversation.setUserId(user != null ? user.getId() : 0);
+            conversation.setSessionId(sessionId);
+            conversation.setCreatedAt(new Date());
+            conversation.setUpdatedAt(new Date());
+            Integer id = conversationDAO.save(conversation);
+            conversation.setId(id);
+        }
+        
+        String userRole = user != null ? user.getRole() : "GUEST";
+        String systemPrompt = buildSystemPrompt(userRole);
+        
+        AIMessage systemMsg = new AIMessage();
+        systemMsg.setConversationId(conversation.getId());
+        systemMsg.setRole("system");
+        systemMsg.setContent(systemPrompt);
+        systemMsg.setCreatedAt(new Date());
+        messageDAO.save(systemMsg);
+    }
+
     public String buildSystemPrompt(String userRole) {
         return "你是黄山学院软件小组管理系统的AI助手。\n" +
-            "请用简洁、专业的语言直接回答用户的问题。\n" +
-            "如果用户询问具体的新闻或活动内容，请引导用户登录系统查看。\n" +
-            "不要提及用户的身份角色，不要进行冗长的解释或思考说明。\n" +
-            "重要：只输出最终答案，不要包含任何思考过程、推理步骤或内心独白。";
+            "角色：用户身份为" + userRole + "。\n" +
+            "要求：简洁直接回答，不解释思考过程，引导登录查看具体内容。";
     }
 
     public String buildContext(String userMessage, String userRole) {
         StringBuilder context = new StringBuilder();
-        context.append("参考知识库：\n");
+        context.append("知识库：\n");
 
         List<AIKnowledgeBase> allKB = knowledgeBaseDAO.findAll();
         String userMsgLower = userMessage.toLowerCase();
@@ -141,17 +162,12 @@ public class AIService {
                 String[] keywords = kb.getKeywords().toLowerCase().split(",");
                 for (String keyword : keywords) {
                     if (userMsgLower.contains(keyword.trim())) {
-                        context.append("【").append(kb.getCategory()).append("】\n");
-                        context.append("问题：").append(kb.getQuestion()).append("\n");
-                        context.append("答案：").append(kb.getAnswer()).append("\n\n");
+                        context.append("- ").append(kb.getAnswer()).append("\n");
                         break;
                     }
                 }
             }
         }
-
-        context.append("用户问题：").append(userMessage).append("\n");
-        context.append("请根据知识库或系统信息回答用户问题。");
 
         return context.toString();
     }
