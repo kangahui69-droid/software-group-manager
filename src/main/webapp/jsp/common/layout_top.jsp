@@ -209,8 +209,15 @@
                                         <div class="nav-item dropdown">
                                             <a href="#" class="nav-link d-flex lh-1 text-reset p-0"
                                                 data-bs-toggle="dropdown" aria-label="Open user menu">
-                                                <span
-                                                    class="avatar avatar-sm bg-blue-lt">${not empty sessionScope.user.name ? sessionScope.user.name.charAt(0) : sessionScope.user.username.substring(0,1)}</span>
+                                                <c:choose>
+                                                    <c:when test="${not empty sessionScope.memberProfile and not empty sessionScope.memberProfile.avatarFileId}">
+                                                        <img src="${pageContext.request.contextPath}/file?action=view&id=${sessionScope.memberProfile.avatarFileId}" 
+                                                             alt="用户头像" class="avatar avatar-sm rounded-circle">
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="avatar avatar-sm bg-blue-lt">${not empty sessionScope.user.name ? sessionScope.user.name.charAt(0) : sessionScope.user.username.substring(0,1)}</span>
+                                                    </c:otherwise>
+                                                </c:choose>
                                                 <div class="d-none d-xl-block ps-2">
                                                     <div>${not empty sessionScope.user.name ? sessionScope.user.name : sessionScope.user.username}</div>
                                                     <div class="mt-1 small text-muted text-capitalize">
