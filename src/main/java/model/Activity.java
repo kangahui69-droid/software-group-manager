@@ -43,6 +43,7 @@ public class Activity {
     // Activity.java model 仅用 status 字段来表示活动进行状态 (upcoming/ongoing/completed/canceled)。
     // 数据库查询到的 activity.approval_status (pending/approved/rejected) 字段尚未在模型中体现。
     private String approvalStatus; // 对应 DB 中 approval_status 字段
+    private Integer creatorId; // 活动创建者用户ID
 
     public static final String APPROVAL_PENDING = "pending";
     public static final String APPROVAL_APPROVED = "approved";
@@ -198,6 +199,22 @@ public class Activity {
 
     public void setRegisteredByCurrentUser(boolean registeredByCurrentUser) {
         isRegisteredByCurrentUser = registeredByCurrentUser;
+    }
+
+    public String getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(String approvalStatus) {
+        this.approvalStatus = approvalStatus;
+    }
+
+    public Integer getCreatorId() {
+        return creatorId;
+    }
+
+    public void setCreatorId(Integer creatorId) {
+        this.creatorId = creatorId;
     }
 
     /**

@@ -121,18 +121,11 @@
                                                  alt="用户头像"
                                                  class="rounded-circle"
                                                  width="120"
-                                                 height="120"
-                                                 onerror="this.style.display='none'; document.getElementById('avatarInitial').style.display='flex';">
-                                            <div id="avatarInitial"
-                                                 class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
-                                                 style="width: 120px; height: 120px; font-size: 48px; font-weight: bold; display: none;">
-                                                ${not empty user.name ? user.name.charAt(0) : '用'}
-                                            </div>
+                                                 height="120">
                                         </c:when>
                                         <%-- 情况2：无头像，显示姓名首字 --%>
                                         <c:otherwise>
-                                            <div id="avatarPreview"
-                                                 class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
                                                  style="width: 120px; height: 120px; font-size: 48px; font-weight: bold;">
                                                 ${not empty user.name ? user.name.charAt(0) : '用'}
                                             </div>

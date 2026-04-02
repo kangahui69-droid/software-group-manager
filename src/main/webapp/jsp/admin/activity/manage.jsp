@@ -56,6 +56,14 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <select name="approvalStatus" class="form-select">
+                            <option value="">所有审批</option>
+                            <option value="pending" ${approvalStatus == 'pending' ? 'selected' : ''}>待审核</option>
+                            <option value="approved" ${approvalStatus == 'approved' ? 'selected' : ''}>已批准</option>
+                            <option value="rejected" ${approvalStatus == 'rejected' ? 'selected' : ''}>已拒绝</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">搜索</button>
                     </div>
                     <div class="col-md-2">
@@ -88,6 +96,7 @@
                             <th>活动名称</th>
                             <th>类型</th>
                             <th>地点</th>
+                            <th>审批状态</th>
                             <th>报名状态</th>
                             <th>活动时间</th>
                             <th>报名时间</th>
@@ -119,6 +128,19 @@
                                 <td class="text-muted">${a.location}</td>
                                 <td>
                                     <c:choose>
+                                        <c:when test="${a.approvalStatus == 'approved'}">
+                                            <span class="badge bg-success">已批准</span>
+                                        </c:when>
+                                        <c:when test="${a.approvalStatus == 'pending'}">
+                                            <span class="badge bg-warning text-dark">待审核</span>
+                                        </c:when>
+                                        <c:when test="${a.approvalStatus == 'rejected'}">
+                                            <span class="badge bg-danger">已拒绝</span>
+                                        </c:when>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <c:choose>
                                         <c:when test="${a.inRegistrationPeriod}">
                                             <span class="badge bg-success">报名中</span>
                                         </c:when>
@@ -139,16 +161,24 @@
                                 </td>
                                 <td>
                                     <div class="btn-list flex-nowrap">
-                                        <a href="${pageContext.request.contextPath}/activity?action=participants&id=${a.id}" class="btn btn-outline-primary btn-sm">报名管理</a>
-                                        <a href="${pageContext.request.contextPath}/activity?action=edit&id=${a.id}" class="btn btn-white btn-sm">编辑</a>
-                                        <a href="${pageContext.request.contextPath}/activity?action=delete&id=${a.id}" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除此活动吗？')">删除</a>
+                                        <c:choose>
+                                            <c:when test="${a.approvalStatus == 'pending'}">
+                                                <a href="${pageContext.request.contextPath}/activity?action=approveActivity&id=${a.id}" class="btn btn-success btn-sm" onclick="return confirm('确定要批准此活动吗？')">批准</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=rejectActivity&id=${a.id}" class="btn btn-danger btn-sm" onclick="return confirm('确定要拒绝此活动吗？')">拒绝</a>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <a href="${pageContext.request.contextPath}/activity?action=participants&id=${a.id}" class="btn btn-outline-primary btn-sm">报名管理</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=edit&id=${a.id}" class="btn btn-white btn-sm">编辑</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=delete&id=${a.id}" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除此活动吗？')">删除</a>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </div>
                                 </td>
                             </tr>
                         </c:forEach>
                         <c:if test="${empty activities}">
                             <tr>
-                                <td colspan="7" class="text-center text-muted">暂无活动记录</td>
+                                <td colspan="8" class="text-center text-muted">暂无活动记录</td>
                             </tr>
                         </c:if>
                     </tbody>

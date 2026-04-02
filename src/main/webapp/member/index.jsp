@@ -74,6 +74,9 @@
                         <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="list-group-item list-group-item-action d-flex align-items-center">
                             <i class="bi bi-calendar-check me-3 text-green"></i> 我的活动
                         </a>
+                        <a href="${pageContext.request.contextPath}/group/my-groups" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="bi bi-chat-dots me-3 text-primary"></i> 我的群聊
+                        </a>
                         <a href="${pageContext.request.contextPath}/project?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
                             <i class="bi bi-briefcase me-3 text-orange"></i> 我的项目
                         </a>

@@ -12,6 +12,8 @@ import java.util.List;
  */
 public class ActivityDAO {
 
+    private RegistrationDAO registrationDAO = new RegistrationDAO();
+
     /**
      * 查询所有活动
      */
@@ -26,6 +28,17 @@ public class ActivityDAO {
      * @param status 活动状态
      */
     public List<Activity> findByConditions(String keyword, String activityType, String status) {
+        return findByConditions(keyword, activityType, status, null);
+    }
+
+    /**
+     * 根据条件搜索活动（带审批状态筛选）
+     * @param keyword 关键词（标题/描述/地点）
+     * @param activityType 活动类型
+     * @param status 活动状态
+     * @param approvalStatus 审批状态
+     */
+    public List<Activity> findByConditions(String keyword, String activityType, String status, String approvalStatus) {
         List<Activity> activities = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT * FROM activity WHERE deleted = 0");
         List<Object> params = new ArrayList<>();
@@ -45,7 +58,11 @@ public class ActivityDAO {
             sql.append(" AND status = ?");
             params.add(status);
         }
-        sql.append(" ORDER BY activity_start_time DESC");
+        if (approvalStatus != null && !approvalStatus.trim().isEmpty()) {
+            sql.append(" AND approval_status = ?");
+            params.add(approvalStatus);
+        }
+        sql.append(" ORDER BY created_at DESC");
         
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -164,7 +181,7 @@ public class ActivityDAO {
     public boolean insert(Activity activity) {
         String sql = "INSERT INTO activity (name, description, activity_type, activity_start_time, activity_end_time, " +
                     "location, organizers, contact_info, registration_start_time, registration_end_time, " +
-                    "max_participants, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "max_participants, status, approval_status, creator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -182,6 +199,8 @@ public class ActivityDAO {
             pstmt.setTimestamp(10, activity.getRegistrationEndTime() != null ? new Timestamp(activity.getRegistrationEndTime().getTime()) : null);
             pstmt.setInt(11, activity.getMaxParticipants() != null ? activity.getMaxParticipants() : 0);
             pstmt.setString(12, activity.getStatus() != null ? activity.getStatus() : "upcoming");
+            pstmt.setString(13, activity.getApprovalStatus() != null ? activity.getApprovalStatus() : "pending");
+            pstmt.setObject(14, activity.getCreatorId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -305,6 +324,8 @@ public class ActivityDAO {
         
         activity.setMaxParticipants(rs.getInt("max_participants"));
         activity.setStatus(rs.getString("status"));
+        activity.setApprovalStatus(rs.getString("approval_status"));
+        activity.setCreatorId((Integer) rs.getObject("creator_id"));
         activity.setCreatedAt(rs.getTimestamp("created_at"));
         activity.setUpdatedAt(rs.getTimestamp("updated_at"));
         
@@ -312,6 +333,98 @@ public class ActivityDAO {
         activity.setRegistrationOpen(activity.isInRegistrationPeriod());
 
         return activity;
+    }
+
+    /**
+     * 审批通过活动
+     */
+    public boolean approveActivity(Integer activityId) {
+        String sql = "UPDATE activity SET approval_status = 'approved' WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return false;
+    }
+
+    /**
+     * 审批拒绝活动
+     */
+    public boolean rejectActivity(Integer activityId) {
+        String sql = "UPDATE activity SET approval_status = 'rejected' WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return false;
+    }
+
+    /**
+     * 查询待审批的活动（管理员用）
+     */
+    public List<Activity> findPendingApproval() {
+        String sql = "SELECT * FROM activity WHERE approval_status = 'pending' AND deleted = 0 ORDER BY created_at DESC";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<Activity> activities = new ArrayList<>();
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                activities.add(mapResultSetToActivity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return activities;
+    }
+
+    /**
+     * 查询用户创建的活动（包含审批状态）
+     */
+    public List<Activity> findByCreatorId(Integer creatorId) {
+        String sql = "SELECT * FROM activity WHERE creator_id = ? AND deleted = 0 ORDER BY created_at DESC";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<Activity> activities = new ArrayList<>();
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, creatorId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Activity activity = mapResultSetToActivity(rs);
+                // 设置当前报名人数
+                activity.setCurrentParticipants(registrationDAO.countByActivityId(activity.getId()));
+                activities.add(activity);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return activities;
     }
 
     /**

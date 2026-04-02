@@ -159,7 +159,7 @@ public class RegistrationDAO {
     }
 
     /**
-     * 获取活动的所有报名记录（管理员用）
+     * 获取活动的所有已报名成员（状态不是rejected和cancelled的）
      */
     public List<Registration> findByActivityId(Integer activityId) {
         List<Registration> registrations = new ArrayList<>();
@@ -171,7 +171,7 @@ public class RegistrationDAO {
                     "JOIN activity a ON ap.activity_id = a.id " +
                     "LEFT JOIN user u ON ap.user_id = u.id " +
                     "LEFT JOIN member_profile mp ON u.id = mp.user_id " +
-                    "WHERE ap.activity_id = ? " +
+                    "WHERE ap.activity_id = ? AND ap.status NOT IN ('rejected', 'cancelled') " +
                     "ORDER BY ap.created_at ASC";
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -180,6 +180,41 @@ public class RegistrationDAO {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, activityId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                registrations.add(mapResultSetToRegistration(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return registrations;
+    }
+
+    /**
+     * 获取活动的指定状态的报名记录
+     */
+    public List<Registration> findByActivityIdAndStatus(Integer activityId, String status) {
+        List<Registration> registrations = new ArrayList<>();
+        String sql = "SELECT ap.*, a.name as activity_name, a.activity_start_time, a.activity_end_time, " +
+                    "a.location, a.registration_end_time, " +
+                    "u.name as user_name, u.email as user_email, u.phone as user_phone, " +
+                    "mp.student_id, mp.major, mp.grade as grade_class " +
+                    "FROM activity_participant ap " +
+                    "JOIN activity a ON ap.activity_id = a.id " +
+                    "LEFT JOIN user u ON ap.user_id = u.id " +
+                    "LEFT JOIN member_profile mp ON u.id = mp.user_id " +
+                    "WHERE ap.activity_id = ? AND ap.status = ? " +
+                    "ORDER BY ap.created_at ASC";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            pstmt.setString(2, status);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 registrations.add(mapResultSetToRegistration(rs));

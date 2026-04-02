@@ -359,6 +359,20 @@
                                                     <span class="nav-link-title">问题反馈</span>
                                                 </a>
                                             </li>
+                                            <li class="nav-item ${param.active == 'myActivities' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/activity?action=myCreatedActivities">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-calendar-plus"></i></span>
+                                                    <span class="nav-link-title">我发起的</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'group' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/group/my-groups">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-chat-dots"></i></span>
+                                                    <span class="nav-link-title">我的群聊</span>
+                                                </a>
+                                            </li>
                                         </c:when>
                                         <c:when test="${sessionScope.user.role == 'ADMIN'}">
                                             <li class="nav-item dropdown ${param.active == 'ai' || param.active == 'ai_stats' ? 'active' : ''}">

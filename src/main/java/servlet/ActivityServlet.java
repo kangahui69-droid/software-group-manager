@@ -50,7 +50,8 @@ public class ActivityServlet extends HttpServlet {
                 showActivityDetail(request, response);
                 break;
             case "create":
-                if (!AuthHelper.checkAdmin(request, response)) return;
+            case "createForm":
+                if (!AuthHelper.checkLogin(request, response)) return;
                 showCreateForm(request, response);
                 break;
             case "edit":
@@ -61,6 +62,11 @@ public class ActivityServlet extends HttpServlet {
                 if (!AuthHelper.checkLogin(request, response)) return;
                 User user1 = AuthHelper.getCurrentUser(request);
                 showMyActivities(request, response, user1);
+                break;
+            case "myCreatedActivities":
+                if (!AuthHelper.checkLogin(request, response)) return;
+                User user3 = AuthHelper.getCurrentUser(request);
+                showMyCreatedActivities(request, response, user3);
                 break;
             case "manage":
                 if (!AuthHelper.checkAdmin(request, response)) return;
@@ -85,6 +91,14 @@ public class ActivityServlet extends HttpServlet {
             case "delete":
                 if (!AuthHelper.checkAdmin(request, response)) return;
                 deleteActivity(request, response);
+                break;
+            case "approveActivity":
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                approveActivity(request, response);
+                break;
+            case "rejectActivity":
+                if (!AuthHelper.checkAdmin(request, response)) return;
+                rejectActivityAction(request, response);
                 break;
             case "cancel":
                 if (!AuthHelper.checkLogin(request, response)) return;
@@ -115,8 +129,7 @@ public class ActivityServlet extends HttpServlet {
 
         switch (action) {
             case "create":
-                if (!AuthHelper.checkAdmin(request, response)) return;
-                createActivity(request, response);
+                createActivity(request, response, user);
                 break;
             case "update":
                 if (!AuthHelper.checkAdmin(request, response)) return;
@@ -257,6 +270,13 @@ public class ActivityServlet extends HttpServlet {
         request.getRequestDispatcher("/jsp/activity/myActivities.jsp").forward(request, response);
     }
 
+    private void showMyCreatedActivities(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        List<Activity> createdActivities = activityDAO.findByCreatorId(user.getId());
+        request.setAttribute("createdActivities", createdActivities);
+        request.getRequestDispatcher("/jsp/activity/myCreatedActivities.jsp").forward(request, response);
+    }
+
     // ==================== Admin Activity Management ====================
     
     private void showActivityManage(HttpServletRequest request, HttpServletResponse response)
@@ -264,13 +284,15 @@ public class ActivityServlet extends HttpServlet {
         String keyword = request.getParameter("keyword");
         String activityType = request.getParameter("activityType");
         String status = request.getParameter("status");
+        String approvalStatus = request.getParameter("approvalStatus");
         
-        List<Activity> activities = activityDAO.findByConditions(keyword, activityType, status);
+        List<Activity> activities = activityDAO.findByConditions(keyword, activityType, status, approvalStatus);
         
         request.setAttribute("activities", activities);
         request.setAttribute("keyword", keyword);
         request.setAttribute("activityType", activityType);
         request.setAttribute("status", status);
+        request.setAttribute("approvalStatus", approvalStatus);
         request.getRequestDispatcher("/jsp/admin/activity/manage.jsp").forward(request, response);
     }
 
@@ -332,9 +354,18 @@ public class ActivityServlet extends HttpServlet {
         }
     }
 
-    private void createActivity(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void createActivity(HttpServletRequest request, HttpServletResponse response, User creator) throws IOException {
         try {
             Activity activity = extractFromRequest(request);
+            
+            // 非管理员创建活动时设置为待审核状态
+            boolean isAdmin = "ADMIN".equalsIgnoreCase(creator.getRole());
+            if (isAdmin) {
+                activity.setApprovalStatus("approved");
+            } else {
+                activity.setApprovalStatus("pending");
+                activity.setCreatorId(creator.getId());
+            }
 
             // ====== 时间校验 ======
             String timeError = validateActivityTime(activity);
@@ -370,7 +401,11 @@ public class ActivityServlet extends HttpServlet {
             // =====================================
 
             if (activityDAO.insert(activity)) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动创建成功"));
+                if (isAdmin) {
+                    response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动创建成功"));
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&success=" + encode("活动已提交，等待管理员审核"));
+                }
             } else {
                 response.sendRedirect(request.getContextPath() + "/activity?action=create&error=" + encode("创建失败"));
             }
@@ -1057,6 +1092,46 @@ public class ActivityServlet extends HttpServlet {
             return URLEncoder.encode(message, "UTF-8");
         } catch (Exception e) {
             return message;
+        }
+    }
+
+    // ==================== Activity Approval (Admin) ====================
+
+    private void approveActivity(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String activityIdStr = request.getParameter("id");
+        if (activityIdStr == null || activityIdStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("参数错误"));
+            return;
+        }
+
+        try {
+            int activityId = Integer.parseInt(activityIdStr);
+            if (activityDAO.approveActivity(activityId)) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动已批准"));
+            } else {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("操作失败"));
+            }
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("无效的活动ID"));
+        }
+    }
+
+    private void rejectActivityAction(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String activityIdStr = request.getParameter("id");
+        if (activityIdStr == null || activityIdStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("参数错误"));
+            return;
+        }
+
+        try {
+            int activityId = Integer.parseInt(activityIdStr);
+            if (activityDAO.rejectActivity(activityId)) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动已拒绝"));
+            } else {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("操作失败"));
+            }
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("无效的活动ID"));
         }
     }
 }
