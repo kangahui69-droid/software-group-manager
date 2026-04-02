@@ -41,7 +41,12 @@
                             
                             <div class="mb-3">
                                 <label class="form-label required">用户名</label>
-                                <input type="text" class="form-control" name="username" placeholder="请输入用户名" required>
+                                <input type="text" class="form-control" name="username" placeholder="请输入用户名（登录用）" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label required">姓名</label>
+                                <input type="text" class="form-control" name="name" placeholder="请输入真实姓名" required>
                             </div>
                             
                             <div class="mb-3">

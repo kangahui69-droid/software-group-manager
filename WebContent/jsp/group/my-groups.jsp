@@ -40,11 +40,6 @@
                 <h2 class="page-title">我的群聊</h2>
                 <div class="text-muted">您加入的所有群聊</div>
             </div>
-            <div class="col-auto">
-                <a href="${pageContext.request.contextPath}/group/create" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-2"></i>创建群聊
-                </a>
-            </div>
         </div>
     </div>
 </div>
@@ -59,10 +54,7 @@
                             <i class="bi bi-chat-dots text-muted" style="font-size: 64px;"></i>
                         </div>
                         <h3 class="mb-2">暂无群聊</h3>
-                        <p class="text-muted mb-4">您还没有加入任何群聊</p>
-                        <a href="${pageContext.request.contextPath}/group/create" class="btn btn-primary">
-                            <i class="bi bi-plus-lg me-2"></i>创建第一个群聊
-                        </a>
+                        <p class="text-muted mb-4">您还没有加入任何群聊。请先发起活动，活动通过审核后可创建群聊。</p>
                     </div>
                 </div>
             </c:when>
