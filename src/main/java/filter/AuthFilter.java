@@ -89,6 +89,12 @@ public class AuthFilter implements Filter {
             return;
         }
 
+        // 限制管理员访问群聊功能（管理员暂不添加群聊功能）
+        if (requestURI.contains("/group/") && "ADMIN".equalsIgnoreCase(userRole)) {
+            httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "管理员暂不使用群聊功能");
+            return;
+        }
+
         // 加载成员档案信息
         if ("MEMBER".equalsIgnoreCase(userRole)) {
             MemberProfileDAO memberProfileDAO = new MemberProfileDAO();

@@ -130,6 +130,16 @@
                             </a>
                         </div>
                         <div class="col-6 col-md-6">
+                            <a href="${pageContext.request.contextPath}/group/my-groups" class="card card-link">
+                                <div class="card-body p-4 text-center">
+                                    <div class="mb-2">
+                                        <i class="bi bi-chat-dots h2 text-primary"></i>
+                                    </div>
+                                    <div class="text-truncate">我的群聊</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-6">
                             <a href="${pageContext.request.contextPath}/resume?action=list" class="card card-link">
                                 <div class="card-body p-4 text-center">
                                     <div class="mb-2">

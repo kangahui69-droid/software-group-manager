@@ -209,8 +209,15 @@
                                         <div class="nav-item dropdown">
                                             <a href="#" class="nav-link d-flex lh-1 text-reset p-0"
                                                 data-bs-toggle="dropdown" aria-label="Open user menu">
-                                                <span
-                                                    class="avatar avatar-sm bg-blue-lt">${not empty sessionScope.user.name ? sessionScope.user.name.charAt(0) : sessionScope.user.username.substring(0,1)}</span>
+                                                <c:choose>
+                                                    <c:when test="${not empty sessionScope.memberProfile and not empty sessionScope.memberProfile.avatarFileId}">
+                                                        <img src="${pageContext.request.contextPath}/file?action=view&id=${sessionScope.memberProfile.avatarFileId}" 
+                                                             alt="用户头像" class="avatar avatar-sm rounded-circle">
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="avatar avatar-sm bg-blue-lt">${not empty sessionScope.user.name ? sessionScope.user.name.charAt(0) : sessionScope.user.username.substring(0,1)}</span>
+                                                    </c:otherwise>
+                                                </c:choose>
                                                 <div class="d-none d-xl-block ps-2">
                                                     <div>${not empty sessionScope.user.name ? sessionScope.user.name : sessionScope.user.username}</div>
                                                     <div class="mt-1 small text-muted text-capitalize">
@@ -350,6 +357,20 @@
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-exclamation-triangle"></i></span>
                                                     <span class="nav-link-title">问题反馈</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'myActivities' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/activity?action=myCreatedActivities">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-calendar-plus"></i></span>
+                                                    <span class="nav-link-title">我发起的</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'group' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/group/my-groups">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-chat-dots"></i></span>
+                                                    <span class="nav-link-title">我的群聊</span>
                                                 </a>
                                             </li>
                                         </c:when>

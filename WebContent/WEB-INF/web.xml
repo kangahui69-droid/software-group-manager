@@ -44,6 +44,8 @@
         <url-pattern>/study/*</url-pattern>
         <url-pattern>/ai</url-pattern>
         <url-pattern>/ai/*</url-pattern>
+        <url-pattern>/group</url-pattern>
+        <url-pattern>/group/*</url-pattern>
     </filter-mapping>
 
     <!-- 操作日志过滤器 -->

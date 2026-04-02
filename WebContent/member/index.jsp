@@ -1,7 +1,22 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="model.User" %>
-<% User user=(User) session.getAttribute("user"); if (user==null) {
-    response.sendRedirect(request.getContextPath() + "/login.jsp" ); return; } %>
+<%@ page import="dao.MemberProfileDAO" %>
+<%@ page import="model.MemberProfile" %>
+<% User user=(User) session.getAttribute("user"); 
+   if (user==null) {
+       response.sendRedirect(request.getContextPath() + "/login.jsp" ); 
+       return; 
+   }
+   // 获取memberProfile
+   MemberProfile memberProfile = (MemberProfile) session.getAttribute("memberProfile");
+   if (memberProfile == null) {
+       MemberProfileDAO profileDAO = new MemberProfileDAO();
+       memberProfile = profileDAO.findByUserId(user.getId());
+       if (memberProfile != null) {
+           session.setAttribute("memberProfile", memberProfile);
+       }
+   }
+%>
 <jsp:include page="../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="个人中心" />
 </jsp:include>
@@ -24,9 +39,14 @@
             <div class="col-md-6 col-lg-4">
                 <div class="card">
                     <div class="card-body p-4 text-center">
-                        <span class="avatar avatar-xl mb-3 avatar-rounded bg-blue-lt">
-                            <%= (user.getName() != null && !user.getName().isEmpty()) ? user.getName().substring(0,1) : user.getUsername().substring(0,1).toUpperCase() %>
-                        </span>
+                        <% if (memberProfile != null && memberProfile.getAvatarFileId() != null) { %>
+                            <img src="${pageContext.request.contextPath}/file?action=view&id=<%=memberProfile.getAvatarFileId()%>" 
+                                 alt="用户头像" class="avatar avatar-xl mb-3 avatar-rounded">
+                        <% } else { %>
+                            <span class="avatar avatar-xl mb-3 avatar-rounded bg-blue-lt">
+                                <%= (user.getName() != null && !user.getName().isEmpty()) ? user.getName().substring(0,1) : user.getUsername().substring(0,1).toUpperCase() %>
+                            </span>
+                        <% } %>
                         <h3 class="m-0 mb-1">
                             <%= (user.getName() != null && !user.getName().isEmpty()) ? user.getName() : user.getUsername() %>
                         </h3>
@@ -53,6 +73,9 @@
                         </a>
                         <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="list-group-item list-group-item-action d-flex align-items-center">
                             <i class="bi bi-calendar-check me-3 text-green"></i> 我的活动
+                        </a>
+                        <a href="${pageContext.request.contextPath}/group/my-groups" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="bi bi-chat-dots me-3 text-primary"></i> 我的群聊
                         </a>
                         <a href="${pageContext.request.contextPath}/project?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
                             <i class="bi bi-briefcase me-3 text-orange"></i> 我的项目
