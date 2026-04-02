@@ -22,14 +22,12 @@
         <c:if test="${empty group.activityId}">
             <div class="alert alert-warning">
                 <p><strong>提示：</strong>此群聊未关联活动，无法通过报名成员添加。</p>
-                <p>群信息：群ID=${groupId}, activityId=${group.activityId}</p>
             </div>
         </c:if>
         
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">选择要添加的成员</h3>
-                <p class="text-muted">以下用户已报名此活动，可添加到群聊</p>
             </div>
             <div class="card-body">
                 <c:choose>

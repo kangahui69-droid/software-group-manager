@@ -14,6 +14,8 @@ import model.Registration;
 import model.User;
 import model.UserGroup;
 
+import java.net.URLEncoder;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -89,7 +91,7 @@ public class GroupServlet extends HttpServlet {
         User currentUser = (User) session.getAttribute("user");
         request.setCharacterEncoding("UTF-8");
 
-        if (pathInfo == null || pathInfo.equals("/")) {
+        if (pathInfo == null || pathInfo.equals("/") || pathInfo.equals("/create")) {
             createGroup(request, response, currentUser);
         } else if (pathInfo.equals("/send")) {
             sendMessage(request, response, currentUser);
@@ -149,7 +151,7 @@ public class GroupServlet extends HttpServlet {
             throws ServletException, IOException {
         String activityIdStr = request.getParameter("activityId");
         if (activityIdStr == null || activityIdStr.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=无效的活动ID");
+            response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=" + URLEncoder.encode("无效的活动ID", "UTF-8"));
             return;
         }
 
@@ -157,17 +159,17 @@ public class GroupServlet extends HttpServlet {
             int activityId = Integer.parseInt(activityIdStr);
             Activity activity = activityDAO.findById(activityId);
             if (activity == null) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=活动不存在");
+                response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=" + URLEncoder.encode("活动不存在", "UTF-8"));
                 return;
             }
 
             if (!activity.getApprovalStatus().equals("approved")) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=活动未通过审核，无法创建群聊");
+                response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=" + URLEncoder.encode("活动未通过审核，无法创建群聊", "UTF-8"));
                 return;
             }
 
             if (!activity.getCreatorId().equals(currentUser.getId())) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=只有活动发起者可以创建群聊");
+                response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&error=" + URLEncoder.encode("只有活动发起者可以创建群聊", "UTF-8"));
                 return;
             }
 
@@ -199,12 +201,12 @@ public class GroupServlet extends HttpServlet {
             int groupId = Integer.parseInt(groupIdStr);
             ActivityGroup group = groupDAO.findById(groupId);
             if (group == null) {
-                response.sendRedirect(request.getContextPath() + "/group/my-groups?error=群不存在");
+                response.sendRedirect(request.getContextPath() + "/group/my-groups?error=" + URLEncoder.encode("群不存在", "UTF-8"));
                 return;
             }
 
             if (!memberDAO.isOwner(groupId, currentUser.getId())) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "只有群主可以添加成员");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, URLEncoder.encode("只有群主可以添加成员", "UTF-8"));
                 return;
             }
 
@@ -226,7 +228,7 @@ public class GroupServlet extends HttpServlet {
             request.setAttribute("existingMemberIds", existingMemberIds);
             request.getRequestDispatcher("/jsp/group/add-members.jsp").forward(request, response);
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/group/my-groups?error=无效的群ID");
+            response.sendRedirect(request.getContextPath() + "/group/my-groups?error=" + URLEncoder.encode("无效的群ID", "UTF-8"));
         }
     }
 
@@ -244,12 +246,12 @@ public class GroupServlet extends HttpServlet {
             int groupId = Integer.parseInt(groupIdStr);
             ActivityGroup group = groupDAO.findById(groupId);
             if (group == null) {
-                response.sendRedirect(request.getContextPath() + "/group/my-groups?error=群不存在");
+                response.sendRedirect(request.getContextPath() + "/group/my-groups?error=" + URLEncoder.encode("群不存在", "UTF-8"));
                 return;
             }
 
             if (!memberDAO.isOwner(groupId, currentUser.getId())) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "只有群主可以添加成员");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, URLEncoder.encode("只有群主可以添加成员", "UTF-8"));
                 return;
             }
 
@@ -270,9 +272,9 @@ public class GroupServlet extends HttpServlet {
                 }
             }
 
-            response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId + "?success=添加了" + addedCount + "名成员");
+            response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId + "?success=" + URLEncoder.encode("添加了" + addedCount + "名成员", "UTF-8"));
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/group/my-groups?error=无效的群ID");
+            response.sendRedirect(request.getContextPath() + "/group/my-groups?error=" + URLEncoder.encode("无效的群ID", "UTF-8"));
         }
     }
 

@@ -133,6 +133,12 @@
     </style>
 </head>
 <body>
+    <c:if test="${not empty param.success}">
+        <div class="alert alert-success alert-dismissible mx-3 mt-3" role="alert">
+            ${param.success}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
     <div class="container-fluid py-3">
         <div class="row">
             <div class="col-md-9">
