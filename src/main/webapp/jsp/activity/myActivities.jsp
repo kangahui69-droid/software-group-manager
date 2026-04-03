@@ -37,6 +37,7 @@
                             <option value="confirmed" ${statusFilter == 'confirmed' ? 'selected' : ''}>已确认</option>
                             <option value="rejected" ${statusFilter == 'rejected' ? 'selected' : ''}>已驳回</option>
                             <option value="expired" ${statusFilter == 'expired' ? 'selected' : ''}>已过期</option>
+                            <option value="activityEnded" ${statusFilter == 'activityEnded' ? 'selected' : ''}>活动已结束</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -108,13 +109,16 @@
                                         <c:when test="${reg.displayStatus == 'expired'}">
                                             <span class="badge bg-secondary text-white">已过期</span>
                                         </c:when>
+                                        <c:when test="${reg.displayStatus == 'activityEnded'}">
+                                            <span class="badge bg-secondary text-white">活动已结束</span>
+                                        </c:when>
                                         <c:otherwise>
                                             <span class="badge bg-secondary text-white">未知</span>
                                         </c:otherwise>
                                     </c:choose>
                                 </td>
                                 <td>
-                                    <c:if test="${reg.status == 'pending' && not reg.expired}">
+                                    <c:if test="${reg.status == 'pending' && not reg.registrationClosed}">
                                         <a href="${pageContext.request.contextPath}/activity?action=cancel&activityId=${reg.activityId}" 
                                            class="btn btn-outline-danger btn-sm"
                                            onclick="return confirm('确定要取消报名吗？')">
@@ -165,6 +169,10 @@
                     <div class="col-md-3">
                         <span class="badge bg-secondary text-white me-1">已过期</span>
                         <span class="text-muted">报名已截止且未处理</span>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge bg-secondary text-white me-1">活动已结束</span>
+                        <span class="text-muted">活动已结束/已取消/进行中</span>
                     </div>
                 </div>
             </div>
