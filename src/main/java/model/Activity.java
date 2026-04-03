@@ -254,7 +254,9 @@ public class Activity {
      * 获取报名状态描述
      */
     public String getRegistrationStatusText() {
-        if (isRegistrationEnded()) {
+        if (STATUS_COMPLETED.equals(status) || STATUS_CANCELED.equals(status) || STATUS_ONGOING.equals(status)) {
+            return "报名已结束";
+        } else if (isRegistrationEnded()) {
             return "报名已结束";
         } else if (isInRegistrationPeriod()) {
             return "报名进行中";
@@ -262,5 +264,16 @@ public class Activity {
             return "报名未开始";
         }
         return "未知";
+    }
+
+    /**
+     * 判断活动报名是否已关闭（考虑活动状态）
+     */
+    public boolean isRegistrationClosed() {
+        return STATUS_COMPLETED.equals(status) || STATUS_CANCELED.equals(status) || STATUS_ONGOING.equals(status) || isRegistrationEnded();
+    }
+    
+    public boolean getRegistrationClosed() {
+        return isRegistrationClosed();
     }
 }

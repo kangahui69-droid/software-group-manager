@@ -631,6 +631,15 @@ public class ActivityServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("活动不存在"));
                 return;
             }
+            
+            // 检查活动状态是否允许报名
+            if (Activity.STATUS_COMPLETED.equals(activity.getStatus()) || 
+                Activity.STATUS_CANCELED.equals(activity.getStatus()) ||
+                Activity.STATUS_ONGOING.equals(activity.getStatus())) {
+                conn.rollback();
+                response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode("活动已结束，不能报名"));
+                return;
+            }
 
             // 检查是否在报名有效期内
             if (!activity.isInRegistrationPeriod()) {
@@ -706,7 +715,20 @@ public class ActivityServlet extends HttpServlet {
             
             // 检查活动报名是否已截止
             Activity activity = activityDAO.findById(activityId);
-            if (activity != null && activity.isRegistrationEnded()) {
+            if (activity == null) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=myActivities&error=" + encode("活动不存在"));
+                return;
+            }
+            
+            // 检查活动状态是否允许取消报名
+            if (Activity.STATUS_COMPLETED.equals(activity.getStatus()) || 
+                Activity.STATUS_CANCELED.equals(activity.getStatus()) ||
+                Activity.STATUS_ONGOING.equals(activity.getStatus())) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=myActivities&error=" + encode("活动已结束，无法取消报名"));
+                return;
+            }
+            
+            if (activity.isRegistrationEnded()) {
                 response.sendRedirect(request.getContextPath() + "/activity?action=myActivities&error=" + encode("报名已截止，无法取消"));
                 return;
             }
