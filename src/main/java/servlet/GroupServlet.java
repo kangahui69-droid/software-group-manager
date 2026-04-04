@@ -2,33 +2,45 @@ package servlet;
 
 import dao.ActivityDAO;
 import dao.ActivityGroupDAO;
+import dao.FileStorageDAO;
 import dao.GroupMemberDAO;
 import dao.GroupMessageDAO;
 import dao.RegistrationDAO;
 import dao.UserGroupDAO;
 import model.Activity;
 import model.ActivityGroup;
+import model.FileStorage;
 import model.GroupMember;
 import model.GroupMessage;
 import model.Registration;
 import model.User;
 import model.UserGroup;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.util.List;
+import javax.servlet.http.Part;
 
 /**
  * 群聊Servlet
  */
 @WebServlet("/group/*")
+@MultipartConfig(maxFileSize = 1024 * 1024 * 10)
 public class GroupServlet extends HttpServlet {
 
     private ActivityGroupDAO groupDAO = new ActivityGroupDAO();
@@ -37,6 +49,8 @@ public class GroupServlet extends HttpServlet {
     private UserGroupDAO userGroupDAO = new UserGroupDAO();
     private ActivityDAO activityDAO = new ActivityDAO();
     private RegistrationDAO registrationDAO = new RegistrationDAO();
+    private FileStorageDAO fileStorageDAO = new FileStorageDAO();
+    private final String UPLOAD_BASE_DIR = "localstorage/group_files";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -72,6 +86,8 @@ public class GroupServlet extends HttpServlet {
             showCreateForActivityForm(request, response, currentUser);
         } else if (pathInfo.equals("/add-members") || "addMembers".equals(action)) {
             showAddMembersForm(request, response, currentUser);
+        } else if (pathInfo.equals("/downloadFile")) {
+            downloadFile(request, response, currentUser);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -95,6 +111,8 @@ public class GroupServlet extends HttpServlet {
             createGroup(request, response, currentUser);
         } else if (pathInfo.equals("/send")) {
             sendMessage(request, response, currentUser);
+        } else if (pathInfo.equals("/sendFile")) {
+            sendFileMessage(request, response, currentUser);
         } else if (pathInfo.equals("/delete")) {
             deleteGroup(request, response, currentUser);
         } else if (pathInfo.equals("/addMultiple")) {
@@ -358,6 +376,90 @@ public class GroupServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId);
     }
 
+    private void sendFileMessage(HttpServletRequest request, HttpServletResponse response, User currentUser)
+            throws ServletException, IOException {
+        String groupIdStr = request.getParameter("groupId");
+        
+        if (groupIdStr == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        int groupId = Integer.parseInt(groupIdStr);
+
+        if (!memberDAO.isMember(groupId, currentUser.getId())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        Part filePart = request.getPart("file");
+        if (filePart == null || filePart.getSize() == 0) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "没有选择文件");
+            return;
+        }
+
+        String fileName = extractFileName(filePart);
+        if (fileName == null || fileName.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "无效的文件名");
+            return;
+        }
+
+        String uploadPath = getServletContext().getRealPath("/" + UPLOAD_BASE_DIR);
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        String uniqueFileName = System.currentTimeMillis() + "_" + fileName;
+        String filePath = uploadPath + File.separator + uniqueFileName;
+
+        try (InputStream input = filePart.getInputStream()) {
+            Files.copy(input, new File(filePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        FileStorage fileStorage = new FileStorage();
+        fileStorage.setCreateBy(currentUser.getId());
+        fileStorage.setOriginalName(fileName);
+        fileStorage.setStoredName(uniqueFileName);
+        fileStorage.setFilePath("/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
+        fileStorage.setFileType(filePart.getContentType());
+        fileStorage.setFileSize(filePart.getSize());
+        fileStorage.setCategory("group_file");
+
+        Integer fileId = fileStorageDAO.insert(fileStorage);
+
+        GroupMessage message = new GroupMessage();
+        message.setGroupId(groupId);
+        message.setSenderId(currentUser.getId());
+        message.setContent("[文件] " + fileName);
+        message.setMessageType(GroupMessage.MESSAGE_TYPE_FILE);
+        message.setFileId(fileId);
+        message.setFileName(fileName);
+        message.setFileSize(filePart.getSize());
+        message.setFileType(filePart.getContentType());
+        message.setFilePath("/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
+
+        messageDAO.insert(message);
+
+        response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId);
+    }
+
+    private String extractFileName(Part part) {
+        String contentDisp = part.getHeader("content-disposition");
+        String[] items = contentDisp.split("; ");
+        for (String s : items) {
+            if (s.startsWith("filename=")) {
+                try {
+                    return URLDecoder.decode(s.substring(s.indexOf("=") + 2, s.length() - 1), "UTF-8");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
     private void deleteGroup(HttpServletRequest request, HttpServletResponse response, User currentUser)
             throws ServletException, IOException {
         String groupIdStr = request.getParameter("groupId");
@@ -383,5 +485,51 @@ public class GroupServlet extends HttpServlet {
         groupDAO.delete(groupId);
 
         response.sendRedirect(request.getContextPath() + "/group/my-groups");
+    }
+
+    private void downloadFile(HttpServletRequest request, HttpServletResponse response, User currentUser)
+            throws ServletException, IOException {
+        String fileIdStr = request.getParameter("fileId");
+        String fileName = request.getParameter("fileName");
+
+        if (fileIdStr == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "文件ID不能为空");
+            return;
+        }
+
+        Integer fileId = Integer.parseInt(fileIdStr);
+        FileStorage fileStorage = fileStorageDAO.findById(fileId);
+
+        if (fileStorage == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "文件不存在");
+            return;
+        }
+
+        String filePath = getServletContext().getRealPath(fileStorage.getFilePath());
+        File file = new File(filePath);
+
+        if (!file.exists()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "文件不存在");
+            return;
+        }
+
+        response.setContentType("application/octet-stream");
+        response.setContentLengthLong(fileStorage.getFileSize());
+        
+        String downloadFileName = fileStorage.getOriginalName();
+        if (fileName != null && !fileName.isEmpty()) {
+            downloadFileName = fileName;
+        }
+        
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + java.net.URLEncoder.encode(downloadFileName, "UTF-8") + "\"");
+
+        try (InputStream input = new FileInputStream(file);
+             OutputStream output = response.getOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+        }
     }
 }

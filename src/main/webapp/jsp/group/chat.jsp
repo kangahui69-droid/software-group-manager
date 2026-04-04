@@ -130,6 +130,76 @@
             background: #ffc107;
             color: #000;
         }
+        .message-file {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            max-width: 300px;
+        }
+        .message.mine .message-file {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.3);
+            color: #fff;
+        }
+        .message-file:hover {
+            background: #e9ecef;
+            text-decoration: none;
+        }
+        .message.mine .message-file:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .message-file .file-icon {
+            font-size: 32px;
+            margin-right: 10px;
+            color: #206bc4;
+        }
+        .message.mine .message-file .file-icon {
+            color: #fff;
+        }
+        .message-file .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .message-file .file-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .message-file .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+        .message.mine .message-file .file-size {
+            color: rgba(255,255,255,0.8);
+        }
+        .message-file .file-download {
+            margin-left: 10px;
+            font-size: 20px;
+        }
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .file-upload-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .file-upload-btn input[type=file] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -171,7 +241,21 @@
                                 </div>
                                 <div class="message-content">
                                     <div class="message-sender">${msg.senderName}</div>
-                                    <div class="message-bubble">${msg.content}</div>
+                                    <c:choose>
+                                        <c:when test="${msg.messageType == 'FILE'}">
+                                            <a href="${pageContext.request.contextPath}/group/downloadFile?fileId=${msg.fileId}&fileName=${msg.fileName}" class="message-file" download>
+                                                <i class="bi bi-file-earmark-fill file-icon"></i>
+                                                <div class="file-info">
+                                                    <div class="file-name" title="${msg.fileName}">${msg.fileName}</div>
+                                                    <div class="file-size">${msg.formattedFileSize}</div>
+                                                </div>
+                                                <i class="bi bi-download file-download"></i>
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <div class="message-bubble">${msg.content}</div>
+                                        </c:otherwise>
+                                    </c:choose>
                                     <div class="message-time">
                                         <fmt:formatDate value="${msg.sentAt}" pattern="HH:mm:ss" />
                                     </div>
@@ -188,13 +272,28 @@
                     </div>
                     
                     <div class="chat-input">
-                        <form action="${pageContext.request.contextPath}/group/send" method="post" id="messageForm">
+                        <form action="${pageContext.request.contextPath}/group/send" method="post" id="messageForm" class="mb-2">
                             <input type="hidden" name="groupId" value="${group.id}">
-                            <input type="text" class="form-control" name="content" placeholder="输入消息..." 
-                                   autocomplete="off" required>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-send"></i> 发送
-                            </button>
+                            <div class="chat-input-wrapper">
+                                <input type="text" class="form-control" name="content" placeholder="输入消息..." 
+                                       autocomplete="off" required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send"></i> 发送
+                                </button>
+                            </div>
+                        </form>
+                        <form action="${pageContext.request.contextPath}/group/sendFile" method="post" enctype="multipart/form-data" id="fileForm">
+                            <input type="hidden" name="groupId" value="${group.id}">
+                            <div class="chat-input-wrapper">
+                                <div class="btn btn-outline-secondary file-upload-btn">
+                                    <i class="bi bi-paperclip"></i> 选择文件
+                                    <input type="file" name="file" id="fileInput" accept="*/*">
+                                </div>
+                                <span class="file-name-display text-muted" id="fileNameDisplay"></span>
+                                <button type="submit" class="btn btn-success" id="uploadBtn" style="display: none;">
+                                    <i class="bi bi-cloud-upload"></i> 上传
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -270,6 +369,33 @@
         document.addEventListener('DOMContentLoaded', function() {
             var messagesDiv = document.getElementById('chatMessages');
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            var fileInput = document.getElementById('fileInput');
+            var fileNameDisplay = document.getElementById('fileNameDisplay');
+            var uploadBtn = document.getElementById('uploadBtn');
+            var fileForm = document.getElementById('fileForm');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        var fileName = this.files[0].name;
+                        fileNameDisplay.textContent = fileName;
+                        uploadBtn.style.display = 'block';
+                    } else {
+                        fileNameDisplay.textContent = '';
+                        uploadBtn.style.display = 'none';
+                    }
+                });
+            }
+
+            if (fileForm) {
+                fileForm.addEventListener('submit', function() {
+                    if (!fileInput.files || fileInput.files.length === 0) {
+                        event.preventDefault();
+                        return false;
+                    }
+                });
+            }
         });
     </script>
 </body>
