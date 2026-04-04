@@ -13,7 +13,7 @@ import java.util.List;
 public class GroupMessageDAO {
 
     public int insert(GroupMessage message) {
-        String sql = "INSERT INTO group_message (group_id, sender_id, content) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO group_message (group_id, sender_id, content, message_type, file_id, file_name, file_size, file_type, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -23,6 +23,12 @@ public class GroupMessageDAO {
             pstmt.setInt(1, message.getGroupId());
             pstmt.setInt(2, message.getSenderId());
             pstmt.setString(3, message.getContent());
+            pstmt.setString(4, message.getMessageType() != null ? message.getMessageType() : GroupMessage.MESSAGE_TYPE_TEXT);
+            pstmt.setObject(5, message.getFileId());
+            pstmt.setString(6, message.getFileName());
+            pstmt.setObject(7, message.getFileSize());
+            pstmt.setString(8, message.getFileType());
+            pstmt.setString(9, message.getFilePath());
             pstmt.executeUpdate();
             
             rs = pstmt.getGeneratedKeys();
@@ -135,6 +141,12 @@ public class GroupMessageDAO {
         message.setSentAt(rs.getTimestamp("sent_at"));
         message.setSenderName(rs.getString("sender_name"));
         message.setSenderAvatarFileId(rs.getString("sender_avatar_file_id"));
+        message.setMessageType(rs.getString("message_type"));
+        message.setFileId(rs.getObject("file_id", Integer.class));
+        message.setFileName(rs.getString("file_name"));
+        message.setFileSize(rs.getObject("file_size", Long.class));
+        message.setFileType(rs.getString("file_type"));
+        message.setFilePath(rs.getString("file_path"));
         return message;
     }
 
