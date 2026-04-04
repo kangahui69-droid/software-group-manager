@@ -12,6 +12,7 @@ public class News {
     private String contentPath; // HTML文件相对路径
     private String summary;
     private Integer authorId;
+    private Integer activityId;
     private Integer status; // 1-发布，0-下线
     private Date createdAt;
     private Date updatedAt;
@@ -66,6 +67,14 @@ public class News {
 
     public void setAuthorId(Integer authorId) {
         this.authorId = authorId;
+    }
+
+    public Integer getActivityId() {
+        return activityId;
+    }
+
+    public void setActivityId(Integer activityId) {
+        this.activityId = activityId;
     }
 
     public Integer getStatus() {

@@ -117,7 +117,7 @@ public class NewsDAO {
      * 添加新闻
      */
     public boolean insert(News news) {
-        String sql = "INSERT INTO news (title, type, content_path, summary, author_id, status) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO news (title, type, content_path, summary, author_id, activity_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -128,7 +128,8 @@ public class NewsDAO {
             pstmt.setString(3, news.getContentPath());
             pstmt.setString(4, news.getSummary());
             pstmt.setObject(5, news.getAuthorId());
-            pstmt.setInt(6, news.getStatus() != null ? news.getStatus() : 1);
+            pstmt.setObject(6, news.getActivityId());
+            pstmt.setInt(7, news.getStatus() != null ? news.getStatus() : 1);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -195,10 +196,59 @@ public class NewsDAO {
         news.setContentPath(rs.getString("content_path"));
         news.setSummary(rs.getString("summary"));
         news.setAuthorId(rs.getInt("author_id"));
+        news.setActivityId((Integer) rs.getObject("activity_id"));
         news.setStatus(rs.getInt("status"));
         news.setCreatedAt(rs.getTimestamp("created_at"));
         news.setUpdatedAt(rs.getTimestamp("updated_at"));
         return news;
+    }
+
+    /**
+     * 根据活动ID查询新闻
+     */
+    public News findByActivityId(Integer activityId) {
+        String sql = "SELECT * FROM news WHERE activity_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToNews(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return null;
+    }
+
+    /**
+     * 检查指定活动是否已生成新闻
+     */
+    public boolean existsByActivityId(Integer activityId) {
+        String sql = "SELECT COUNT(*) FROM news WHERE activity_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, activityId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return false;
     }
 
     /**

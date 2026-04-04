@@ -70,6 +70,8 @@ public class NewsServlet extends HttpServlet {
             updateNews(request, response);
         } else if ("delete".equals(action)) {
             deleteNews(request, response);
+        } else if ("publish".equals(action)) {
+            publishNews(request, response);
         } else {
             response.sendRedirect(request.getContextPath() + "/news?action=manage");
         }
@@ -343,6 +345,23 @@ public class NewsServlet extends HttpServlet {
             try {
                 Integer id = Integer.parseInt(idStr);
                 newsDAO.updateStatus(id, 0);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+        response.sendRedirect(request.getContextPath() + "/news?action=manage");
+    }
+
+    /**
+     * 发布新闻
+     */
+    private void publishNews(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String idStr = request.getParameter("id");
+        if (idStr != null) {
+            try {
+                Integer id = Integer.parseInt(idStr);
+                newsDAO.updateStatus(id, 1);
             } catch (NumberFormatException e) {
                 e.printStackTrace();
             }

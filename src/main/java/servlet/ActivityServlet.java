@@ -4,18 +4,22 @@ import dao.ActivityDAO;
 import dao.RegistrationDAO;
 import dao.MemberProfileDAO;
 import dao.DictionaryDAO;
+import dao.NewsDAO;
 import model.Activity;
 import model.Registration;
 import model.User;
 import model.MemberProfile;
 import model.Dictionary;
+import model.News;
 import util.AuthHelper;
+import util.FileUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.sql.Connection;
@@ -33,6 +37,7 @@ public class ActivityServlet extends HttpServlet {
     private RegistrationDAO registrationDAO = new RegistrationDAO();
     private MemberProfileDAO memberProfileDAO = new MemberProfileDAO();
     private DictionaryDAO dictionaryDAO = new DictionaryDAO();
+    private NewsDAO newsDAO = new NewsDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -420,6 +425,10 @@ public class ActivityServlet extends HttpServlet {
             Activity activity = extractFromRequest(request);
             activity.setId(Integer.parseInt(request.getParameter("id")));
 
+            // 获取更新前的活动状态
+            Activity oldActivity = activityDAO.findById(activity.getId());
+            String oldStatus = oldActivity != null ? oldActivity.getStatus() : null;
+
             // ====== 时间校验 ======
             String timeError = validateActivityTime(activity);
             if (timeError != null) {
@@ -443,6 +452,12 @@ public class ActivityServlet extends HttpServlet {
             // =======================================================
 
             if (activityDAO.update(activity)) {
+                // 检查活动状态是否变为"已结束"，且之前不是"已结束"
+                if (Activity.STATUS_COMPLETED.equals(activity.getStatus()) 
+                    && !Activity.STATUS_COMPLETED.equals(oldStatus)) {
+                    // 自动生成活动新闻
+                    generateActivityNews(activity, request);
+                }
                 response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动更新成功"));
             } else {
                 response.sendRedirect(request.getContextPath() + "/activity?action=edit&id=" + activity.getId() + "&error=" + encode("更新失败"));
@@ -451,6 +466,71 @@ public class ActivityServlet extends HttpServlet {
             e.printStackTrace();
             String id = request.getParameter("id");
             response.sendRedirect(request.getContextPath() + "/activity?action=edit&id=" + id + "&error=" + encode(e.getMessage()));
+        }
+    }
+
+    /**
+     * 为活动生成新闻（活动回顾）
+     * 新闻默认为待发布状态，需要管理员审核后发布
+     */
+    private void generateActivityNews(Activity activity, HttpServletRequest request) {
+        try {
+            // 检查是否已存在该活动的新闻
+            if (newsDAO.existsByActivityId(activity.getId())) {
+                return;
+            }
+
+            // 获取当前管理员用户作为新闻作者
+            User currentUser = AuthHelper.getCurrentUser(request);
+            Integer authorId = currentUser != null ? currentUser.getId() : activity.getCreatorId();
+            if (authorId == null) {
+                authorId = 1; // 默认管理员ID
+            }
+
+            // 获取参与人数
+            int participantCount = registrationDAO.getConfirmedCount(activity.getId());
+
+            // 格式化时间
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            String activityTime = activity.getActivityStartTime() != null ? sdf.format(activity.getActivityStartTime()) : "待定";
+            String location = activity.getLocation() != null && !activity.getLocation().isEmpty() ? activity.getLocation() : "待定";
+
+            // 构建新闻摘要：活动时间、活动地点、参与人数
+            String summary = String.format("活动时间：%s | 活动地点：%s | 参与人数：%d人", 
+                activityTime, location, participantCount);
+
+            // 构建新闻标题：添加活动回顾前缀
+            String newsTitle = "【活动回顾】" + activity.getTitle();
+
+            // 将活动描述转换为HTML内容
+            String content = activity.getDescription() != null ? activity.getDescription() : "";
+
+            // 生成HTML文件
+            String fileName = System.currentTimeMillis() + "_activity.html";
+            String relativePath = "localstorage/news/activity/" + fileName;
+            String realPath = getServletContext().getRealPath("/" + relativePath);
+
+            File htmlFile = new File(realPath);
+            FileUtil.ensureDirectoryExists(htmlFile.getParent());
+
+            try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
+                    new java.io.FileOutputStream(htmlFile), java.nio.charset.StandardCharsets.UTF_8)) {
+                writer.write(content);
+            }
+
+            // 创建新闻对象
+            News news = new News();
+            news.setTitle(newsTitle);
+            news.setType("activity");
+            news.setContentPath(relativePath);
+            news.setSummary(summary);
+            news.setAuthorId(authorId);
+            news.setActivityId(activity.getId());
+            news.setStatus(0); // 待发布，需要管理员审核
+
+            newsDAO.insert(news);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
