@@ -51,8 +51,8 @@
                                             <label class="form-label">状态</label>
                                             <select class="form-select" name="status">
                                                 <option value="">全部</option>
-                                                <option value="1" ${status == '1' ? 'selected' : ''}>正常</option>
-                                                <option value="0" ${status == '0' ? 'selected' : ''}>已删除</option>
+                                                <option value="1" ${status == '1' ? 'selected' : ''}>已发布</option>
+                                                <option value="0" ${status == '0' ? 'selected' : ''}>未发布</option>
                                             </select>
                                         </div>
                                         <div class="col-md-2 d-flex align-items-end">
@@ -101,9 +101,9 @@
                                                         </td>
                                                         <td>
                                                             <% if (news.getStatus()==1) { %>
-                                                                <span class="badge bg-success">正常</span>
+                                                                <span class="badge bg-success">已发布</span>
                                                                 <% } else { %>
-                                                                    <span class="badge bg-danger">已删除</span>
+                                                                    <span class="badge bg-warning text-dark">未发布</span>
                                                                     <% } %>
                                                         </td>
                                                         <td>
@@ -117,6 +117,14 @@
                                                                         onsubmit="return confirm('确定要删除这条新闻吗？');">
                                                                         <button type="submit"
                                                                             class="btn btn-outline-danger btn-sm">删除</button>
+                                                                    </form>
+                                                                    <% } else { %>
+                                                                    <form
+                                                                        action="${pageContext.request.contextPath}/news?action=publish&id=<%= news.getId() %>"
+                                                                        method="POST" class="d-inline"
+                                                                        onsubmit="return confirm('确定要发布这条新闻吗？');">
+                                                                        <button type="submit"
+                                                                            class="btn btn-outline-success btn-sm">发布</button>
                                                                     </form>
                                                                     <% } %>
                                                             </div>

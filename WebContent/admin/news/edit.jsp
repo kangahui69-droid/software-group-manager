@@ -80,14 +80,14 @@
                                                             </div>
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
-                                                                    <label class="form-label">状态</label>
+                                                                    <label class="form-label">发布状态</label>
                                                                     <select class="form-select" name="status">
                                                                         <option value="1" <%=(isEdit &&
-                                                                            news.getStatus()==1) ? "selected" : "" %>>正常
+                                                                            news.getStatus()==1) ? "selected" : "" %>>已发布
                                                                         </option>
                                                                         <option value="0" <%=(isEdit &&
                                                                             news.getStatus()==0) ? "selected" : "" %>
-                                                                            >禁用/删除</option>
+                                                                            >未发布</option>
                                                                     </select>
                                                                 </div>
                                                             </div>
