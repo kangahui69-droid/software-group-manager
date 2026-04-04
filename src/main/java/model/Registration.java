@@ -28,6 +28,7 @@ public class Registration {
     private Date activityEndTime;
     private Date registrationEndTime;
     private String location;
+    private String activityStatus; // 活动状态：upcoming/ongoing/completed/canceled
 
     public Registration() {
     }
@@ -176,6 +177,25 @@ public class Registration {
         this.location = location;
     }
 
+    public String getActivityStatus() {
+        return activityStatus;
+    }
+
+    public void setActivityStatus(String activityStatus) {
+        this.activityStatus = activityStatus;
+    }
+
+    /**
+     * 判断报名是否已结束（考虑活动状态）
+     */
+    public boolean isRegistrationClosed() {
+        return "completed".equals(activityStatus) || "canceled".equals(activityStatus) || "ongoing".equals(activityStatus) || isExpired();
+    }
+    
+    public boolean getRegistrationClosed() {
+        return isRegistrationClosed();
+    }
+
     /**
      * 检查报名是否已过期（动态计算）
      */
@@ -189,8 +209,15 @@ public class Registration {
     /**
      * 获取报名状态显示文本
      * 如果状态为pending且活动报名已截止，返回"已过期"
+     * 如果活动状态为已完成/已取消/进行中，返回"activityEnded"
      */
     public String getDisplayStatus() {
+        if ("confirmed".equals(status) && ("completed".equals(activityStatus) || "canceled".equals(activityStatus) || "ongoing".equals(activityStatus))) {
+            return "activityEnded";
+        }
+        if ("pending".equals(status) && ("completed".equals(activityStatus) || "canceled".equals(activityStatus) || "ongoing".equals(activityStatus))) {
+            return "activityEnded";
+        }
         if ("pending".equals(status) && registrationEndTime != null && new Date().after(registrationEndTime)) {
             return "expired";
         }

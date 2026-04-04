@@ -134,7 +134,7 @@ public class RegistrationDAO {
     public List<Registration> findByUserId(Integer userId) {
         List<Registration> registrations = new ArrayList<>();
         String sql = "SELECT ap.*, a.name as activity_name, a.activity_start_time, a.activity_end_time, " +
-                    "a.location, a.registration_end_time " +
+                    "a.location, a.registration_end_time, a.status as activity_status " +
                     "FROM activity_participant ap " +
                     "JOIN activity a ON ap.activity_id = a.id " +
                     "WHERE ap.user_id = ? AND a.deleted = 0 AND ap.deleted = 0 " +
@@ -238,14 +238,22 @@ public class RegistrationDAO {
         if ("expired".equals(status)) {
             // 查询已过期的pending报名（当前时间超过报名截止时间）
             sql = "SELECT ap.*, a.name as activity_name, a.activity_start_time, a.activity_end_time, " +
-                  "a.location, a.registration_end_time " +
+                  "a.location, a.registration_end_time, a.status as activity_status " +
                   "FROM activity_participant ap " +
                   "JOIN activity a ON ap.activity_id = a.id " +
                   "WHERE ap.user_id = ? AND ap.status = 'pending' AND a.registration_end_time < NOW() AND a.deleted = 0 AND ap.deleted = 0 " +
                   "ORDER BY ap.created_at DESC";
+        } else if ("activityEnded".equals(status)) {
+            // 查询活动已结束/已取消/进行中的报名
+            sql = "SELECT ap.*, a.name as activity_name, a.activity_start_time, a.activity_end_time, " +
+                  "a.location, a.registration_end_time, a.status as activity_status " +
+                  "FROM activity_participant ap " +
+                  "JOIN activity a ON ap.activity_id = a.id " +
+                  "WHERE ap.user_id = ? AND (a.status IN ('completed', 'canceled', 'ongoing') OR (ap.status = 'pending' AND a.registration_end_time < NOW())) AND a.deleted = 0 AND ap.deleted = 0 " +
+                  "ORDER BY ap.created_at DESC";
         } else {
             sql = "SELECT ap.*, a.name as activity_name, a.activity_start_time, a.activity_end_time, " +
-                  "a.location, a.registration_end_time " +
+                  "a.location, a.registration_end_time, a.status as activity_status " +
                   "FROM activity_participant ap " +
                   "JOIN activity a ON ap.activity_id = a.id " +
                   "WHERE ap.user_id = ? AND ap.status = ? AND a.deleted = 0 AND ap.deleted = 0 " +
@@ -517,6 +525,10 @@ public class RegistrationDAO {
 
             Timestamp registrationEndTime = rs.getTimestamp("registration_end_time");
             registration.setRegistrationEndTime(registrationEndTime != null ? new java.util.Date(registrationEndTime.getTime()) : null);
+
+            if (hasColumn(rs, "activity_status")) {
+                registration.setActivityStatus(rs.getString("activity_status"));
+            }
         }
 
         // 关联用户信息
