@@ -276,4 +276,83 @@ public class Activity {
     public boolean getRegistrationClosed() {
         return isRegistrationClosed();
     }
+
+    /**
+     * 根据活动时间自动计算活动状态
+     * - 活动开始时间之前：即将开始 (upcoming)
+     * - 活动开始时间和结束时间之间：进行中 (ongoing)
+     * - 活动结束时间之后：已结束 (completed)
+     * - 已取消状态(canceled)不会被自动覆盖
+     * @return 计算后的状态
+     */
+    public String calculateStatus() {
+        if (STATUS_CANCELED.equals(this.status)) {
+            return STATUS_CANCELED;
+        }
+        Date now = new Date();
+        if (activityStartTime == null || activityEndTime == null) {
+            return STATUS_UPCOMING;
+        }
+        if (now.before(activityStartTime)) {
+            return STATUS_UPCOMING;
+        }
+        if (now.after(activityEndTime)) {
+            return STATUS_COMPLETED;
+        }
+        return STATUS_ONGOING;
+    }
+
+    /**
+     * 根据活动时间判断是否为"即将开始"状态
+     */
+    public boolean isUpcoming() {
+        return STATUS_UPCOMING.equals(calculateStatus());
+    }
+
+    public boolean getUpcoming() {
+        return isUpcoming();
+    }
+
+    /**
+     * 根据活动时间判断是否为"进行中"状态
+     */
+    public boolean isOngoing() {
+        return STATUS_ONGOING.equals(calculateStatus());
+    }
+
+    public boolean getOngoing() {
+        return isOngoing();
+    }
+
+    /**
+     * 根据活动时间判断是否为"已结束"状态
+     */
+    public boolean isCompleted() {
+        return STATUS_COMPLETED.equals(calculateStatus());
+    }
+
+    public boolean getCompleted() {
+        return isCompleted();
+    }
+
+    /**
+     * 获取根据时间计算的实际状态显示文本
+     */
+    public String getComputedStatusText() {
+        String computed = calculateStatus();
+        switch (computed) {
+            case STATUS_UPCOMING: return "即将开始";
+            case STATUS_ONGOING: return "进行中";
+            case STATUS_COMPLETED: return "已结束";
+            case STATUS_CANCELED: return "已取消";
+            default: return computed;
+        }
+    }
+
+    /**
+     * 获取计算后的状态值
+     */
+    public String getComputedStatus() {
+        return calculateStatus();
+    }
 }

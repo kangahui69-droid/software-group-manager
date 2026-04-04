@@ -97,6 +97,7 @@
                             <th>类型</th>
                             <th>地点</th>
                             <th>审批状态</th>
+                            <th>活动状态</th>
                             <th>报名状态</th>
                             <th>活动时间</th>
                             <th>报名时间</th>
@@ -141,6 +142,29 @@
                                 </td>
                                 <td>
                                     <c:choose>
+                                        <c:when test="${a.status == 'canceled'}">
+                                            <span class="badge bg-danger">已取消</span>
+                                        </c:when>
+                                        <c:when test="${a.activityStartTime != null && a.activityEndTime != null}">
+                                            <c:choose>
+                                                <c:when test="${a.upcoming}">
+                                                    <span class="badge bg-info">即将开始</span>
+                                                </c:when>
+                                                <c:when test="${a.ongoing}">
+                                                    <span class="badge bg-success">进行中</span>
+                                                </c:when>
+                                                <c:when test="${a.completed}">
+                                                    <span class="badge bg-secondary">已结束</span>
+                                                </c:when>
+                                            </c:choose>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge bg-secondary">未知</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <c:choose>
                                         <c:when test="${a.inRegistrationPeriod}">
                                             <span class="badge bg-success">报名中</span>
                                         </c:when>
@@ -178,7 +202,7 @@
                         </c:forEach>
                         <c:if test="${empty activities}">
                             <tr>
-                                <td colspan="8" class="text-center text-muted">暂无活动记录</td>
+                                <td colspan="9" class="text-center text-muted">暂无活动记录</td>
                             </tr>
                         </c:if>
                     </tbody>
