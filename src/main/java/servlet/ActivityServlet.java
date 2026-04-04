@@ -599,7 +599,12 @@ public class ActivityServlet extends HttpServlet {
             activity.setRegistrationEndTime(regEndCal.getTime());
         }
         
-        activity.setStatus(request.getParameter("status") != null ? request.getParameter("status") : "upcoming");
+        String userStatus = request.getParameter("status");
+        if (Activity.STATUS_CANCELED.equals(userStatus)) {
+            activity.setStatus(Activity.STATUS_CANCELED);
+        } else {
+            activity.setStatus(activity.calculateStatus());
+        }
         return activity;
     }
 
