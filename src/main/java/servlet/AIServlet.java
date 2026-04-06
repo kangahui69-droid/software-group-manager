@@ -74,6 +74,8 @@ public class AIServlet extends HttpServlet {
             sendMessageStream(req, resp);
         } else if ("clear".equals(action)) {
             clearConversation(req, resp);
+        } else if ("execute".equals(action)) {
+            executeAction(req, resp);
         }
     }
 
@@ -96,11 +98,11 @@ public class AIServlet extends HttpServlet {
         String userRole = user != null ? user.getRole() : "GUEST";
         String systemPrompt = aiService.buildSystemPrompt(userRole);
         String context = aiService.buildContext(message, userRole);
-        String fullPrompt = systemPrompt + "\n\n" + context;
+        String userContent = "用户消息: " + message + "\n\n" + context;
 
         try {
             AIClientUtil aiClient = AIClientUtil.getInstance();
-            aiClient.chatStream(fullPrompt, message, resp);
+            aiClient.chatStream(systemPrompt, userContent, resp);
         } catch (Exception e) {
             e.printStackTrace();
             resp.setContentType("text/event-stream;charset=UTF-8");
@@ -180,5 +182,34 @@ public class AIServlet extends HttpServlet {
         List<model.AIFaqStatistics> stats = aiService.getAllFaqStatistics();
         req.setAttribute("stats", stats);
         req.getRequestDispatcher("/jsp/ai/ai_statistics.jsp").forward(req, resp);
+    }
+
+    private void executeAction(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String actionType = req.getParameter("actionType");
+        String actionString = req.getParameter("actionString");
+        String sessionId = req.getParameter("session_id");
+
+        System.out.println("[AIServlet] executeAction - actionType: " + actionType + ", actionString: " + actionString);
+
+        HttpSession session = req.getSession(false);
+        User user = null;
+        if (session != null && session.getAttribute("user") != null) {
+            user = (User) session.getAttribute("user");
+        }
+
+        if (actionType == null || actionType.trim().isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "未指定操作类型");
+            PrintWriter out = resp.getWriter();
+            out.print(gson.toJson(error));
+            return;
+        }
+
+        Map<String, String> params = aiService.parseActionParams(actionString);
+        Map<String, Object> result = aiService.executeAction(actionType, params, user);
+
+        PrintWriter out = resp.getWriter();
+        out.print(gson.toJson(result));
     }
 }

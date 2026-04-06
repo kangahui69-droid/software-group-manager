@@ -28,6 +28,11 @@
                             <h2 class="page-title">
                                 ${pageTitle}
                             </h2>
+                            <c:if test="${activeNav == 'activity'}">
+                                <a href="${pageContext.request.contextPath}/activity?action=list" class="btn btn-outline-primary btn-sm mt-2">
+                                    更多活动详情 <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </c:if>
                         </div>
                     </div>
                 </div>

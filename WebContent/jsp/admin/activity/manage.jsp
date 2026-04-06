@@ -96,8 +96,8 @@
                             <th>活动名称</th>
                             <th>类型</th>
                             <th>地点</th>
-                            <th>审批状态</th>
                             <th>活动状态</th>
+                            <th>审批状态</th>
                             <th>报名状态</th>
                             <th>活动时间</th>
                             <th>报名时间</th>
@@ -129,6 +129,22 @@
                                 <td class="text-muted">${a.location}</td>
                                 <td>
                                     <c:choose>
+                                        <c:when test="${a.status == 'upcoming'}">
+                                            <span class="badge bg-info">即将开始</span>
+                                        </c:when>
+                                        <c:when test="${a.status == 'ongoing'}">
+                                            <span class="badge bg-success">进行中</span>
+                                        </c:when>
+                                        <c:when test="${a.status == 'completed'}">
+                                            <span class="badge bg-secondary text-white">已结束</span>
+                                        </c:when>
+                                        <c:when test="${a.status == 'canceled'}">
+                                            <span class="badge bg-danger">已取消</span>
+                                        </c:when>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <c:choose>
                                         <c:when test="${a.approvalStatus == 'approved'}">
                                             <span class="badge bg-success">已批准</span>
                                         </c:when>
@@ -142,29 +158,9 @@
                                 </td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${a.status == 'canceled'}">
-                                            <span class="badge bg-danger">已取消</span>
+                                        <c:when test="${a.status == 'completed' || a.status == 'canceled' || a.status == 'ongoing'}">
+                                            <span class="badge bg-secondary text-white">已结束</span>
                                         </c:when>
-                                        <c:when test="${a.activityStartTime != null && a.activityEndTime != null}">
-                                            <c:choose>
-                                                <c:when test="${a.upcoming}">
-                                                    <span class="badge bg-info">即将开始</span>
-                                                </c:when>
-                                                <c:when test="${a.ongoing}">
-                                                    <span class="badge bg-success">进行中</span>
-                                                </c:when>
-                                                <c:when test="${a.completed}">
-                                                    <span class="badge bg-secondary">已结束</span>
-                                                </c:when>
-                                            </c:choose>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="badge bg-secondary">未知</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td>
-                                    <c:choose>
                                         <c:when test="${a.inRegistrationPeriod}">
                                             <span class="badge bg-success">报名中</span>
                                         </c:when>

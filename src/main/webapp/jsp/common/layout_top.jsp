@@ -453,6 +453,13 @@
                                                     <span class="nav-link-title">问题管理</span>
                                                 </a>
                                             </li>
+                                            <li class="nav-item ${param.active == 'groupAdmin' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/group/admin?action=list">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-chat-dots-fill"></i></span>
+                                                    <span class="nav-link-title">群聊管理</span>
+                                                </a>
+                                            </li>
                                         </c:when>
                                     </c:choose>
                                 </ul>

@@ -16,6 +16,9 @@
                     <fmt:formatDate value="${activity.activityStartTime}" pattern="yyyy-MM-dd HH:mm" /> | 
                     地点: ${activity.location} |
                     <c:choose>
+                        <c:when test="${activity.status == 'completed' || activity.status == 'canceled' || activity.status == 'ongoing'}">
+                            <span class="text-danger">报名已结束</span>
+                        </c:when>
                         <c:when test="${activity.registrationEnded}">
                             <span class="text-danger">报名已截止</span>
                         </c:when>
@@ -150,9 +153,9 @@
         </c:if>
         
         <!-- 已过期提示 -->
-        <c:if test="${activity.registrationEnded}">
+        <c:if test="${activity.registrationClosed}">
             <div class="alert alert-warning">
-                <strong>注意：</strong>此活动的报名已截止，仅可查看报名记录，无法进行审核操作。
+                <strong>注意：</strong>此活动的报名已结束，仅可查看报名记录，无法进行审核操作。
             </div>
         </c:if>
         
@@ -163,7 +166,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h3 class="card-title">报名人员列表</h3>
-                        <c:if test="${not activity.registrationEnded}">
+                        <c:if test="${not activity.registrationClosed}">
                             <div>
                                 <label class="form-check">
                                     <input type="checkbox" class="form-check-input" id="selectAll">
@@ -173,7 +176,7 @@
                         </c:if>
                     </div>
                 </div>
-                <c:if test="${not activity.registrationEnded}">
+                <c:if test="${not activity.registrationClosed}">
                     <div class="card-body">
                         <div class="mb-3">
                             <button type="submit" name="action" value="batchApprove" class="btn btn-success" onclick="return confirm('确定要批量通过选中的报名吗？')">
@@ -202,7 +205,7 @@
                             <c:forEach var="r" items="${registrations}">
                                 <tr>
                                     <td>
-                                        <c:if test="${not activity.registrationEnded}">
+                                        <c:if test="${not activity.registrationClosed}">
                                             <input type="checkbox" name="userIds" value="${r.userId}" class="participant-checkbox">
                                         </c:if>
                                     </td>
@@ -233,7 +236,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-list flex-nowrap">
-                                            <c:if test="${not activity.registrationEnded}">
+                                            <c:if test="${not activity.registrationClosed}">
                                                 <c:if test="${r.status == 'pending'}">
                                                     <a href="${pageContext.request.contextPath}/activity?action=approve&activityId=${activity.id}&userId=${r.userId}" class="btn btn-success btn-sm">通过</a>
                                                 </c:if>
