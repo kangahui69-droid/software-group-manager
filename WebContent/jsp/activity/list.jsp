@@ -121,6 +121,9 @@
                                     </c:choose>
                                 </span>
                                 <c:choose>
+                                    <c:when test="${activity.status == 'completed' || activity.status == 'canceled' || activity.status == 'ongoing'}">
+                                        <span class="badge bg-secondary text-white">报名已结束</span>
+                                    </c:when>
                                     <c:when test="${activity.inRegistrationPeriod}">
                                         <span class="badge bg-success text-white">报名进行中</span>
                                     </c:when>

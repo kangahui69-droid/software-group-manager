@@ -126,6 +126,19 @@
                     </div>
                     <div class="card-body">
                         <c:choose>
+                            <c:when test="${activity.status == 'completed' || activity.status == 'canceled' || activity.status == 'ongoing'}">
+                                <div class="alert alert-secondary alert-dismissible" role="alert">
+                                    <div class="d-flex">
+                                        <div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="alert-title">报名已结束</h4>
+                                            <div class="text-muted">该活动已结束</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:when>
                             <c:when test="${activity.inRegistrationPeriod}">
                                 <div class="alert alert-success alert-dismissible" role="alert">
                                     <div class="d-flex">
@@ -228,6 +241,13 @@
                                     <button class="btn btn-success w-100" disabled>
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l5 5l10 -10"></path></svg>
                                         已报名
+                                    </button>
+                                </div>
+                            </c:when>
+                            <c:when test="${activity.status == 'completed' || activity.status == 'canceled' || activity.status == 'ongoing'}">
+                                <div class="mt-3">
+                                    <button class="btn btn-secondary w-100" disabled>
+                                        活动已结束
                                     </button>
                                 </div>
                             </c:when>

@@ -318,26 +318,36 @@ public class GroupServlet extends HttpServlet {
         group.setActivityId(activityId);
 
         if (groupDAO.insert(group)) {
-            ActivityGroup createdGroup = groupDAO.findByActivityId(activityId);
-            if (createdGroup == null) {
-                List<ActivityGroup> groups = groupDAO.findByOwnerId(currentUser.getId());
-                if (!groups.isEmpty()) {
-                    createdGroup = groups.get(0);
+            ActivityGroup createdGroup = null;
+            Integer newGroupId = null;
+            
+            if (activityId != null) {
+                createdGroup = groupDAO.findByActivityId(activityId);
+                if (createdGroup != null) {
+                    newGroupId = createdGroup.getId();
                 }
             }
             
-            if (createdGroup != null) {
-                memberDAO.insertOwner(createdGroup.getId(), currentUser.getId());
-                userGroupDAO.insertUserToGroup(currentUser.getId(), createdGroup.getId());
+            if (newGroupId == null) {
+                List<ActivityGroup> groups = groupDAO.findByOwnerId(currentUser.getId());
+                if (!groups.isEmpty()) {
+                    createdGroup = groups.get(0);
+                    newGroupId = createdGroup.getId();
+                }
+            }
+            
+            if (newGroupId != null) {
+                memberDAO.insertOwner(newGroupId, currentUser.getId());
+                userGroupDAO.insertUserToGroup(currentUser.getId(), newGroupId);
 
                 if (selectedUserIds != null && selectedUserIds.length > 0) {
                     for (String userIdStr : selectedUserIds) {
                         try {
                             int userId = Integer.parseInt(userIdStr);
-                            if (userId != currentUser.getId() && !memberDAO.isMember(createdGroup.getId(), userId)) {
-                                GroupMember member = new GroupMember(createdGroup.getId(), userId, GroupMember.ROLE_MEMBER);
+                            if (userId != currentUser.getId() && !memberDAO.isMember(newGroupId, userId)) {
+                                GroupMember member = new GroupMember(newGroupId, userId, GroupMember.ROLE_MEMBER);
                                 memberDAO.insert(member);
-                                userGroupDAO.insertUserToGroup(userId, createdGroup.getId());
+                                userGroupDAO.insertUserToGroup(userId, newGroupId);
                             }
                         } catch (NumberFormatException e) {
                             // 忽略无效的用户ID

@@ -277,7 +277,27 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                assistantContentDiv.innerHTML = data.response.replace(/\n/g, '<br>');
+                var responseText = data.response;
+                console.log("AI response:", responseText);
+                var lastActionIdx = responseText.lastIndexOf('[ACTION]');
+                if (lastActionIdx !== -1) {
+                    var afterAction = responseText.substring(lastActionIdx + 8);
+                    var nextNewline = afterAction.indexOf('\n');
+                    var actionStr;
+                    if (nextNewline !== -1) {
+                        actionStr = afterAction.substring(0, nextNewline).trim();
+                    } else {
+                        actionStr = afterAction.trim();
+                    }
+                    console.log("Action extracted:", actionStr);
+                    if (actionStr.length > 0 && actionStr.includes('=')) {
+                        executeActionFromAI(actionStr, assistantContentDiv, sessionId);
+                    } else {
+                        assistantContentDiv.innerHTML = responseText.replace(/\n/g, '<br>');
+                    }
+                } else {
+                    assistantContentDiv.innerHTML = responseText.replace(/\n/g, '<br>');
+                }
             } else {
                 assistantContentDiv.innerHTML = '<span class="text-danger">' + (data.error || '回复失败') + '</span>';
             }
@@ -287,6 +307,49 @@
             console.error(err);
         });
     });
+
+    function executeActionFromAI(actionStr, contentDiv, sessionId) {
+        console.log("executeActionFromAI called with:", actionStr);
+        var firstPipeIndex = actionStr.indexOf('|');
+        var actionType, params;
+        
+        if (firstPipeIndex === -1) {
+            actionType = actionStr.trim();
+            params = '';
+        } else {
+            actionType = actionStr.substring(0, firstPipeIndex).trim();
+            params = actionStr.substring(firstPipeIndex + 1).trim();
+        }
+        
+        console.log("actionType:", actionType, "params:", params);
+        
+        contentDiv.innerHTML = '<div class="action-executing"><i class="bi bi-hourglass"></i> 正在执行操作...</div>';
+        
+        fetch('${pageContext.request.contextPath}/ai?action=execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'actionType=' + encodeURIComponent(actionType) + '&actionString=' + encodeURIComponent(params) + '&session_id=' + encodeURIComponent(sessionId)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                var resultHtml = '<div class="action-result success"><i class="bi bi-check-circle text-success"></i> ' + data.message + '</div>';
+                if (data.type === 'redirect' && data.redirectUrl) {
+                    resultHtml += '<div class="mt-2"><a href="${pageContext.request.contextPath}' + data.redirectUrl + '" class="btn btn-sm btn-primary">立即跳转</a></div>';
+                }
+                if (data.type === 'view_list' && data.data) {
+                    resultHtml += '<div class="mt-2"><a href="${pageContext.request.contextPath}/activity?action=myActivities" class="btn btn-sm btn-outline-primary">查看详情</a></div>';
+                }
+                contentDiv.innerHTML = resultHtml;
+            } else {
+                contentDiv.innerHTML = '<div class="action-result error"><i class="bi bi-x-circle text-danger"></i> ' + data.message + '</div>';
+            }
+        })
+        .catch(err => {
+            contentDiv.innerHTML = '<span class="text-danger">操作执行失败，请稍后重试。</span>';
+            console.error(err);
+        });
+    }
 
     function sendQuickQuestion(question) {
         document.getElementById('messageInput').value = question;

@@ -1,16 +1,20 @@
 package servlet;
 
 import dao.ActivityDAO;
+import dao.ActivityGroupDAO;
 import dao.RegistrationDAO;
 import dao.MemberProfileDAO;
 import dao.DictionaryDAO;
 import dao.NewsDAO;
+import dao.GroupMemberDAO;
+import dao.UserGroupDAO;
 import model.Activity;
 import model.Registration;
 import model.User;
 import model.MemberProfile;
 import model.Dictionary;
 import model.News;
+import model.ActivityGroup;
 import util.AuthHelper;
 import util.FileUtil;
 
@@ -34,10 +38,13 @@ import java.util.List;
  */
 public class ActivityServlet extends HttpServlet {
     private ActivityDAO activityDAO = new ActivityDAO();
+    private ActivityGroupDAO groupDAO = new ActivityGroupDAO();
     private RegistrationDAO registrationDAO = new RegistrationDAO();
     private MemberProfileDAO memberProfileDAO = new MemberProfileDAO();
     private DictionaryDAO dictionaryDAO = new DictionaryDAO();
     private NewsDAO newsDAO = new NewsDAO();
+    private GroupMemberDAO groupMemberDAO = new GroupMemberDAO();
+    private UserGroupDAO userGroupDAO = new UserGroupDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -406,6 +413,12 @@ public class ActivityServlet extends HttpServlet {
             // =====================================
 
             if (activityDAO.insert(activity)) {
+                // 如果是管理员且选择了创建群聊
+                boolean createGroupChat = "true".equals(request.getParameter("createGroupChat"));
+                if (isAdmin && createGroupChat) {
+                    createGroupChatForActivity(activity.getId(), creator.getId(), activity.getTitle());
+                }
+                
                 if (isAdmin) {
                     response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动创建成功"));
                 } else {
@@ -417,6 +430,21 @@ public class ActivityServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/activity?action=create&error=" + encode(e.getMessage()));
+        }
+    }
+
+    private void createGroupChatForActivity(Integer activityId, Integer creatorId, String activityTitle) {
+        ActivityGroup group = new ActivityGroup();
+        group.setGroupName(activityTitle + "交流群");
+        group.setGroupOwnerId(creatorId);
+        group.setActivityId(activityId);
+        
+        if (groupDAO.insert(group)) {
+            ActivityGroup createdGroup = groupDAO.findByActivityId(activityId);
+            if (createdGroup != null) {
+                groupMemberDAO.insertOwner(createdGroup.getId(), creatorId);
+                userGroupDAO.insertUserToGroup(creatorId, createdGroup.getId());
+            }
         }
     }
 

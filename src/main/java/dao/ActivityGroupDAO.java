@@ -140,6 +140,33 @@ public class ActivityGroupDAO {
         return groups;
     }
 
+    public List<ActivityGroup> findAll() {
+        String sql = "SELECT ag.*, u.name as owner_name, a.name as activity_name, " +
+                     "(SELECT COUNT(*) FROM group_member WHERE group_id = ag.id) as member_count, " +
+                     "(SELECT COUNT(*) FROM group_message WHERE group_id = ag.id) as message_count " +
+                     "FROM activity_group ag " +
+                     "LEFT JOIN user u ON ag.group_owner_id = u.id " +
+                     "LEFT JOIN activity a ON ag.activity_id = a.id " +
+                     "ORDER BY ag.created_at DESC";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<ActivityGroup> groups = new ArrayList<>();
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                groups.add(mapResultSetToGroup(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return groups;
+    }
+
     public boolean delete(Integer id) {
         String sql = "DELETE FROM activity_group WHERE id = ?";
         Connection conn = null;
@@ -148,6 +175,46 @@ public class ActivityGroupDAO {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return false;
+    }
+
+    public boolean muteGroup(Integer groupId, Date mutedUntil, String reason) {
+        String sql = "UPDATE activity_group SET is_muted = 1, muted_until = ?, mute_reason = ?, updated_at = NOW() WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            if (mutedUntil != null) {
+                pstmt.setTimestamp(1, new Timestamp(mutedUntil.getTime()));
+            } else {
+                pstmt.setNull(1, Types.TIMESTAMP);
+            }
+            pstmt.setString(2, reason);
+            pstmt.setInt(3, groupId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return false;
+    }
+
+    public boolean unmuteGroup(Integer groupId) {
+        String sql = "UPDATE activity_group SET is_muted = 0, muted_until = NULL, mute_reason = NULL, updated_at = NOW() WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, groupId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -168,6 +235,12 @@ public class ActivityGroupDAO {
         group.setOwnerName(rs.getString("owner_name"));
         group.setActivityName(rs.getString("activity_name"));
         group.setMemberCount(rs.getInt("member_count"));
+        
+        int isMuted = rs.getInt("is_muted");
+        group.setIsMuted(isMuted);
+        group.setMutedUntil(rs.getTimestamp("muted_until"));
+        group.setMuteReason(rs.getString("mute_reason"));
+        
         return group;
     }
 

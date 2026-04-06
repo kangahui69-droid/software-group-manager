@@ -57,7 +57,7 @@
                                     </div>
                                     <div class="col-auto">
                                         <div class="btn-list">
-                                            <button class="btn btn-icon btn-white" aria-label="Share">
+                                            <button class="btn btn-icon btn-white" aria-label="Share" onclick="copyLink()">
                                                 <i class="bi bi-share"></i>
                                             </button>
                                         </div>
@@ -71,3 +71,13 @@
         </div>
 
         <jsp:include page="../common/layout_bottom.jsp" />
+
+        <script>
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href).then(function() {
+                alert('链接已复制到剪贴板');
+            }, function() {
+                prompt('链接：', window.location.href);
+            });
+        }
+        </script>

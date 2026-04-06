@@ -1,0 +1,261 @@
+# AI助手功能增强建议
+
+## 一、现状分析
+
+### 1.1 当前AI助手架构
+- **AIServlet**：处理AI对话请求，支持chat、history、statistics等action
+- **AIService**：核心服务，构建system prompt、管理会话
+- **AIClientUtil**：调用第三方AI API
+- **知识库**：通过AIKnowledgeBaseDAO管理FAQ知识库
+
+### 1.2 当前AI能力
+- 基础问答
+- 根据关键词匹配知识库
+- 会话历史管理
+- 提问统计
+
+### 1.3 现有权限体系
+```
+GUEST（游客）
+MEMBER（普通成员）
+ADMIN（管理员）
+```
+
+---
+
+## 二、功能建议
+
+### 2.1 普通用户（MEMBER）可用的AI功能
+
+#### 2.1.1 活动相关
+| 功能 | 涉及类 | 建议实现方式 |
+|------|--------|-------------|
+| 申请活动报名 | `RegistrationDAO` | AI引导用户确认报名信息，调用`RegistrationDAO.register()` |
+| 查看可参加的活动 | `ActivityDAO` | AI返回活动列表摘要，引导用户进入详情页 |
+| 查询报名状态 | `RegistrationDAO.findByUserId()` | AI汇总用户的报名情况 |
+
+**建议Prompt增强**：
+```
+当用户询问"我想报名参加XX活动"时：
+1. 引导用户确认活动名称和时间
+2. 调用 RegistrationDAO.checkExistingRegistration() 检查是否已报名
+3. 如未报名，生成确认链接或跳转到报名页面
+```
+
+#### 2.1.2 项目相关
+| 功能 | 涉及类 | 建议实现方式 |
+|------|--------|-------------|
+| 申请加入项目 | `ProjectServlet` | AI收集用户意向，调用`ProjectMemberApplication`相关方法 |
+| 查看可加入的项目 | `ProjectDAO` | AI汇总项目列表信息 |
+| 查询申请状态 | `ProjectDAO.getMemberApplications()` | AI汇总用户的申请情况 |
+
+#### 2.1.3 新闻公告相关
+| 功能 | 涉及类 | 建议实现方式 |
+|------|--------|-------------|
+| 提交活动新闻投稿 | `NewsServlet` | AI引导用户提供新闻内容，调用`NewsDAO.insert()` |
+| 查看新闻审核状态 | `NewsDAO.findByCreatorId()` | AI汇总用户的投稿情况 |
+
+#### 2.1.4 问题反馈相关
+| 功能 | 涉及类 | 建议实现方式 |
+|------|--------|-------------|
+| 提交问题反馈 | `MemberProblemServlet` | AI引导用户描述问题，调用`ProblemReportDAO.insert()` |
+| 查看反馈处理进度 | `ProblemReportDAO.findByUserId()` | AI汇总用户的问题处理状态 |
+
+---
+
+### 2.2 管理员（ADMIN）可用的AI功能
+
+#### 2.2.1 用户与权限验证
+| 功能 | 涉及类 | 建议实现方式 |
+|------|--------|-------------|
+| AI验证用户身份 | `UserDAO` | 管理员通过AI核实用户信息后一键批准注册 |
+| 批量审核用户 | `UserDAO`, `MemberProfileDAO` | AI列出待审核用户，管理员确认后批量操作 |
+
+**建议实现**：
+```
+管理员向AI发送"帮我审核新注册用户"
+AI调用 UserDAO.findByStatus("pending") 获取待审核用户
+展示用户信息摘要，管理员确认后：
+- 通过：调用 UserDAO.approve() + MemberProfileDAO.insert()
+- 拒绝：调用 UserDAO.reject()
+```
+
+#### 2.2.2 问题处理
+| 功能 | 涉及类 | 建议实现方式 |
+|------|--------|-------------|
+| AI自动分类问题 | `ProblemReportDAO` | AI分析问题内容，标记类型（技术/非技术/紧急） |
+| AI生成处理建议 | `AIKnowledgeBase` | 根据问题类型匹配历史解决方案 |
+| 一键修复常见问题 | 各相关DAO | 管理员确认后，AI调用对应DAO执行修复操作 |
+
+**建议实现**：
+```
+管理员向AI发送"帮我处理待处理的问题"
+AI调用 ProblemReportDAO.findByStatus("pending") 获取问题列表
+对每个问题：
+1. AI分析问题类型和紧急程度
+2. 从AIKnowledgeBase匹配类似问题的解决方案
+3. 生成处理建议展示给管理员
+4. 管理员确认后执行实际操作（如更新状态、发送通知等）
+```
+
+#### 2.2.3 活动与新闻审核
+| 功能 | 涉及类 | 建议实现方式 |
+|------|--------|-------------|
+| 批量审核活动 | `ActivityServlet` | AI列出待审核活动，管理员确认后调用`ActivityDAO.approveActivity()` |
+| 批量审核新闻 | `NewsServlet` | AI列出待审核新闻，管理员确认后调用`NewsDAO.approve()` |
+
+---
+
+### 2.3 游客（GUEST）可用的AI功能
+
+#### 2.3.1 引导功能
+| 功能 | 建议实现方式 |
+|------|-------------|
+| 了解小组 | AI根据知识库介绍软件小组基本情况 |
+| 了解如何加入 | AI介绍加入流程，引导注册 |
+| 常见问题解答 | 基于AIKnowledgeBase自动回答 |
+
+---
+
+## 三、技术实现建议
+
+### 3.1 AIService增强
+
+```java
+// 建议新增方法
+public class AIService {
+    
+    // 1. 权限化的系统Prompt构建
+    public String buildSystemPrompt(String userRole) {
+        switch(userRole) {
+            case "ADMIN":
+                return buildAdminPrompt();
+            case "MEMBER":
+                return buildMemberPrompt();
+            default:
+                return buildGuestPrompt();
+        }
+    }
+    
+    // 2. 管理员操作上下文
+    public String buildAdminPrompt() {
+        return "你是黄山学院软件小组的AI管理员助手。\n" +
+               "你拥有以下权限：\n" +
+               "- 审核用户注册\n" +
+               "- 处理问题反馈\n" +
+               "- 审核活动报名\n" +
+               "- 审核新闻发布\n" +
+               "- 一键修复常见问题\n" +
+               "当你需要执行操作时，回复格式：\n" +
+               "[ACTION]:action_name|param1=value1|param2=value2\n" +
+               "例如：[ACTION]:approve_user|user_id=123";
+    }
+    
+    // 3. 普通成员操作上下文
+    public String buildMemberPrompt() {
+        return "你是黄山学院软件小组的AI助手。\n" +
+               "你可以帮助用户：\n" +
+               "- 了解活动信息并报名\n" +
+               "- 了解项目并申请加入\n" +
+               "- 提交活动新闻投稿\n" +
+               "- 提交问题反馈\n" +
+               "需要执行操作时，使用[ACTION]格式。";
+    }
+    
+    // 4. 操作执行方法
+    public String executeAction(String actionType, Map<String, String> params, User admin) {
+        if (!"ADMIN".equals(admin.getRole())) {
+            return "权限不足，需要管理员身份";
+        }
+        
+        switch(actionType) {
+            case "approve_user":
+                return approveUser(params);
+            case "process_problem":
+                return processProblem(params);
+            case "approve_activity":
+                return approveActivity(params);
+            // ... 其他操作
+            default:
+                return "未知操作类型";
+        }
+    }
+}
+```
+
+### 3.2 AIServlet增强
+
+```java
+// 建议新增action
+// doPost中新增
+if ("execute".equals(action)) {
+    executeAction(req, resp);  // 执行AI触发的操作
+}
+
+// 新增方法
+private void executeAction(HttpServletRequest req, HttpServletResponse resp) {
+    String actionType = req.getParameter("actionType");
+    // 解析参数
+    // 调用AIService.executeAction()
+    // 返回执行结果
+}
+```
+
+### 3.3 前端增强
+
+**聊天界面建议调整**：
+```jsp
+<%-- AI返回的操作按钮 --%>
+<c:if test="${not empty actionButtons}">
+    <div class="ai-actions">
+        <c:forEach var="btn" items="${actionButtons}">
+            <button class="btn btn-sm btn-${btn.type}" 
+                    onclick="executeAction('${btn.action}', '${btn.params}')">
+                ${btn.label}
+            </button>
+        </c:forEach>
+    </div>
+</c:if>
+```
+
+---
+
+## 四、实施建议
+
+### 4.1 分阶段实现
+
+**第一阶段（基础）**：
+- 增强MEMBER的操作引导功能
+- AI能够理解用户意图并跳转到对应功能页面
+- 不实际执行操作，只做导航
+
+**第二阶段（核心）**：
+- 管理员可调用AI执行实际操作
+- 需要严格权限校验
+- 添加操作日志记录
+
+**第三阶段（高级）**：
+- AI学习历史处理记录
+- 自动分类和处理常见问题
+- 批量操作支持
+
+### 4.2 安全建议
+
+1. **操作权限校验**：每个ACTION都要校验当前用户角色
+2. **操作日志**：记录所有AI触发的实际操作
+3. **确认机制**：高风险操作（如删除、批量审核）需要二次确认
+4. **敏感信息**：AI不能返回用户密码等敏感信息
+
+### 4.3 相关文件清单
+
+| 文件 | 作用 |
+|------|------|
+| `AIServlet.java` | 核心入口，新增execute action |
+| `AIService.java` | 核心服务，增强Prompt和Action执行 |
+| `UserDAO.java` | 用户相关操作 |
+| `ActivityDAO.java` | 活动相关操作 |
+| `RegistrationDAO.java` | 报名相关操作 |
+| `ProjectServlet.java` | 项目相关操作 |
+| `NewsServlet.java` | 新闻相关操作 |
+| `ProblemReportDAO.java` | 问题反馈相关 |
+| `OperationLogDAO.java` | 操作日志记录 |
