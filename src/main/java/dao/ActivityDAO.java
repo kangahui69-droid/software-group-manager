@@ -216,7 +216,7 @@ public class ActivityDAO {
     public boolean update(Activity activity) {
         String sql = "UPDATE activity SET name=?, description=?, activity_type=?, activity_start_time=?, " +
                     "activity_end_time=?, location=?, organizers=?, contact_info=?, registration_start_time=?, " +
-                    "registration_end_time=?, max_participants=?, status=? WHERE id=?";
+                    "registration_end_time=?, max_participants=?, status=?, approval_status=? WHERE id=?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -234,7 +234,8 @@ public class ActivityDAO {
             pstmt.setTimestamp(10, activity.getRegistrationEndTime() != null ? new Timestamp(activity.getRegistrationEndTime().getTime()) : null);
             pstmt.setInt(11, activity.getMaxParticipants() != null ? activity.getMaxParticipants() : 0);
             pstmt.setString(12, activity.getStatus());
-            pstmt.setInt(13, activity.getId());
+            pstmt.setString(13, activity.getApprovalStatus() != null ? activity.getApprovalStatus() : "approved");
+            pstmt.setInt(14, activity.getId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -248,7 +249,7 @@ public class ActivityDAO {
      * 删除活动（软删除，同时将状态改为已取消）
      */
     public boolean delete(Integer id) {
-        String sql = "UPDATE activity SET deleted = 1, status = 'CANCELED' WHERE id=?";
+        String sql = "UPDATE activity SET deleted = 1, status = 'canceled' WHERE id=?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -271,7 +272,7 @@ public class ActivityDAO {
      * @return 是否删除成功
      */
     public boolean delete(Integer id, Connection conn) {
-        String sql = "UPDATE activity SET deleted = 1, status = 'CANCELED' WHERE id=?";
+        String sql = "UPDATE activity SET deleted = 1, status = 'canceled' WHERE id=?";
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);

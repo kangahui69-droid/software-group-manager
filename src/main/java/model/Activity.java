@@ -290,8 +290,14 @@ public class Activity {
             return STATUS_CANCELED;
         }
         Date now = new Date();
-        if (activityStartTime == null || activityEndTime == null) {
+        if (activityStartTime == null) {
             return STATUS_UPCOMING;
+        }
+        if (activityEndTime == null) {
+            if (now.before(activityStartTime)) {
+                return STATUS_UPCOMING;
+            }
+            return STATUS_ONGOING;
         }
         if (now.before(activityStartTime)) {
             return STATUS_UPCOMING;
@@ -355,4 +361,7 @@ public class Activity {
     public String getComputedStatus() {
         return calculateStatus();
     }
+
+
+
 }

@@ -92,7 +92,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">开始时间</label>
                                     <input type="datetime-local" class="form-control" name="activityStartTime" 
-                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                             
@@ -100,7 +100,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">结束时间</label>
                                     <input type="datetime-local" class="form-control" name="activityEndTime" 
-                                           value="<fmt:formatDate value='${activity.activityEndTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                           value="<fmt:formatDate value='${activity.activityEndTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                         </div>
@@ -110,7 +110,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">报名开始时间</label>
                                     <input type="datetime-local" class="form-control" name="registrationStartTime" 
-                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                             
@@ -118,7 +118,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">报名截止时间</label>
                                     <input type="datetime-local" class="form-control" name="registrationEndTime" 
-                                           value="<fmt:formatDate value='${activity.registrationEndTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                           value="<fmt:formatDate value='${activity.registrationEndTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                         </div>

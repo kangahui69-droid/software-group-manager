@@ -129,16 +129,16 @@
                                 <td class="text-muted">${a.location}</td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${a.status == 'upcoming'}">
+                                        <c:when test="${a.computedStatus == 'upcoming'}">
                                             <span class="badge bg-info">即将开始</span>
                                         </c:when>
-                                        <c:when test="${a.status == 'ongoing'}">
+                                        <c:when test="${a.computedStatus == 'ongoing'}">
                                             <span class="badge bg-success">进行中</span>
                                         </c:when>
-                                        <c:when test="${a.status == 'completed'}">
+                                        <c:when test="${a.computedStatus == 'completed'}">
                                             <span class="badge bg-secondary text-white">已结束</span>
                                         </c:when>
-                                        <c:when test="${a.status == 'canceled'}">
+                                        <c:when test="${a.computedStatus == 'canceled'}">
                                             <span class="badge bg-danger">已取消</span>
                                         </c:when>
                                     </c:choose>

@@ -290,7 +290,7 @@
                         actionStr = afterAction.trim();
                     }
                     console.log("Action extracted:", actionStr);
-                    if (actionStr.length > 0 && actionStr.includes('=')) {
+                    if (actionStr.length > 0) {
                         executeActionFromAI(actionStr, assistantContentDiv, sessionId);
                     } else {
                         assistantContentDiv.innerHTML = responseText.replace(/\n/g, '<br>');
@@ -334,10 +334,41 @@
         .then(data => {
             if (data.success) {
                 var resultHtml = '<div class="action-result success"><i class="bi bi-check-circle text-success"></i> ' + data.message + '</div>';
-                if (data.type === 'redirect' && data.redirectUrl) {
+                
+                if (data.type === 'table' && data.data && data.columns) {
+                    resultHtml += '<div class="table-responsive mt-2"><table class="table table-sm table-bordered"><thead><tr>';
+                    var columns = data.columns;
+                    for (var i = 0; i < columns.length; i++) {
+                        resultHtml += '<th>' + columns[i] + '</th>';
+                    }
+                    resultHtml += '</tr></thead><tbody>';
+                    var rows = data.data;
+                    for (var i = 0; i < rows.length; i++) {
+                        resultHtml += '<tr>';
+                        for (var j = 0; j < columns.length; j++) {
+                            var val = rows[i][columns[j]];
+                            if (val == null) val = '-';
+                            resultHtml += '<td>' + val + '</td>';
+                        }
+                        resultHtml += '</tr>';
+                    }
+                    resultHtml += '</tbody></table></div>';
+                } else if (data.type === 'statistics' && data.data) {
+                    resultHtml += '<div class="mt-2"><ul class="list-group">';
+                    for (var key in data.data) {
+                        resultHtml += '<li class="list-group-item d-flex justify-content-between align-items-center">' + key + '<span class="badge bg-primary">' + data.data[key] + '</span></li>';
+                    }
+                    resultHtml += '</ul></div>';
+                } else if (data.type === 'participants' && data.data) {
+                    resultHtml += '<div class="mt-2"><ul class="list-group">';
+                    for (var i = 0; i < data.data.length; i++) {
+                        var u = data.data[i];
+                        resultHtml += '<li class="list-group-item">' + u.name + ' (' + u.username + ')</li>';
+                    }
+                    resultHtml += '</ul></div>';
+                } else if (data.type === 'redirect' && data.redirectUrl) {
                     resultHtml += '<div class="mt-2"><a href="${pageContext.request.contextPath}' + data.redirectUrl + '" class="btn btn-sm btn-primary">立即跳转</a></div>';
-                }
-                if (data.type === 'view_list' && data.data) {
+                } else if (data.type === 'view_list' && data.data) {
                     resultHtml += '<div class="mt-2"><a href="${pageContext.request.contextPath}/activity?action=myActivities" class="btn btn-sm btn-outline-primary">查看详情</a></div>';
                 }
                 contentDiv.innerHTML = resultHtml;
