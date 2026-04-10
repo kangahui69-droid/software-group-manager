@@ -368,7 +368,7 @@ public class ActivityServlet extends HttpServlet {
 
     private void createActivity(HttpServletRequest request, HttpServletResponse response, User creator) throws IOException {
         try {
-            Activity activity = extractFromRequest(request);
+            Activity activity = extractFromRequest(request, null);
             
             // 非管理员创建活动时设置为待审核状态
             boolean isAdmin = "ADMIN".equalsIgnoreCase(creator.getRole());
@@ -450,12 +450,18 @@ public class ActivityServlet extends HttpServlet {
 
     private void updateActivity(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
-            Activity activity = extractFromRequest(request);
-            activity.setId(Integer.parseInt(request.getParameter("id")));
+            Integer activityId = Integer.parseInt(request.getParameter("id"));
+            Activity oldActivity = activityDAO.findById(activityId);
+            if (oldActivity == null) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("活动不存在"));
+                return;
+            }
+            
+            Activity activity = extractFromRequest(request, oldActivity);
+            activity.setId(activityId);
 
             // 获取更新前的活动状态
-            Activity oldActivity = activityDAO.findById(activity.getId());
-            String oldStatus = oldActivity != null ? oldActivity.getStatus() : null;
+            String oldStatus = oldActivity.getStatus();
 
             // ====== 时间校验 ======
             String timeError = validateActivityTime(activity);
@@ -632,7 +638,7 @@ public class ActivityServlet extends HttpServlet {
         }
     }
 
-    private Activity extractFromRequest(HttpServletRequest request) throws Exception {
+    private Activity extractFromRequest(HttpServletRequest request, Activity original) throws Exception {
         Activity activity = new Activity();
         activity.setTitle(request.getParameter("title"));
         activity.setDescription(request.getParameter("description"));
@@ -646,65 +652,73 @@ public class ActivityServlet extends HttpServlet {
             try {
                 activity.setMaxParticipants(Integer.parseInt(maxParticipantsStr));
             } catch (NumberFormatException e) {
-                activity.setMaxParticipants(0);
+                activity.setMaxParticipants(original != null ? original.getMaxParticipants() : 0);
             }
         } else {
-            activity.setMaxParticipants(0);
+            activity.setMaxParticipants(original != null ? original.getMaxParticipants() : 0);
         }
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-        
-        // 计算下一个周六
-        Calendar cal = Calendar.getInstance();
-        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-        int daysToSaturday = Calendar.SATURDAY - dayOfWeek;
-        if (daysToSaturday <= 0) daysToSaturday += 7; // 如果是周六或更晚，加7天到下周六
-        cal.add(Calendar.DAY_OF_MONTH, daysToSaturday);
-        cal.set(Calendar.HOUR_OF_DAY, 9);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date defaultStartTime = cal.getTime();
-        
-        // 结束时间默认 +2小时
-        cal.add(Calendar.HOUR_OF_DAY, 2);
-        Date defaultEndTime = cal.getTime();
-        
-        // 当前时间
         Date now = new Date();
         
-        // 活动时间
+        // 活动开始时间
         String activityStartTime = request.getParameter("activityStartTime");
-        if (activityStartTime != null && !activityStartTime.isEmpty()) {
-            activity.setActivityStartTime(sdf.parse(activityStartTime));
+        Date parsedStartTime = parseDateTime(activityStartTime, sdf);
+        if (original != null && parsedStartTime == null) {
+            activity.setActivityStartTime(original.getActivityStartTime());
+        } else if (parsedStartTime != null) {
+            activity.setActivityStartTime(parsedStartTime);
         } else {
-            activity.setActivityStartTime(defaultStartTime);
+            activity.setActivityStartTime(now);
         }
         
+        // 活动结束时间 - 保持与开始时间的偏移
         String activityEndTime = request.getParameter("activityEndTime");
-        if (activityEndTime != null && !activityEndTime.isEmpty()) {
-            activity.setActivityEndTime(sdf.parse(activityEndTime));
+        Date parsedEndTime = parseDateTime(activityEndTime, sdf);
+        if (original != null && parsedEndTime == null) {
+            if (original.getActivityEndTime() != null && original.getActivityStartTime() != null) {
+                long offset = original.getActivityEndTime().getTime() - original.getActivityStartTime().getTime();
+                activity.setActivityEndTime(new Date(activity.getActivityStartTime().getTime() + offset));
+            } else {
+                activity.setActivityEndTime(original.getActivityEndTime());
+            }
+        } else if (parsedEndTime != null) {
+            activity.setActivityEndTime(parsedEndTime);
         } else {
-            activity.setActivityEndTime(defaultEndTime);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(activity.getActivityStartTime());
+            cal.add(Calendar.HOUR_OF_DAY, 2);
+            activity.setActivityEndTime(cal.getTime());
         }
         
-        // 报名时间
+        // 报名开始时间
         String registrationStartTime = request.getParameter("registrationStartTime");
-        if (registrationStartTime != null && !registrationStartTime.isEmpty()) {
-            activity.setRegistrationStartTime(sdf.parse(registrationStartTime));
+        Date parsedRegStart = parseDateTime(registrationStartTime, sdf);
+        if (original != null && parsedRegStart == null) {
+            activity.setRegistrationStartTime(original.getRegistrationStartTime());
+        } else if (parsedRegStart != null) {
+            activity.setRegistrationStartTime(parsedRegStart);
         } else {
             activity.setRegistrationStartTime(now);
         }
         
+        // 报名截止时间 - 保持与开始时间的偏移
         String registrationEndTime = request.getParameter("registrationEndTime");
-        if (registrationEndTime != null && !registrationEndTime.isEmpty()) {
-            activity.setRegistrationEndTime(sdf.parse(registrationEndTime));
+        Date parsedRegEnd = parseDateTime(registrationEndTime, sdf);
+        if (original != null && parsedRegEnd == null) {
+            if (original.getRegistrationEndTime() != null && original.getActivityStartTime() != null) {
+                long offset = original.getRegistrationEndTime().getTime() - original.getActivityStartTime().getTime();
+                activity.setRegistrationEndTime(new Date(activity.getActivityStartTime().getTime() + offset));
+            } else {
+                activity.setRegistrationEndTime(original.getRegistrationEndTime());
+            }
+        } else if (parsedRegEnd != null) {
+            activity.setRegistrationEndTime(parsedRegEnd);
         } else {
-            // 报名截止默认活动开始前1天
-            Calendar regEndCal = Calendar.getInstance();
-            regEndCal.setTime(activity.getActivityStartTime());
-            regEndCal.add(Calendar.DAY_OF_MONTH, -1);
-            activity.setRegistrationEndTime(regEndCal.getTime());
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(activity.getActivityStartTime());
+            cal.add(Calendar.DAY_OF_MONTH, -1);
+            activity.setRegistrationEndTime(cal.getTime());
         }
         
         String userStatus = request.getParameter("status");
@@ -714,6 +728,18 @@ public class ActivityServlet extends HttpServlet {
             activity.setStatus(activity.calculateStatus());
         }
         return activity;
+    }
+    
+    private Date parseDateTime(String dateTimeStr, SimpleDateFormat sdf) {
+        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return sdf.parse(dateTimeStr.trim());
+        } catch (Exception e) {
+            System.err.println("解析时间失败: " + dateTimeStr + ", error: " + e.getMessage());
+            return null;
+        }
     }
 
     // ==================== Registration Operations ====================
