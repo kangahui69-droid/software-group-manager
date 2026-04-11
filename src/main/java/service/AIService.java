@@ -27,6 +27,7 @@ import util.AIClientUtil;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -114,11 +115,8 @@ public class AIService {
         boolean isAdmin = ROLE_ADMIN.equals(userRole);
         boolean isGuestOrMember = ROLE_GUEST.equals(userRole) || ROLE_MEMBER.equals(userRole);
         
+        // 注意：活动查询已移至ACTION系统，不要在这里直接查询
         if (isAdmin || isGuestOrMember) {
-            if (msg.contains("活动") || msg.contains("讲座") || msg.contains("培训") || msg.contains("比赛") || msg.contains("分享")) {
-                return queryActivityList(userMessage);
-            }
-            
             if (msg.contains("项目")) {
                 return queryProjectList(userMessage);
             }
@@ -550,16 +548,26 @@ public class AIService {
         return "你是黄山学院软件小组的智能助手，直接用中文回答用户问题。\n\n" +
                "用户身份：正式成员\n\n" +
                "你可以帮助用户：\n" +
-               "1. 查询活动信息并帮助报名\n" +
-               "2. 查询和申请项目\n" +
-               "3. 提交新闻投稿\n" +
-               "4. 提交问题反馈\n" +
-               "5. 创建活动\n" +
-               "6. 查询报名记录和项目申请\n\n" +
+               "1. 查看和申请活动\n" +
+               "2. 发起新活动申请\n" +
+               "3. 查询和申请项目\n" +
+               "4. 提交新闻投稿\n" +
+               "5. 提交问题反馈\n\n" +
+               "【重要】当用户想执行操作时，必须输出：[ACTION]操作名|参数\n" +
+               "操作类型：\n" +
+               "- apply_activity：申请活动（当用户想报名/申请参加活动时）\n" +
+               "- create_activity_request：发起活动申请（当用户想创建/发起新活动时）\n" +
+               "- list_latest_activities：查看最新活动列表\n\n" +
+               "【活动申请流程】\n" +
+               "当用户想申请活动时，直接输出：[ACTION]apply_activity\n" +
+               "系统会返回可报名的活动列表\n\n" +
+               "【发起活动流程】\n" +
+               "当用户想发起活动时，直接输出：[ACTION]create_activity_request\n" +
+               "系统会引导用户提供活动详情\n\n" +
                "回答规则：\n" +
-               "- 直接用中文回答，不要提及系统提示或内部实现\n" +
-               "- 如实回答，不确定的信息说\"暂无相关信息\"\n" +
-               "- 需要执行的操作，引导用户提供必要信息";
+               "- 直接用中文回答\n" +
+               "- 如实回答，不确定的说\"暂无相关信息\"\n" +
+               "- 想执行操作时，只输出[ACTION]格式，不要输出其他内容";
     }
 
     private String buildAdminPrompt() {
@@ -577,10 +585,23 @@ public class AIService {
 
     public String buildContext(String userMessage, String userRole) {
         StringBuilder context = new StringBuilder();
+        String userMsgLower = userMessage.toLowerCase();
+        
+        // 先检查是否需要执行操作
+        String operationGuide = buildOperationGuide(userMessage, userRole);
+        boolean shouldExecuteAction = operationGuide.contains("[ACTION]");
+        
+        // 如果需要执行ACTION，不返回FAQ知识库内容，直接返回操作指引
+        if (shouldExecuteAction) {
+            context.append("【操作指引】\n");
+            context.append(operationGuide);
+            return context.toString();
+        }
+        
+        // 不需要执行操作时，才返回FAQ知识库内容
         context.append("【知识库匹配】\n");
 
         List<AIKnowledgeBase> allKB = knowledgeBaseDAO.findAll();
-        String userMsgLower = userMessage.toLowerCase();
         boolean found = false;
 
         for (AIKnowledgeBase kb : allKB) {
@@ -602,7 +623,7 @@ public class AIService {
         }
 
         context.append("\n【操作引导】\n");
-        context.append(buildOperationGuide(userMessage, userRole));
+        context.append(operationGuide);
 
         return context.toString();
     }
@@ -611,10 +632,18 @@ public class AIService {
         StringBuilder guide = new StringBuilder();
         String msgLower = userMessage.toLowerCase();
 
-        if ((msgLower.contains("创建") || msgLower.contains("发起") || msgLower.contains("举办")) && msgLower.contains("活动")) {
-            guide.append("- 用户想创建活动，请引导用户提供活动详情\n");
-        } else if (msgLower.contains("报名") && msgLower.contains("活动")) {
-            guide.append("- 用户想报名活动，请引导用户提供活动名称\n");
+        // 发起/创建活动（更严格的条件，避免误匹配）
+        if (msgLower.contains("发起活动") || msgLower.contains("创建活动") || msgLower.contains("举办活动")) {
+            guide.append("- 用户想发起活动，执行：[ACTION]create_activity_request\n");
+        }
+        // 报名/申请活动
+        else if (msgLower.contains("报名") && msgLower.contains("活动")) {
+            guide.append("- 用户想报名参加活动，执行：[ACTION]apply_activity\n");
+        }
+        // 查看活动列表
+        else if (msgLower.contains("活动列表") || msgLower.contains("查看活动") || 
+                 (msgLower.contains("活动") && (msgLower.contains("有哪些") || msgLower.contains("有什么") || msgLower.contains("全部活动")))) {
+            guide.append("- 用户想查看活动列表，执行：[ACTION]list_latest_activities\n");
         }
 
         if (msgLower.contains("新闻") && (msgLower.contains("发布") || msgLower.contains("投稿") || msgLower.contains("提交"))) {
@@ -703,6 +732,10 @@ public class AIService {
         Map<String, Object> result = new HashMap<>();
         result.put("success", false);
 
+        if ("list_all_news".equals(actionType) || "recent_news".equals(actionType) || "list_activities".equals(actionType) || "list_latest_activities".equals(actionType)) {
+            return executePublicQuery(actionType, params);
+        }
+
         if (user == null) {
             result.put("message", "请先登录后再操作");
             return result;
@@ -710,7 +743,7 @@ public class AIService {
 
         String userRole = user.getRole();
         if (ROLE_GUEST.equals(userRole)) {
-            result.put("message", "访客不能执行操作，请先登录");
+            result.put("message", "访客不能执行该操作，请先登录");
             return result;
         }
 
@@ -734,6 +767,10 @@ public class AIService {
                     return executeViewMyProjects(params, user);
                 case "view_my_groups":
                     return executeViewMyGroups(params, user);
+                case "apply_activity":
+                    return executeSignupActivity(params, user);
+                case "create_activity_request":
+                    return executeCreateActivityRequest(params, user);
                 default:
                     result.put("message", "未知操作类型: " + actionType);
             }
@@ -742,6 +779,173 @@ public class AIService {
             result.put("message", "执行出错: " + e.getMessage());
         }
         return result;
+    }
+
+    private Map<String, Object> executePublicQuery(String actionType, Map<String, String> params) {
+        switch (actionType) {
+            case "list_all_news":
+                return executeListAllNews(params);
+            case "recent_news":
+                return executeRecentNews(params);
+            case "list_activities":
+                return executeListActivities(params);
+            case "list_latest_activities":
+                return executeListLatestActivities(params);
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", false);
+        result.put("message", "未知查询类型: " + actionType);
+        return result;
+    }
+
+    private Map<String, Object> executeListActivities(Map<String, String> params) {
+        Map<String, Object> result = new HashMap<>();
+        List<Activity> activities = activityDAO.findInRegistrationPeriod();
+        
+        if (activities.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "当前没有可报名的活动");
+            return result;
+        }
+        
+        result.put("success", true);
+        result.put("message", "以下是当前可报名的活动，请告诉我活动ID：");
+        result.put("type", "table");
+        result.put("columns", new String[]{"ID", "活动名称", "时间", "地点"});
+        
+        List<Map<String, Object>> data = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm");
+        for (Activity a : activities) {
+            Map<String, Object> row = new HashMap<>();
+            row.put("ID", a.getId());
+            row.put("活动名称", a.getTitle());
+            row.put("时间", sdf.format(a.getActivityStartTime()));
+            row.put("地点", a.getLocation() != null ? a.getLocation() : "-");
+            data.add(row);
+        }
+        result.put("data", data);
+        return result;
+    }
+
+    private Map<String, Object> executeListLatestActivities(Map<String, String> params) {
+        Map<String, Object> result = new HashMap<>();
+        List<Activity> activities = activityDAO.findAll();
+        
+        if (activities.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "当前没有任何活动");
+            return result;
+        }
+        
+        result.put("success", true);
+        result.put("message", "以下是最新活动列表：");
+        result.put("type", "table");
+        result.put("columns", new String[]{"ID", "活动名称", "类型", "时间", "状态"});
+        
+        List<Map<String, Object>> data = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm");
+        int count = 0;
+        for (Activity a : activities) {
+            if (count >= 10) break;
+            Map<String, Object> row = new HashMap<>();
+            row.put("ID", a.getId());
+            row.put("活动名称", a.getTitle());
+            row.put("类型", a.getActivityType() != null ? a.getActivityType() : "-");
+            row.put("时间", a.getActivityStartTime() != null ? sdf.format(a.getActivityStartTime()) : "-");
+            row.put("状态", getActivityStatusText(a.getStatus()));
+            data.add(row);
+            count++;
+        }
+        result.put("data", data);
+        return result;
+    }
+
+    private java.util.Date parseDateTime(String dateStr, SimpleDateFormat... formats) {
+        for (SimpleDateFormat sdf : formats) {
+            try {
+                return sdf.parse(dateStr);
+            } catch (Exception e) {
+            }
+        }
+        return null;
+    }
+
+    private Map<String, Object> executeCreateActivityRequest(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        String name = params.get("name");
+        String description = params.get("description");
+        String activityType = params.get("activity_type");
+        String location = params.get("location");
+        String startTime = params.get("start_time");
+        String endTime = params.get("end_time");
+        String regStartTime = params.get("reg_start");
+        if (regStartTime == null) regStartTime = params.get("registration_start_time");
+        String regEndTime = params.get("reg_end");
+        if (regEndTime == null) regEndTime = params.get("registration_end_time");
+        String maxParticipants = params.get("max_participants");
+        
+        // 引导用户提供信息
+        List<String> missingInfo = new ArrayList<>();
+        if (name == null || name.trim().isEmpty()) missingInfo.add("活动名称");
+        if (location == null || location.trim().isEmpty()) missingInfo.add("活动地点");
+        if (startTime == null || startTime.trim().isEmpty()) missingInfo.add("开始时间（如：2026-04-15 09:00）");
+        if (endTime == null || endTime.trim().isEmpty()) missingInfo.add("结束时间（如：2026-04-15 17:00）");
+        if (regStartTime == null || regStartTime.trim().isEmpty()) missingInfo.add("报名开始时间（如：2026-04-10 00:00）");
+        if (regEndTime == null || regEndTime.trim().isEmpty()) missingInfo.add("报名截止时间（如：2026-04-14 23:59）");
+        
+        if (!missingInfo.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请提供以下信息来完成活动申请：\n" + String.join("、", missingInfo));
+            result.put("need_more_info", true);
+            return result;
+        }
+        
+        try {
+            Activity activity = new Activity();
+            activity.setTitle(name.trim());
+            activity.setDescription(description != null ? description.trim() : "");
+            activity.setActivityType(activityType != null ? activityType : "OTHER");
+            activity.setLocation(location.trim());
+            activity.setMaxParticipants(maxParticipants != null && !maxParticipants.isEmpty() ? Integer.parseInt(maxParticipants) : null);
+            activity.setStatus("upcoming");
+            activity.setApprovalStatus("pending");
+            activity.setCreatorId(user.getId());
+            
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            SimpleDateFormat sdfAlt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            
+            activity.setActivityStartTime(parseDateTime(startTime.trim(), sdf, sdfAlt));
+            activity.setActivityEndTime(parseDateTime(endTime.trim(), sdf, sdfAlt));
+            if (regStartTime != null && !regStartTime.trim().isEmpty()) {
+                activity.setRegistrationStartTime(parseDateTime(regStartTime.trim(), sdf, sdfAlt));
+            }
+            if (regEndTime != null && !regEndTime.trim().isEmpty()) {
+                activity.setRegistrationEndTime(parseDateTime(regEndTime.trim(), sdf, sdfAlt));
+            }
+            
+            boolean success = activityDAO.insert(activity);
+            result.put("success", success);
+            if (success) {
+                result.put("message", "活动「" + name + "」申请已提交，等待管理员审核！");
+            } else {
+                result.put("message", "活动申请提交失败，请重试");
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "创建活动出错: " + e.getMessage());
+        }
+        return result;
+    }
+
+    private String getActivityStatusText(String status) {
+        if (status == null) return "-";
+        switch (status) {
+            case "upcoming": return "即将开始";
+            case "ongoing": return "进行中";
+            case "completed": return "已结束";
+            case "canceled": return "已取消";
+            default: return status;
+        }
     }
 
     private Map<String, Object> executeAdminAction(String actionType, Map<String, String> params, User user) {
@@ -1072,7 +1276,7 @@ public class AIService {
         result.put("success", true);
         result.put("type", "table");
         result.put("data", newsList);
-        result.put("columns", new String[]{"id", "title", "type", "summary", "authorId", "createdAt"});
+        result.put("columns", new String[]{"编号", "标题", "类型", "摘要", "申请人", "发布时间"});
         result.put("message", "待审核新闻共 " + newsList.size() + " 条");
         return result;
     }
@@ -1085,7 +1289,7 @@ public class AIService {
         result.put("success", true);
         result.put("type", "table");
         result.put("data", newsList);
-        result.put("columns", new String[]{"id", "title", "type", "summary", "status", "createdAt"});
+        result.put("columns", new String[]{"编号", "标题", "类型", "摘要", "状态", "发布时间"});
         result.put("message", "新闻共 " + newsList.size() + " 条");
         return result;
     }
@@ -1280,7 +1484,7 @@ public class AIService {
         result.put("success", true);
         result.put("type", "table");
         result.put("data", newsList.subList(0, Math.min(newsList.size(), limit)));
-        result.put("columns", new String[]{"id", "title", "type", "createdAt"});
+        result.put("columns", new String[]{"编号", "标题", "类型", "发布时间"});
         result.put("message", "最近 " + Math.min(newsList.size(), limit) + " 条新闻");
         return result;
     }
@@ -1423,12 +1627,66 @@ public class AIService {
 
         if (activityIdStr == null || activityIdStr.trim().isEmpty()) {
             if (activityName == null || activityName.trim().isEmpty()) {
-                result.put("success", false);
-                result.put("message", "请提供活动ID或活动名称");
+                // 没有提供活动名称，返回当前可报名的活动列表
+                List<Activity> availableActivities = activityDAO.findInRegistrationPeriod();
+                if (availableActivities.isEmpty()) {
+                    result.put("success", false);
+                    result.put("message", "当前没有可报名的活动");
+                    return result;
+                }
+                
+                // 返回表格格式的活动列表
+                result.put("success", true);
+                result.put("message", "以下是当前可报名的活动，请告诉我活动ID进行报名：");
+                result.put("type", "table");
+                result.put("columns", new String[]{"ID", "活动名称", "类型", "时间", "地点"});
+                
+                List<Map<String, Object>> data = new ArrayList<>();
+                SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm");
+                for (Activity a : availableActivities) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("ID", a.getId());
+                    row.put("活动名称", a.getTitle());
+                    row.put("类型", getActivityTypeName(a.getActivityType()));
+                    row.put("时间", a.getActivityStartTime() != null ? sdf.format(a.getActivityStartTime()) : "-");
+                    row.put("地点", a.getLocation() != null ? a.getLocation() : "-");
+                    data.add(row);
+                }
+                result.put("data", data);
                 return result;
             }
-            result.put("success", false);
-            result.put("message", "请告诉我活动ID，或者我帮你搜索活动");
+            // 搜索匹配名称的活动
+            List<Activity> matchedActivities = activityDAO.findByConditions(activityName, null, null);
+            List<Activity> availableActivities = new ArrayList<>();
+            for (Activity a : matchedActivities) {
+                if (a.isInRegistrationPeriod()) {
+                    availableActivities.add(a);
+                }
+            }
+            if (availableActivities.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "未找到可报名的活动「" + activityName + "」，请确认活动名称或查看当前可报名活动");
+                return result;
+            }
+            
+            // 返回表格格式
+            result.put("success", true);
+            result.put("message", "找到以下可报名的活动，请告诉我活动ID进行报名：");
+            result.put("type", "table");
+            result.put("columns", new String[]{"ID", "活动名称", "类型", "时间", "地点"});
+            
+            List<Map<String, Object>> data = new ArrayList<>();
+            SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm");
+            for (Activity a : availableActivities) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("ID", a.getId());
+                row.put("活动名称", a.getTitle());
+                row.put("类型", getActivityTypeName(a.getActivityType()));
+                row.put("时间", a.getActivityStartTime() != null ? sdf.format(a.getActivityStartTime()) : "-");
+                row.put("地点", a.getLocation() != null ? a.getLocation() : "-");
+                data.add(row);
+            }
+            result.put("data", data);
             return result;
         }
 
