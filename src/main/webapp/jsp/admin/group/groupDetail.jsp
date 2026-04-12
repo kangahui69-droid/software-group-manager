@@ -80,6 +80,18 @@
                 
                 <div class="card mt-3">
                     <div class="card-header">
+                        <h3 class="card-title">群聊操作</h3>
+                    </div>
+                    <div class="card-body">
+                        <a href="${pageContext.request.contextPath}/group/chat/${group.id}" 
+                           class="btn btn-primary w-100 mb-2">
+                            <i class="bi bi-chat-dots me-2"></i>进入群聊
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header">
                         <h3 class="card-title">禁言管理</h3>
                     </div>
                     <div class="card-body">

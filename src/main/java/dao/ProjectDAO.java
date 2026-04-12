@@ -73,6 +73,34 @@ public class ProjectDAO {
     }
 
     /**
+     * 根据负责人ID查询项目
+     */
+    public List<Project> findByLeaderId(Integer leaderId) {
+        List<Project> projects = new ArrayList<>();
+        String sql = "SELECT p.*, u.name as leader_name FROM project p " +
+                    "LEFT JOIN user u ON p.leader_id = u.id " +
+                    "WHERE p.leader_id = ? AND (p.deleted = 0 OR p.deleted IS NULL) " +
+                    "ORDER BY p.created_at DESC";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, leaderId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                projects.add(mapResultSetToProject(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return projects;
+    }
+
+    /**
      * 根据条件搜索项目
      */
     public List<Project> findByConditions(String keyword, String status, Integer year) {
@@ -201,7 +229,11 @@ public class ProjectDAO {
                 pstmt.setNull(8, java.sql.Types.DATE);
             }
             
-            pstmt.setInt(9, project.getAdminId() != null ? project.getAdminId() : 0);
+            if (project.getAdminId() != null) {
+                pstmt.setInt(9, project.getAdminId());
+            } else {
+                pstmt.setNull(9, java.sql.Types.INTEGER);
+            }
             pstmt.setBigDecimal(10, project.getBudget());
             pstmt.setString(11, project.getRepoUrl());
             pstmt.setString(12, project.getDocUrl());

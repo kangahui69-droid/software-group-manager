@@ -23,14 +23,14 @@ public class GroupMessageDAO {
             pstmt.setInt(1, message.getGroupId());
             pstmt.setInt(2, message.getSenderId());
             pstmt.setString(3, message.getContent());
-            pstmt.setString(4, message.getMessageType() != null ? message.getMessageType() : GroupMessage.MESSAGE_TYPE_TEXT);
+            pstmt.setString(4, message.getMessageType() != null ? message.getMessageType() : "TEXT");
             pstmt.setObject(5, message.getFileId());
             pstmt.setString(6, message.getFileName());
             pstmt.setObject(7, message.getFileSize());
             pstmt.setString(8, message.getFileType());
             pstmt.setString(9, message.getFilePath());
             pstmt.executeUpdate();
-            
+
             rs = pstmt.getGeneratedKeys();
             if (rs.next()) {
                 return rs.getInt(1);
@@ -139,14 +139,30 @@ public class GroupMessageDAO {
         message.setSenderId(rs.getInt("sender_id"));
         message.setContent(rs.getString("content"));
         message.setSentAt(rs.getTimestamp("sent_at"));
-        message.setSenderName(rs.getString("sender_name"));
-        message.setSenderAvatarFileId(rs.getString("sender_avatar_file_id"));
-        message.setMessageType(rs.getString("message_type"));
-        message.setFileId(rs.getObject("file_id", Integer.class));
-        message.setFileName(rs.getString("file_name"));
-        message.setFileSize(rs.getObject("file_size", Long.class));
-        message.setFileType(rs.getString("file_type"));
-        message.setFilePath(rs.getString("file_path"));
+        try {
+            message.setSenderName(rs.getString("sender_name"));
+        } catch (SQLException e) { }
+        try {
+            message.setSenderAvatarFileId(rs.getString("sender_avatar_file_id"));
+        } catch (SQLException e) { }
+        try {
+            message.setMessageType(rs.getString("message_type"));
+        } catch (SQLException e) { }
+        try {
+            message.setFileId(rs.getObject("file_id", Integer.class));
+        } catch (SQLException e) { }
+        try {
+            message.setFileName(rs.getString("file_name"));
+        } catch (SQLException e) { }
+        try {
+            message.setFileSize(rs.getObject("file_size", Long.class));
+        } catch (SQLException e) { }
+        try {
+            message.setFileType(rs.getString("file_type"));
+        } catch (SQLException e) { }
+        try {
+            message.setFilePath(rs.getString("file_path"));
+        } catch (SQLException e) { }
         return message;
     }
 
