@@ -208,6 +208,27 @@
                     </div>
                 </a>
             </div>
+            <div class="col-sm-6 col-lg-3">
+                <a href="<%= contextPath %>/group/admin?action=list" class="card card-link">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">群聊管理</div>
+                        </div>
+                        <div class="mt-4 d-flex align-items-center">
+                            <div class="me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-orange" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M21 15a2 2 0 0 1 -2 2H7l-4 4V5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="h2">群聊管理</h3>
+                                <p class="text-muted">管理群聊和消息记录</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 </div>

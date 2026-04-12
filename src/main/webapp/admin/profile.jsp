@@ -211,6 +211,16 @@
                                 </div>
                             </a>
                         </div>
+                        <div class="col-6">
+                            <a href="${pageContext.request.contextPath}/group/admin?action=list" class="card card-link">
+                                <div class="card-body p-3 text-center">
+                                    <div class="mb-2">
+                                        <i class="bi bi-chat-dots h2 text-orange"></i>
+                                    </div>
+                                    <div class="text-truncate">群聊管理</div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
