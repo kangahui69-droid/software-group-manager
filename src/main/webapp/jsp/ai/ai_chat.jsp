@@ -1189,7 +1189,7 @@
         pendingActionInfo = null;
         document.getElementById('pendingActionType').value = '';
 
-        fetch('/software_group_war_exploded/ai?action=execute', {
+         fetch('${pageContext.request.contextPath}/ai?action=execute', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'actionType=' + encodeURIComponent(actionType) + '&actionString=' + encodeURIComponent(paramsStr) + '&session_id=' + encodeURIComponent(sessionId)
@@ -1224,7 +1224,7 @@
                     }
                     resultHtml += '</tbody></table></div>';
                 } else if (data.type === 'redirect' && data.redirectUrl) {
-                    resultHtml += '<div class="mt-2"><a href="/software_group_war_exploded' + data.redirectUrl + '" class="btn btn-sm btn-primary">立即跳转</a></div>';
+                    resultHtml += '<div class="mt-2"><a href="${pageContext.request.contextPath}' + data.redirectUrl + '" class="btn btn-sm btn-primary">立即跳转</a></div>';
                 }
                 assistantContentDiv.innerHTML = resultHtml;
             } else {
