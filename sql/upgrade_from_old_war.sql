@@ -1,45 +1,41 @@
 -- ============================================
 -- 从旧版WAR包升级到最新版数据库的增量脚本
--- 版本: upgrade_from_old_war
+-- 版本: upgrade_from_old_war_v4
 -- 适用场景: 已有旧版数据库，需要升级
+-- MySQL 5.7 兼容版本
 -- 执行前请先备份数据库！
 -- ============================================
 
 USE software_group;
 
 -- ============================================
--- 第一部分：群聊禁言功能（activity_group表）
+-- 说明：MySQL 5.7 不支持 IF NOT EXISTS 语法
+-- 以下语句如果重复执行会报错，但不影响升级（字段已存在）
 -- ============================================
-ALTER TABLE activity_group ADD COLUMN is_muted TINYINT(1) DEFAULT 0 COMMENT '是否全体禁言 0-否 1-是';
-ALTER TABLE activity_group ADD COLUMN muted_until DATETIME DEFAULT NULL COMMENT '禁言截止时间';
-ALTER TABLE activity_group ADD COLUMN mute_reason VARCHAR(255) DEFAULT NULL COMMENT '禁言原因';
 
 -- ============================================
--- 第二部分：群成员禁言（group_member表）
+-- 第一部分：activity表 - 添加缺失的字段
 -- ============================================
-ALTER TABLE group_member ADD COLUMN muted TINYINT(1) DEFAULT 0 COMMENT '是否被禁言 0-否 1-是';
-ALTER TABLE group_member ADD COLUMN muted_until DATETIME DEFAULT NULL COMMENT '禁言截止时间';
 
--- ============================================
--- 第三部分：群消息扩展（group_message表）
--- ============================================
-ALTER TABLE group_message ADD COLUMN status VARCHAR(20) DEFAULT 'normal' COMMENT '消息状态 normal-正常 pending-待审核 blocked-已屏蔽';
-ALTER TABLE group_message ADD COLUMN message_type VARCHAR(20) DEFAULT 'TEXT' COMMENT '消息类型：TEXT-文本消息，FILE-文件消息';
-ALTER TABLE group_message ADD COLUMN file_id INT DEFAULT NULL COMMENT '文件ID（文件消息时使用）';
-ALTER TABLE group_message ADD COLUMN file_name VARCHAR(255) DEFAULT NULL COMMENT '原始文件名';
-ALTER TABLE group_message ADD COLUMN file_size BIGINT DEFAULT NULL COMMENT '文件大小（字节）';
-ALTER TABLE group_message ADD COLUMN file_type VARCHAR(100) DEFAULT NULL COMMENT '文件MIME类型';
-ALTER TABLE group_message ADD COLUMN file_path VARCHAR(500) DEFAULT NULL COMMENT '文件存储路径';
+-- 添加活动创建者字段（creator_id）
+ALTER TABLE activity ADD COLUMN creator_id INT DEFAULT NULL COMMENT '活动创建者用户ID';
 
 -- 添加索引
-ALTER TABLE group_message ADD INDEX idx_message_type (message_type);
-ALTER TABLE group_message ADD INDEX idx_file_id (file_id);
+ALTER TABLE activity ADD INDEX idx_creator_id (creator_id);
 
 -- ============================================
--- 第四部分：创建群聊相关表（如果不存在）
+-- 第二部分：news表 - 添加activity_id字段
 -- ============================================
 
--- 创建活动群表（如果不存在）
+-- 为news表添加activity_id字段
+ALTER TABLE news ADD COLUMN activity_id INT DEFAULT NULL COMMENT '关联的活动ID';
+
+-- 添加索引
+ALTER TABLE news ADD INDEX idx_news_activity_id (activity_id);
+
+-- ============================================
+-- 第三部分：创建活动群表（如果不存在）
+-- ============================================
 CREATE TABLE IF NOT EXISTS activity_group (
     id INT NOT NULL AUTO_INCREMENT,
     activity_id INT DEFAULT NULL COMMENT '关联的活动ID',
@@ -55,7 +51,14 @@ CREATE TABLE IF NOT EXISTS activity_group (
     KEY idx_group_owner_id (group_owner_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 创建群成员表（如果不存在）
+-- 为已存在的activity_group表添加缺失的字段（如果存在旧版）
+ALTER TABLE activity_group ADD COLUMN is_muted TINYINT(1) DEFAULT 0 COMMENT '是否全体禁言';
+ALTER TABLE activity_group ADD COLUMN muted_until DATETIME DEFAULT NULL COMMENT '禁言截止时间';
+ALTER TABLE activity_group ADD COLUMN mute_reason VARCHAR(255) DEFAULT NULL COMMENT '禁言原因';
+
+-- ============================================
+-- 第四部分：创建群成员表（如果不存在）
+-- ============================================
 CREATE TABLE IF NOT EXISTS group_member (
     id INT NOT NULL AUTO_INCREMENT,
     group_id INT NOT NULL COMMENT '群ID',
@@ -70,7 +73,13 @@ CREATE TABLE IF NOT EXISTS group_member (
     KEY idx_group_id (group_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 创建群消息表（如果不存在）
+-- 为已存在的group_member表添加缺失的字段
+ALTER TABLE group_member ADD COLUMN muted TINYINT(1) DEFAULT 0 COMMENT '是否被禁言';
+ALTER TABLE group_member ADD COLUMN muted_until DATETIME DEFAULT NULL COMMENT '禁言截止时间';
+
+-- ============================================
+-- 第五部分：创建群消息表（如果不存在）
+-- ============================================
 CREATE TABLE IF NOT EXISTS group_message (
     id INT NOT NULL AUTO_INCREMENT,
     group_id INT NOT NULL COMMENT '群ID',
@@ -92,7 +101,22 @@ CREATE TABLE IF NOT EXISTS group_message (
     KEY idx_file_id (file_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 创建用户_群关系表（如果不存在）
+-- 为已存在的group_message表添加缺失的字段
+ALTER TABLE group_message ADD COLUMN status VARCHAR(20) DEFAULT 'normal' COMMENT '消息状态';
+ALTER TABLE group_message ADD COLUMN message_type VARCHAR(20) DEFAULT 'TEXT' COMMENT '消息类型';
+ALTER TABLE group_message ADD COLUMN file_id INT DEFAULT NULL COMMENT '文件ID';
+ALTER TABLE group_message ADD COLUMN file_name VARCHAR(255) DEFAULT NULL COMMENT '文件名';
+ALTER TABLE group_message ADD COLUMN file_size BIGINT DEFAULT NULL COMMENT '文件大小';
+ALTER TABLE group_message ADD COLUMN file_type VARCHAR(100) DEFAULT NULL COMMENT '文件类型';
+ALTER TABLE group_message ADD COLUMN file_path VARCHAR(500) DEFAULT NULL COMMENT '文件路径';
+
+-- 添加索引
+ALTER TABLE group_message ADD INDEX idx_message_type (message_type);
+ALTER TABLE group_message ADD INDEX idx_file_id (file_id);
+
+-- ============================================
+-- 第六部分：创建用户_群关系表（如果不存在）
+-- ============================================
 CREATE TABLE IF NOT EXISTS user_group (
     id INT NOT NULL AUTO_INCREMENT,
     user_id INT NOT NULL COMMENT '用户ID',
@@ -107,9 +131,12 @@ CREATE TABLE IF NOT EXISTS user_group (
 -- ============================================
 -- 验证表结构
 -- ============================================
-DESCRIBE activity_group;
-DESCRIBE group_member;
-DESCRIBE group_message;
-DESCRIBE user_group;
-
+SELECT '========================================' AS '';
+SELECT 'activity表creator_id字段:' AS '';
+DESCRIBE activity;
+SELECT '========================================' AS '';
+SELECT 'news表activity_id字段:' AS '';
+DESCRIBE news;
+SELECT '========================================' AS '';
 SELECT '升级完成！' AS status;
+SELECT '========================================' AS '';

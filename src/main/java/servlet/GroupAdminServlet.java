@@ -3,6 +3,7 @@ package servlet;
 import dao.ActivityGroupDAO;
 import dao.GroupMessageDAO;
 import dao.GroupMemberDAO;
+import dao.UserGroupDAO;
 import model.ActivityGroup;
 import model.GroupMessage;
 import model.User;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -22,6 +24,7 @@ public class GroupAdminServlet extends HttpServlet {
     private ActivityGroupDAO groupDAO = new ActivityGroupDAO();
     private GroupMessageDAO messageDAO = new GroupMessageDAO();
     private GroupMemberDAO memberDAO = new GroupMemberDAO();
+    private UserGroupDAO userGroupDAO = new UserGroupDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -39,11 +42,17 @@ public class GroupAdminServlet extends HttpServlet {
             case "list":
                 listGroups(req, resp);
                 break;
+            case "myGroups":
+                listMyGroups(req, resp);
+                break;
             case "detail":
                 showGroupDetail(req, resp);
                 break;
             case "messages":
                 showGroupMessages(req, resp);
+                break;
+            case "delete":
+                deleteGroup(req, resp);
                 break;
             default:
                 listGroups(req, resp);
@@ -70,6 +79,9 @@ public class GroupAdminServlet extends HttpServlet {
             case "deleteMessage":
                 deleteMessage(req, resp);
                 break;
+            case "delete":
+                deleteGroup(req, resp);
+                break;
             default:
                 resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
         }
@@ -77,6 +89,13 @@ public class GroupAdminServlet extends HttpServlet {
 
     private void listGroups(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         List<ActivityGroup> groups = groupDAO.findAll();
+        req.setAttribute("groups", groups);
+        req.getRequestDispatcher("/jsp/admin/group/groupList.jsp").forward(req, resp);
+    }
+
+    private void listMyGroups(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        User currentUser = (User) req.getSession().getAttribute("user");
+        List<ActivityGroup> groups = groupDAO.findByOwnerId(currentUser.getId());
         req.setAttribute("groups", groups);
         req.getRequestDispatcher("/jsp/admin/group/groupList.jsp").forward(req, resp);
     }
@@ -174,9 +193,9 @@ public class GroupAdminServlet extends HttpServlet {
             boolean success = groupDAO.muteGroup(groupId, mutedUntil, reason);
             String redirectUrl = req.getContextPath() + "/group/admin?action=detail&id=" + groupId;
             if (success) {
-                resp.sendRedirect(redirectUrl + "&success=禁言成功");
+                resp.sendRedirect(redirectUrl + "&success=" + URLEncoder.encode("禁言成功", "UTF-8"));
             } else {
-                resp.sendRedirect(redirectUrl + "&error=禁言失败");
+                resp.sendRedirect(redirectUrl + "&error=" + URLEncoder.encode("禁言失败", "UTF-8"));
             }
         } catch (NumberFormatException e) {
             resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
@@ -196,9 +215,9 @@ public class GroupAdminServlet extends HttpServlet {
             boolean success = groupDAO.unmuteGroup(groupId);
             String redirectUrl = req.getContextPath() + "/group/admin?action=detail&id=" + groupId;
             if (success) {
-                resp.sendRedirect(redirectUrl + "&success=已解除禁言");
+                resp.sendRedirect(redirectUrl + "&success=" + URLEncoder.encode("已解除禁言", "UTF-8"));
             } else {
-                resp.sendRedirect(redirectUrl + "&error=解除禁言失败");
+                resp.sendRedirect(redirectUrl + "&error=" + URLEncoder.encode("解除禁言失败", "UTF-8"));
             }
         } catch (NumberFormatException e) {
             resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
@@ -221,10 +240,32 @@ public class GroupAdminServlet extends HttpServlet {
             boolean success = messageDAO.delete(messageId);
             String redirectUrl = req.getContextPath() + "/group/admin?action=messages&id=" + groupId;
             if (success) {
-                resp.sendRedirect(redirectUrl + "&success=消息已删除");
+                resp.sendRedirect(redirectUrl + "&success=" + URLEncoder.encode("消息已删除", "UTF-8"));
             } else {
-                resp.sendRedirect(redirectUrl + "&error=删除失败");
+                resp.sendRedirect(redirectUrl + "&error=" + URLEncoder.encode("删除失败", "UTF-8"));
             }
+        } catch (NumberFormatException e) {
+            resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
+        }
+    }
+
+    private void deleteGroup(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String groupIdStr = req.getParameter("groupId");
+
+        if (groupIdStr == null || groupIdStr.isEmpty()) {
+            resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
+            return;
+        }
+
+        try {
+            int groupId = Integer.parseInt(groupIdStr);
+            
+            messageDAO.deleteByGroupId(groupId);
+            memberDAO.deleteByGroupId(groupId);
+            userGroupDAO.deleteByGroupId(groupId);
+            groupDAO.delete(groupId);
+
+            resp.sendRedirect(req.getContextPath() + "/group/admin?action=list&success=" + URLEncoder.encode("群聊已删除", "UTF-8"));
         } catch (NumberFormatException e) {
             resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
         }

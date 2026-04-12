@@ -70,6 +70,41 @@ public class StudySessionDAO {
     }
 
     /**
+     * 结束所有今日进行中的学习时段（用于22:00定时任务）
+     */
+    public int endAllActiveSessions() throws SQLException {
+        String sql = "UPDATE study_session SET check_out_time = NOW(), " +
+                     "duration = TIMESTAMPDIFF(MINUTE, check_in_time, NOW()), " +
+                     "status = 'COMPLETED' WHERE session_date = CURDATE() AND status = 'ACTIVE'";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            return ps.executeUpdate();
+        }
+    }
+
+    /**
+     * 获取今日所有进行中的学习时段
+     */
+    public List<StudySession> getAllActiveSessions() throws SQLException {
+        String sql = "SELECT s.*, u.name as user_name FROM study_session s " +
+                     "LEFT JOIN user u ON s.user_id = u.id " +
+                     "WHERE s.session_date = CURDATE() AND s.status = 'ACTIVE'";
+
+        List<StudySession> sessions = new ArrayList<>();
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                sessions.add(extractSession(rs));
+            }
+        }
+        return sessions;
+    }
+
+    /**
      * 获取今日进行中的学习时段
      */
     public StudySession getTodayActiveSession(Integer userId) throws SQLException {

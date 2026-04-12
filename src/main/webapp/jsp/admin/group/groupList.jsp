@@ -75,6 +75,8 @@
                                            class="btn btn-white btn-sm">详情</a>
                                         <a href="${pageContext.request.contextPath}/group/admin?action=messages&id=${group.id}" 
                                            class="btn btn-outline-primary btn-sm">消息</a>
+                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                onclick="confirmDelete(${group.id}, '${group.groupName}')">删除</button>
                                     </div>
                                 </td>
                             </tr>
@@ -90,5 +92,13 @@
         </div>
     </div>
 </div>
+
+<script>
+function confirmDelete(groupId, groupName) {
+    if (confirm('确定要删除群聊"' + groupName + '"吗？此操作不可恢复！')) {
+        window.location.href = '${pageContext.request.contextPath}/group/admin?action=delete&groupId=' + groupId;
+    }
+}
+</script>
 
 <jsp:include page="../../common/layout_bottom.jsp" />

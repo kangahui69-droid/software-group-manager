@@ -224,6 +224,27 @@ public class ActivityGroupDAO {
         return false;
     }
 
+    /**
+     * 解除所有已过期的禁言（根据muted_until时间）
+     * @return 解除禁言的群聊数量
+     */
+    public int unmuteExpiredGroups() {
+        String sql = "UPDATE activity_group SET is_muted = 0, muted_until = NULL, mute_reason = NULL, updated_at = NOW() " +
+                     "WHERE is_muted = 1 AND muted_until IS NOT NULL AND muted_until < NOW()";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+        return 0;
+    }
+
     private ActivityGroup mapResultSetToGroup(ResultSet rs) throws SQLException {
         ActivityGroup group = new ActivityGroup();
         group.setId(rs.getInt("id"));

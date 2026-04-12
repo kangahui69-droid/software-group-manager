@@ -279,13 +279,29 @@
                         </c:if>
                     </div>
                     
+                    <c:if test="${group.isMuted == 1}">
+                        <div class="alert alert-danger mb-2" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>当前群聊已被禁言</strong>
+                            <c:if test="${not empty group.muteReason}">
+                                <br>禁言原因：${group.muteReason}
+                            </c:if>
+                            <c:if test="${not empty group.mutedUntil}">
+                                <br>禁言解除时间：<fmt:formatDate value="${group.mutedUntil}" pattern="yyyy-MM-dd HH:mm" />
+                            </c:if>
+                            <c:if test="${empty group.mutedUntil}">
+                                <br>禁言解除时间：永久禁言
+                            </c:if>
+                        </div>
+                    </c:if>
+                    
                     <div class="chat-input">
                         <form action="${pageContext.request.contextPath}/group/send" method="post" id="messageForm" class="mb-2">
                             <input type="hidden" name="groupId" value="${group.id}">
                             <div class="chat-input-wrapper">
                                 <input type="text" class="form-control" name="content" placeholder="输入消息..." 
-                                       autocomplete="off" required>
-                                <button type="submit" class="btn btn-primary">
+                                       autocomplete="off" required ${group.isMuted == 1 ? 'disabled' : ''}>
+                                <button type="submit" class="btn btn-primary" ${group.isMuted == 1 ? 'disabled' : ''}>
                                     <i class="bi bi-send"></i> 发送
                                 </button>
                             </div>
@@ -293,9 +309,9 @@
                         <form action="${pageContext.request.contextPath}/group/sendFile" method="post" enctype="multipart/form-data" id="fileForm">
                             <input type="hidden" name="groupId" value="${group.id}">
                             <div class="chat-input-wrapper">
-                                <div class="btn btn-outline-secondary file-upload-btn">
+                                <div class="btn btn-outline-secondary file-upload-btn" ${group.isMuted == 1 ? 'style="opacity: 0.5; pointer-events: none;"' : ''}>
                                     <i class="bi bi-paperclip"></i> 选择文件
-                                    <input type="file" name="file" id="fileInput" accept="*/*">
+                                    <input type="file" name="file" id="fileInput" accept="*/*" ${group.isMuted == 1 ? 'disabled' : ''}>
                                 </div>
                                 <span class="file-name-display text-muted" id="fileNameDisplay"></span>
                                 <button type="submit" class="btn btn-success" id="uploadBtn" style="display: none;">

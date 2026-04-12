@@ -37,7 +37,7 @@ ALTER TABLE group_message ADD COLUMN file_name VARCHAR(255) DEFAULT NULL COMMENT
 ALTER TABLE group_message ADD COLUMN file_size BIGINT DEFAULT NULL COMMENT '文件大小（字节）' AFTER file_name;
 
 -- 添加文件类型（MIME type）
-ALTER TABLE group_message ADD COLUMN file_type VARCHAR(100) DEFAULT NULL COMMENT '文件MIME类型' AFTER file_type;
+ALTER TABLE group_message ADD COLUMN file_type VARCHAR(100) DEFAULT NULL COMMENT '文件MIME类型' AFTER file_size;
 
 -- 添加文件存储路径（冗余存储）
 ALTER TABLE group_message ADD COLUMN file_path VARCHAR(500) DEFAULT NULL COMMENT '文件存储路径' AFTER file_type;

@@ -67,7 +67,9 @@ public class GroupServlet extends HttpServlet {
         User currentUser = (User) session.getAttribute("user");
 
         if (pathInfo == null || pathInfo.equals("/")) {
-            if ("createForActivity".equals(action)) {
+            if ("deleteGroup".equals(action)) {
+                deleteGroup(request, response, currentUser);
+            } else if ("createForActivity".equals(action)) {
                 showCreateForActivityForm(request, response, currentUser);
             } else if ("myGroups".equals(action)) {
                 listMyGroups(request, response, currentUser);
@@ -88,6 +90,8 @@ public class GroupServlet extends HttpServlet {
             showAddMembersForm(request, response, currentUser);
         } else if (pathInfo.equals("/downloadFile")) {
             downloadFile(request, response, currentUser);
+        } else if ("deleteGroup".equals(action)) {
+            deleteGroup(request, response, currentUser);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -380,6 +384,12 @@ public class GroupServlet extends HttpServlet {
             return;
         }
 
+        ActivityGroup group = groupDAO.findById(groupId);
+        if (group != null && group.isMuted()) {
+            response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId + "?error=" + URLEncoder.encode("当前群聊已被禁言", "UTF-8"));
+            return;
+        }
+
         GroupMessage message = new GroupMessage(groupId, currentUser.getId(), content.trim());
         int messageId = messageDAO.insert(message);
 
@@ -399,6 +409,12 @@ public class GroupServlet extends HttpServlet {
 
         if (!memberDAO.isMember(groupId, currentUser.getId())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        ActivityGroup group = groupDAO.findById(groupId);
+        if (group != null && group.isMuted()) {
+            response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId + "?error=" + URLEncoder.encode("当前群聊已被禁言", "UTF-8"));
             return;
         }
 
@@ -492,6 +508,8 @@ public class GroupServlet extends HttpServlet {
         }
 
         messageDAO.deleteByGroupId(groupId);
+        memberDAO.deleteByGroupId(groupId);
+        userGroupDAO.deleteByGroupId(groupId);
         groupDAO.delete(groupId);
 
         response.sendRedirect(request.getContextPath() + "/group/my-groups");

@@ -14,7 +14,6 @@
 <style>
 .group-card {
     transition: all 0.3s ease;
-    cursor: pointer;
 }
 .group-card:hover {
     transform: translateY(-3px);
@@ -62,27 +61,36 @@
                 <div class="row row-cards">
                     <c:forEach var="ug" items="${userGroups}">
                         <div class="col-md-6 col-lg-4">
-                            <a href="${pageContext.request.contextPath}/group/chat/${ug.groupId}" class="card card-link group-card">
+                            <div class="card group-card">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
-                                        <div class="group-icon me-3">
-                                            <i class="bi bi-people"></i>
-                                        </div>
-                                        <div class="flex-fill">
-                                            <h4 class="mb-1">${ug.groupName}</h4>
-                                            <c:if test="${not empty ug.activityName}">
-                                                <small class="text-muted">${ug.activityName}</small>
-                                            </c:if>
-                                        </div>
+                                        <a href="${pageContext.request.contextPath}/group/chat/${ug.groupId}" class="text-decoration-none text-reset flex-fill">
+                                            <div class="group-icon me-3 d-inline-flex">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div class="d-inline-block">
+                                                <h4 class="mb-1">${ug.groupName}</h4>
+                                                <c:if test="${not empty ug.activityName}">
+                                                    <small class="text-muted">${ug.activityName}</small>
+                                                </c:if>
+                                            </div>
+                                        </a>
                                     </div>
-                                    <div class="d-flex justify-content-between text-muted">
+                                    <div class="d-flex justify-content-between align-items-center text-muted">
                                         <span><i class="bi bi-people me-1"></i> ${ug.memberCount} 人</span>
                                         <span><i class="bi bi-clock me-1"></i> 
                                             <fmt:formatDate value="${ug.joinedAt}" pattern="MM-dd HH:mm" />
                                         </span>
                                     </div>
+                                    <c:if test="${sessionScope.user.id == ug.ownerId}">
+                                        <div class="mt-3">
+                                            <button type="button" class="btn btn-danger btn-sm w-100" onclick="confirmDisband(${ug.groupId}, '${ug.groupName}')">
+                                                <i class="bi bi-trash me-1"></i>解散群聊
+                                            </button>
+                                        </div>
+                                    </c:if>
                                 </div>
-                            </a>
+                            </div>
                         </div>
                     </c:forEach>
                 </div>
@@ -90,5 +98,13 @@
         </c:choose>
     </div>
 </div>
+
+<script>
+function confirmDisband(groupId, groupName) {
+    if (confirm('确定要解散群聊"' + groupName + '"吗？此操作不可恢复！')) {
+        window.location.href = '${pageContext.request.contextPath}/group?action=deleteGroup&groupId=' + groupId;
+    }
+}
+</script>
 
 <jsp:include page="../common/layout_bottom.jsp" />

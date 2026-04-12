@@ -363,7 +363,7 @@
                                                 <a class="nav-link" href="${pageContext.request.contextPath}/activity?action=myCreatedActivities">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-calendar-plus"></i></span>
-                                                    <span class="nav-link-title">我发起的</span>
+                                                    <span class="nav-link-title">活动申请</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'group' ? 'active' : ''}">
@@ -453,12 +453,20 @@
                                                     <span class="nav-link-title">问题管理</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item ${param.active == 'groupAdmin' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/group/admin?action=list">
+                                            <li class="nav-item dropdown ${param.active == 'groupAdmin' ? 'active' : ''}">
+                                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-chat-dots-fill"></i></span>
-                                                    <span class="nav-link-title">群聊管理</span>
+                                                    <span class="nav-link-title">群聊</span>
                                                 </a>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/group/admin?action=myGroups">
+                                                        <i class="bi bi-people me-1"></i>我的群聊
+                                                    </a>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/group/admin?action=list">
+                                                        <i class="bi bi-shield me-1"></i>群聊管理
+                                                    </a>
+                                                </div>
                                             </li>
                                         </c:when>
                                     </c:choose>
