@@ -57,6 +57,22 @@ public class GroupMemberDAO {
         return false;
     }
 
+    public void deleteByGroupId(Integer groupId) {
+        String sql = "DELETE FROM group_member WHERE group_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, groupId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+    }
+
     public boolean isMember(Integer groupId, Integer userId) {
         String sql = "SELECT COUNT(*) FROM group_member WHERE group_id = ? AND user_id = ?";
         Connection conn = null;

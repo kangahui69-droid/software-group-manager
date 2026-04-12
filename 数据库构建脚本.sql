@@ -64,12 +64,10 @@ CREATE TABLE `activity` (
   `max_participants` int DEFAULT NULL,
   `status` enum('upcoming','ongoing','completed','canceled') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'upcoming',
   `approval_status` enum('pending','approved','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'approved',
-  `creator_id` int DEFAULT NULL COMMENT '活动创建者用户ID',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` tinyint DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `idx_creator_id` (`creator_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='活动表';
 
 -- ============================================

@@ -341,4 +341,14 @@
         <session-timeout>30</session-timeout>
     </session-config>
 
+    <!-- 学习会话定时任务监听器 -->
+    <listener>
+        <listener-class>listener.StudySessionListener</listener-class>
+    </listener>
+
+    <!-- 群聊禁言定时任务监听器 -->
+    <listener>
+        <listener-class>listener.GroupMuteListener</listener-class>
+    </listener>
+
 </web-app>

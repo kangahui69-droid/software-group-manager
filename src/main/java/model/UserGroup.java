@@ -14,6 +14,7 @@ public class UserGroup {
     private String groupName;
     private String activityName;
     private Integer memberCount;
+    private Integer ownerId;
 
     public UserGroup() {
     }
@@ -77,5 +78,13 @@ public class UserGroup {
 
     public void setMemberCount(Integer memberCount) {
         this.memberCount = memberCount;
+    }
+
+    public Integer getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Integer ownerId) {
+        this.ownerId = ownerId;
     }
 }

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.Config;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -86,6 +87,13 @@ public class AIClientUtil {
         request.setHeader("Authorization", "Bearer " + apiKey);
         request.setHeader("Content-Type", "application/json");
         request.setEntity(new StringEntity(gson.toJson(requestBody), StandardCharsets.UTF_8));
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(30000)
+                .setSocketTimeout(60000)
+                .setConnectionRequestTimeout(60000)
+                .build();
+        request.setConfig(requestConfig);
 
         CloseableHttpClient client = HttpClients.custom()
                 .setRedirectStrategy(new LaxRedirectStrategy())
