@@ -186,7 +186,7 @@ public class ActivityDAO {
         PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, activity.getTitle());
             pstmt.setString(2, activity.getDescription());
             pstmt.setString(3, activity.getActivityType());
@@ -201,7 +201,15 @@ public class ActivityDAO {
             pstmt.setString(12, activity.getStatus() != null ? activity.getStatus() : "upcoming");
             pstmt.setString(13, activity.getApprovalStatus() != null ? activity.getApprovalStatus() : "pending");
             pstmt.setObject(14, activity.getCreatorId());
-            return pstmt.executeUpdate() > 0;
+            boolean success = pstmt.executeUpdate() > 0;
+            if (success) {
+                java.sql.ResultSet rs = pstmt.getGeneratedKeys();
+                if (rs.next()) {
+                    activity.setId(rs.getInt(1));
+                }
+                rs.close();
+            }
+            return success;
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
