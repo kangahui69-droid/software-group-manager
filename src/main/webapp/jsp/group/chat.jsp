@@ -134,7 +134,7 @@
             display: flex;
             align-items: center;
             padding: 10px 15px;
-            background: #f8f9fa;
+            background: #ffffff;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             text-decoration: none;
@@ -142,8 +142,8 @@
             max-width: 300px;
         }
         .message.mine .message-file {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.3);
+            background: #206bc4;
+            border-color: #206bc4;
             color: #fff;
         }
         .message-file:hover {
@@ -151,7 +151,7 @@
             text-decoration: none;
         }
         .message.mine .message-file:hover {
-            background: rgba(255,255,255,0.3);
+            background: #1a5fb4;
         }
         .message-file .file-icon {
             font-size: 32px;

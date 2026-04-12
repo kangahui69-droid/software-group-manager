@@ -399,7 +399,7 @@ public class GroupServlet extends HttpServlet {
     private void sendFileMessage(HttpServletRequest request, HttpServletResponse response, User currentUser)
             throws ServletException, IOException {
         String groupIdStr = request.getParameter("groupId");
-        
+
         if (groupIdStr == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;

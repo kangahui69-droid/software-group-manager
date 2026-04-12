@@ -314,8 +314,10 @@
                         </c:when>
                         <c:when test="${userRole == 'MEMBER'}">
                             <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_latest_activities')">查看最新活动</span>
-                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]apply_activity')">申请活动</span>
-                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]create_activity_request')">发起活动</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]apply_activity')">报名活动</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]create_activity_request')">申请活动</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_projects')">查看项目</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]create_project_request')">申请项目</span>
                             <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]view_my_activities')">我的活动</span>
                             <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]recent_news')">小组动态</span>
                         </c:when>
@@ -454,14 +456,24 @@
                 convertedAction = 'list_all_users';
             } else if (msgLower.includes('招新') || msgLower.includes('报名参加')) {
                 convertedAction = 'list_activities';
+            } else if (msgLower.includes('报名活动')) {
+                convertedAction = 'apply_activity';
+            } else if (msgLower.includes('申请活动')) {
+                convertedAction = 'create_activity_request';
             } else if (msgLower.includes('发布新闻') || msgLower === '新闻发布' || msgLower.includes('提交新闻')) {
-                convertedAction = 'pending_feature';
-            } else if (msgLower.includes('申请项目') || msgLower.includes('提交项目') || msgLower.includes('创建项目')) {
-                convertedAction = 'pending_feature';
-            } else if (msgLower.includes('奖项申请') || msgLower.includes('提交奖项') || msgLower.includes('申请奖项') || msgLower.includes('奖项') || msgLower.includes('获奖')) {
-                convertedAction = 'pending_feature';
+                convertedAction = 'submit_news';
+            } else if (msgLower.includes('查看项目') || msgLower === '项目列表' || msgLower === '所有项目') {
+                convertedAction = 'list_all_projects';
+            } else if (msgLower.includes('申请项目') || msgLower.includes('提交项目') || msgLower.includes('创建项目') || msgLower.includes('发起项目')) {
+                convertedAction = 'create_project_request';
+            } else if (msgLower.includes('奖项申请') || msgLower.includes('提交奖项') || msgLower.includes('申请奖项') || msgLower.includes('获奖')) {
+                convertedAction = 'submit_award';
+            } else if (msgLower.includes('我的奖项') || msgLower.includes('个人奖项') || msgLower.includes('我的获奖')) {
+                convertedAction = 'list_my_awards';
+            } else if (msgLower.includes('奖项') || msgLower.includes('获奖')) {
+                convertedAction = 'list_my_awards';
             } else if (msgLower.includes('项目')) {
-                convertedAction = 'pending_feature';
+                convertedAction = 'list_all_projects';
             }
         }
         
@@ -482,6 +494,9 @@
                 'apply_activity': '正在处理您的报名请求...',
                 'create_activity_request': '正在创建活动...',
                 'submit_news': '正在发布新闻...',
+                'submit_award': '正在申请奖项...',
+                'list_my_awards': '正在获取您的奖项...',
+                'list_all_awards': '正在获取奖项列表...',
                 'pending_feature': '正在处理...'
             };
             var loadingText = actionLabels[convertedAction.split('|')[0]] || '正在处理...';
@@ -515,6 +530,7 @@
             if (data.success) {
                 var responseText = data.response;
                 console.log("AI response:", responseText);
+                console.log("Data object:", JSON.stringify(data));
                 var lastActionIdx = responseText.lastIndexOf('[ACTION]');
                 if (lastActionIdx !== -1) {
                     var beforeAction = responseText.substring(0, lastActionIdx).trim();
@@ -565,8 +581,18 @@
             
             // 根据action显示友好文字
             if (actionStr === 'list_latest_activities') displayText = '查看最新活动';
-            else if (actionStr === 'apply_activity') displayText = '申请活动';
-            else if (actionStr === 'create_activity_request') displayText = '发起活动';
+            else if (actionStr === 'apply_activity') displayText = '报名活动';
+            else if (actionStr === 'create_activity_request') displayText = '申请活动';
+            else if (actionStr === 'list_all_projects') displayText = '查看项目';
+            else if (actionStr === 'create_project_request') displayText = '申请项目';
+            else if (actionStr === 'view_my_activities') displayText = '我的活动';
+            else if (actionStr === 'recent_news') displayText = '小组动态';
+            else if (actionStr === 'submit_news') displayText = '发布新闻';
+            else if (actionStr === 'list_pending_news') displayText = '审核新闻';
+            else if (actionStr === 'list_pending_activities') displayText = '审核活动';
+            else if (actionStr === 'list_pending_users') displayText = '处理招新';
+            else if (actionStr === 'list_all_users') displayText = '查看成员';
+            else if (actionStr === 'statistics') displayText = '数据统计';
             else displayText = actionStr;
             
             var sessionId = document.getElementById('sessionId').value;
@@ -870,6 +896,8 @@
             actionType = 'submit_feedback';
         } else if (responseText.indexOf('用户') !== -1) {
             actionType = 'query_user';
+        } else if (responseText.indexOf('项目') !== -1) {
+            actionType = 'create_project_request';
         }
 
         pendingActionInfo = {
@@ -933,10 +961,11 @@
 
         var actionLabels = {
             'create_activity_request': '创建活动',
-            'apply_activity': '申请活动',
+            'apply_activity': '报名活动',
             'signup_activity': '报名活动',
             'submit_news': '发布新闻',
-            'submit_feedback': '提交反馈'
+            'submit_feedback': '提交反馈',
+            'create_project_request': '创建项目'
         };
 
         var allFields = {
@@ -957,14 +986,61 @@
                 { label: '活动ID', key: 'activity_id', type: 'text', placeholder: '请输入活动ID' }
             ],
             'submit_news': [
-                { label: '标题', key: 'title', type: 'text', placeholder: '请输入标题' },
-                { label: '内容', key: 'content', type: 'textarea', placeholder: '请输入内容...' },
-                { label: '分类', key: 'category', type: 'select', options: ['技术', '学术', '文艺', '体育', '其他'] }
+                { label: '标题', key: 'title', type: 'text', placeholder: '请输入新闻标题' },
+                { label: '摘要', key: 'summary', type: 'textarea', placeholder: '请输入新闻摘要...' },
+                { label: '内容', key: 'content', type: 'textarea', placeholder: '请输入新闻详细内容...' },
+                { label: '分类', key: 'type', type: 'select', options: [
+                    { value: 'activity', label: '活动新闻' },
+                    { value: 'notice', label: '通知公告' },
+                    { value: 'tech', label: '技术分享' },
+                    { value: 'award', label: '获奖荣誉' },
+                    { value: 'recruit', label: '招新招聘' }
+                ]}
             ],
             'submit_feedback': [
                 { label: '标题', key: 'title', type: 'text', placeholder: '请输入标题' },
                 { label: '内容', key: 'content', type: 'textarea', placeholder: '请输入内容...' },
                 { label: '分类', key: 'category', type: 'select', options: ['技术', '学术', '文艺', '体育', '其他'] }
+            ],
+            'create_project_request': [
+                { label: '项目名称', key: 'name', type: 'text', placeholder: '例如：校园二手平台' },
+                { label: '项目描述', key: 'description', type: 'textarea', placeholder: '请描述项目内容...' },
+                { label: '项目分类', key: 'category', type: 'select', options: ['技术', '学术', '创业', '文艺', '其他'] },
+                { label: '预计开始日期', key: 'expected_start_date', type: 'date', placeholder: '例如：2026-05-01' },
+                { label: '预计结束日期', key: 'expected_end_date', type: 'date', placeholder: '例如：2026-12-31' },
+                { label: '仓库地址', key: 'repo_url', type: 'text', placeholder: '例如：https://github.com/...' },
+                { label: '项目预算', key: 'budget', type: 'number', placeholder: '预算金额（元）' }
+            ],
+            'submit_award': [
+                { label: '比赛名称', key: 'competition', type: 'text', placeholder: '例如：ACM国际大学生程序设计竞赛' },
+                { label: '比赛时间', key: 'compTime', type: 'date', placeholder: '例如：2026-05-01' },
+                { label: '比赛地点', key: 'compLocation', type: 'text', placeholder: '比赛举办地点' },
+                { label: '比赛届别', key: 'compSession', type: 'text', placeholder: '例如：第12届' },
+                { label: '比赛等级', key: 'compLevel', type: 'select', options: [
+                    { value: '2', label: '国家级' },
+                    { value: '1', label: '省级' },
+                    { value: '3', label: '地区级别' },
+                    { value: '4', label: '其他级别' }
+                ]},
+                { label: '奖项类型', key: 'awardType', type: 'select', options: [
+                    { value: '5', label: '个人' },
+                    { value: '6', label: '团队' }
+                ]},
+                { label: '奖项类别', key: 'awardCategory', type: 'select', options: [
+                    { value: '7', label: '项目' },
+                    { value: '8', label: '经典算法' },
+                    { value: '9', label: '人工智能' },
+                    { value: '10', label: '文档类' },
+                    { value: '11', label: '其他' }
+                ]},
+                { label: '团队名称', key: 'teamName', type: 'text', placeholder: '团队奖项请填写团队名称' },
+                { label: '奖项等级', key: 'awardLevel', type: 'select', options: [
+                    { value: '21', label: '一等奖' },
+                    { value: '22', label: '二等奖' },
+                    { value: '23', label: '三等奖' },
+                    { value: '24', label: '优胜奖' },
+                    { value: '25', label: '参与奖' }
+                ]}
             ]
         };
 
@@ -1010,8 +1086,14 @@
                 select.appendChild(defaultOpt);
                 for (var j = 0; j < fieldConfig.options.length; j++) {
                     var opt = document.createElement('option');
-                    opt.value = fieldConfig.options[j];
-                    opt.textContent = fieldConfig.options[j];
+                    var optData = fieldConfig.options[j];
+                    if (typeof optData === 'object') {
+                        opt.value = optData.value;
+                        opt.textContent = optData.label;
+                    } else {
+                        opt.value = optData;
+                        opt.textContent = optData;
+                    }
                     select.appendChild(opt);
                 }
                 groupDiv.appendChild(select);
@@ -1055,11 +1137,17 @@
         var first = true;
         var displayParts = [];
         var keyToLabelMap = {
-            'name': '活动名称', 'location': '活动地点', 'description': '活动描述',
+            'name': '奖项名称', 'location': '活动地点', 'description': '获奖描述',
             'start_time': '开始时间', 'end_time': '结束时间',
             'reg_start': '报名开始时间', 'reg_end': '报名截止时间',
             'max_participants': '最大参与人数', 'activity_id': '活动ID',
-            'title': '标题', 'content': '内容', 'category': '分类'
+            'title': '标题', 'content': '内容', 'category': '分类',
+            'expected_start_date': '预计开始日期', 'expected_end_date': '预计结束日期',
+            'repo_url': '仓库地址', 'budget': '项目预算',
+            'competition': '比赛名称', 'compTime': '比赛时间',
+            'compLocation': '比赛地点', 'compSession': '比赛届别',
+            'compLevel': '比赛等级', 'awardType': '奖项类型',
+            'awardCategory': '奖项类别', 'teamName': '团队名称', 'awardLevel': '奖项等级'
         };
         
         for (var pair of formData.entries()) {
@@ -1231,6 +1319,31 @@
                     resultHtml += '<div class="mt-2"><a href="${pageContext.request.contextPath}' + data.redirectUrl + '" class="btn btn-sm btn-primary">立即跳转</a></div>';
                 } else if (data.type === 'view_list' && data.data) {
                     resultHtml += '<div class="mt-2"><a href="${pageContext.request.contextPath}/activity?action=myActivities" class="btn btn-sm btn-outline-primary">查看详情</a></div>';
+                } else if (data.type === 'categorized_news' && data.categories) {
+                    console.log("Categorized news data:", data);
+                    var categories = data.categories;
+                    for (var i = 0; i < categories.length; i++) {
+                        var cat = categories[i];
+                        console.log("Category:", cat.name, "Count:", cat.count, "Items:", cat.items);
+                        var items = cat.items;
+                        if (items && items.length > 0) {
+                            resultHtml += '<div class="mt-3"><h6><i class="bi bi-folder-fill me-1"></i>' + cat.name + ' (' + items.length + ')</h6>';
+                            resultHtml += '<div class="list-group list-group-flush">';
+                            for (var j = 0; j < items.length; j++) {
+                                var news = items[j];
+                                resultHtml += '<div class="list-group-item px-0 py-2">';
+                                resultHtml += '<div class="d-flex justify-content-between align-items-start">';
+                                resultHtml += '<div><h6 class="mb-1">' + news.title + '</h6>';
+                                if (news.summary) {
+                                    resultHtml += '<small class="text-muted">' + news.summary.substring(0, 50) + (news.summary.length > 50 ? '...' : '') + '</small>';
+                                }
+                                resultHtml += '</div>';
+                                resultHtml += '<small class="text-muted">' + (news.createdAt || '') + '</small>';
+                                resultHtml += '</div></div>';
+                            }
+                            resultHtml += '</div></div>';
+                        }
+                    }
                 }
                 targetDiv.innerHTML = resultHtml;
             } else {

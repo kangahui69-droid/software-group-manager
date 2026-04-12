@@ -6,6 +6,7 @@ import dao.AIKnowledgeBaseDAO;
 import dao.AIFaqStatisticsDAO;
 import dao.ActivityDAO;
 import dao.ActivityParticipantDAO;
+import dao.AwardDAO;
 import dao.NewsDAO;
 import dao.ProblemReportDAO;
 import dao.RegistrationDAO;
@@ -17,6 +18,7 @@ import model.AIMessage;
 import model.AIKnowledgeBase;
 import model.AIFaqStatistics;
 import model.Activity;
+import model.Award;
 import model.News;
 import model.Project;
 import model.ProblemReport;
@@ -25,8 +27,10 @@ import model.User;
 import util.AIClientUtil;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +50,7 @@ public class AIService {
     private ActivityDAO activityDAO = new ActivityDAO();
     private ActivityParticipantDAO activityParticipantDAO = new ActivityParticipantDAO();
     private NewsDAO newsDAO = new NewsDAO();
+    private AwardDAO awardDAO = new AwardDAO();
     private ProblemReportDAO problemReportDAO = new ProblemReportDAO();
     private RegistrationDAO registrationDAO = new RegistrationDAO();
     private ProjectDAO projectDAO = new ProjectDAO();
@@ -767,10 +772,24 @@ public class AIService {
                     return executeViewMyProjects(params, user);
                 case "view_my_groups":
                     return executeViewMyGroups(params, user);
+                case "list_activities":
+                    return executeListActivities(params);
+                case "list_latest_activities":
+                    return executeListLatestActivities(params);
                 case "apply_activity":
                     return executeSignupActivity(params, user);
                 case "create_activity_request":
                     return executeCreateActivityRequest(params, user);
+                case "list_all_projects":
+                    return executeListAllProjects(params, user);
+                case "list_public_projects":
+                    return executeListPublicProjects(params, user);
+                case "create_project_request":
+                    return executeCreateProjectRequest(params, user);
+                case "submit_award":
+                    return executeSubmitAward(params, user);
+                case "list_my_awards":
+                    return executeListMyAwards(params, user);
                 default:
                     result.put("message", "未知操作类型: " + actionType);
             }
@@ -980,6 +999,10 @@ public class AIService {
                     return executeApproveNews(params);
                 case "reject_news":
                     return executeRejectNews(params);
+                case "submit_news":
+                    return executeSubmitNews(params, user);
+                case "list_all_awards":
+                    return executeListAllAwards(params);
                 case "list_pending_problems":
                     return executeListPendingProblems();
                 case "list_all_problems":
@@ -1283,14 +1306,46 @@ public class AIService {
 
     private Map<String, Object> executeListAllNews(Map<String, String> params) {
         Map<String, Object> result = new HashMap<>();
-        String keyword = params.get("keyword");
-        String type = params.get("type");
-        List<News> newsList = newsDAO.findByConditions(keyword, type, null);
+        List<News> newsList = newsDAO.findByConditions(null, null, 1);
+        
+        Map<String, List<Map<String, Object>>> categorizedData = new LinkedHashMap<>();
+        Map<String, String> typeNames = new HashMap<>();
+        typeNames.put("activity", "活动新闻");
+        typeNames.put("notice", "通知公告");
+        typeNames.put("tech", "技术分享");
+        typeNames.put("award", "获奖荣誉");
+        typeNames.put("recruit", "招新招聘");
+        typeNames.put("other", "其他");
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        
+        for (News n : newsList) {
+            String type = n.getType() != null ? n.getType() : "other";
+            String typeName = typeNames.getOrDefault(type, "其他");
+            
+            Map<String, Object> newsMap = new HashMap<>();
+            newsMap.put("id", n.getId());
+            newsMap.put("title", n.getTitle());
+            newsMap.put("summary", n.getSummary());
+            newsMap.put("type", typeName);
+            newsMap.put("createdAt", n.getCreatedAt() != null ? sdf.format(n.getCreatedAt()) : "");
+            
+            categorizedData.computeIfAbsent(typeName, k -> new ArrayList<>()).add(newsMap);
+        }
+        
+        List<Map<String, Object>> categories = new ArrayList<>();
+        for (Map.Entry<String, List<Map<String, Object>>> entry : categorizedData.entrySet()) {
+            Map<String, Object> cat = new HashMap<>();
+            cat.put("name", entry.getKey());
+            cat.put("count", entry.getValue().size());
+            cat.put("items", entry.getValue());
+            categories.add(cat);
+        }
+        
         result.put("success", true);
-        result.put("type", "table");
-        result.put("data", newsList);
-        result.put("columns", new String[]{"编号", "标题", "类型", "摘要", "状态", "发布时间"});
-        result.put("message", "新闻共 " + newsList.size() + " 条");
+        result.put("type", "categorized_news");
+        result.put("categories", categories);
+        result.put("message", "新闻共 " + newsList.size() + " 条，分为 " + categories.size() + " 个类别");
         return result;
     }
 
@@ -1549,14 +1604,22 @@ public class AIService {
 
     private Map<String, Object> executeSubmitNews(Map<String, String> params, User user) {
         Map<String, Object> result = new HashMap<>();
+        
+        if (!ROLE_ADMIN.equals(user.getRole())) {
+            result.put("success", false);
+            result.put("message", "只有管理员才能发布新闻");
+            return result;
+        }
+        
         String title = params.get("title");
         String summary = params.get("summary");
         String type = params.get("type");
-        String contentPath = params.get("content_path");
+        String content = params.get("content");
 
         if (title == null || title.trim().isEmpty()) {
             result.put("success", false);
-            result.put("message", "新闻标题不能为空");
+            result.put("need_more_info", true);
+            result.put("message", "请提供以下信息来完成新闻发布：\n标题、摘要、内容、分类");
             return result;
         }
 
@@ -1564,21 +1627,21 @@ public class AIService {
         news.setTitle(title.trim());
         news.setSummary(summary != null ? summary.trim() : "");
         news.setType(type != null ? type : "activity");
-        news.setContentPath(contentPath != null ? contentPath : "");
+        news.setContentPath(content != null ? content : "");
         news.setAuthorId(user.getId());
-        news.setStatus(0);
+        news.setStatus(1);
 
         try {
             boolean success = newsDAO.insert(news);
             result.put("success", success);
             if (success) {
-                result.put("message", "新闻提交成功，等待管理员审核");
+                result.put("message", "新闻发布成功！");
             } else {
-                result.put("message", "新闻提交失败，请重试");
+                result.put("message", "新闻发布失败，请重试");
             }
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", "提交出错: " + e.getMessage());
+            result.put("message", "发布出错: " + e.getMessage());
         }
         return result;
     }
@@ -1735,6 +1798,114 @@ public class AIService {
         return result;
     }
 
+    private Map<String, Object> executeListAllProjects(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        List<Project> projects;
+        
+        if (ROLE_ADMIN.equals(user.getRole())) {
+            projects = projectDAO.findAll();
+        } else {
+            projects = projectDAO.findProjectsByUserId(user.getId());
+        }
+        
+        if (projects.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "当前没有项目");
+            return result;
+        }
+        result.put("success", true);
+        result.put("message", ROLE_ADMIN.equals(user.getRole()) ? "项目共 " + projects.size() + " 个" : "您参与的项目共 " + projects.size() + " 个");
+        result.put("type", "table");
+        result.put("columns", new String[]{"编号", "项目名称", "负责人ID", "状态", "创建时间"});
+        List<Map<String, Object>> data = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        for (Project p : projects) {
+            Map<String, Object> row = new HashMap<>();
+            row.put("编号", p.getId());
+            row.put("项目名称", p.getName());
+            row.put("负责人ID", p.getLeaderId());
+            row.put("状态", getProjectStatusText(p.getStatus()));
+            row.put("创建时间", p.getCreatedAt() != null ? sdf.format(p.getCreatedAt()) : "-");
+            data.add(row);
+        }
+        result.put("data", data);
+        return result;
+    }
+
+    private Map<String, Object> executeListPublicProjects(Map<String, String> params, User user) {
+        return executeListAllProjects(params, user);
+    }
+
+    private Map<String, Object> executeCreateProjectRequest(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        String name = params.get("name");
+        String description = params.get("description");
+        String category = params.get("category");
+        String startDate = params.get("expected_start_date");
+        String endDate = params.get("expected_end_date");
+        String repoUrl = params.get("repo_url");
+        String budget = params.get("budget");
+
+        if (name == null || name.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("need_more_info", true);
+            result.put("message", "请提供以下信息来完成项目申请：\n项目名称、项目描述、项目分类");
+            return result;
+        }
+
+        try {
+            Project project = new Project();
+            project.setName(name.trim());
+            project.setDescription(description != null ? description.trim() : "");
+            project.setCategory(category != null ? category.trim() : "其他");
+            project.setLeaderId(user.getId());
+            project.setStatus(Project.STATUS_PENDING);
+            project.setYear(Calendar.getInstance().get(Calendar.YEAR));
+            
+            if (startDate != null && !startDate.trim().isEmpty()) {
+                try {
+                    project.setExpectedStartDate(new SimpleDateFormat("yyyy-MM-dd").parse(startDate.trim()));
+                } catch (Exception e) { }
+            }
+            if (endDate != null && !endDate.trim().isEmpty()) {
+                try {
+                    project.setExpectedEndDate(new SimpleDateFormat("yyyy-MM-dd").parse(endDate.trim()));
+                } catch (Exception e) { }
+            }
+            if (repoUrl != null && !repoUrl.trim().isEmpty()) {
+                project.setRepoUrl(repoUrl.trim());
+            }
+            if (budget != null && !budget.trim().isEmpty()) {
+                try {
+                    project.setBudget(new java.math.BigDecimal(budget.trim()));
+                } catch (Exception e) { }
+            }
+
+            boolean success = projectDAO.insert(project);
+            result.put("success", success);
+            if (success) {
+                result.put("message", "项目「" + name + "」申请已提交，等待管理员审核！");
+            } else {
+                result.put("message", "项目申请提交失败，请重试");
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "创建项目出错: " + e.getMessage());
+        }
+        return result;
+    }
+
+    private String getProjectStatusText(String status) {
+        if (status == null) return "-";
+        switch (status) {
+            case "pending": return "待审核";
+            case "approved": return "已通过";
+            case "rejected": return "已拒绝";
+            case "completed": return "已完成";
+            default: return status;
+        }
+    }
+
     private Map<String, Object> executeViewMyProjects(Map<String, String> params, User user) {
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
@@ -1750,6 +1921,104 @@ public class AIService {
         result.put("type", "redirect");
         result.put("message", "正在跳转到我的群聊页面...");
         result.put("redirectUrl", "/group?action=myGroups");
+        return result;
+    }
+
+    private Map<String, Object> executeSubmitAward(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        String competition = params.get("competition");
+        String compTime = params.get("compTime");
+        String compLocation = params.get("compLocation");
+        String compSession = params.get("compSession");
+        String compLevel = params.get("compLevel");
+        String awardType = params.get("awardType");
+        String awardCategory = params.get("awardCategory");
+        String teamName = params.get("teamName");
+        String awardLevel = params.get("awardLevel");
+
+        if (competition == null || competition.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("need_more_info", true);
+            result.put("message", "请提供以下信息来完成奖项申请：\n比赛名称、比赛时间（必填）\n比赛等级、奖项类型、奖项等级（必填）");
+            return result;
+        }
+
+        try {
+            Award award = new Award();
+            award.setName(competition.trim());
+            award.setCompetition(competition.trim());
+            if (compTime != null && !compTime.trim().isEmpty()) {
+                try {
+                    award.setCompetitionTime(new SimpleDateFormat("yyyy-MM-dd").parse(compTime.trim()));
+                } catch (Exception e) { }
+            }
+            award.setCompetitionLocation(compLocation != null ? compLocation.trim() : "");
+            award.setCompetitionSession(compSession != null ? compSession.trim() : "");
+            if (compLevel != null && !compLevel.trim().isEmpty()) {
+                award.setCompetitionLevel(Integer.parseInt(compLevel.trim()));
+            }
+            if (awardType != null && !awardType.trim().isEmpty()) {
+                award.setAwardType(Integer.parseInt(awardType.trim()));
+            }
+            if (awardCategory != null && !awardCategory.trim().isEmpty()) {
+                award.setAwardCategory(Integer.parseInt(awardCategory.trim()));
+            }
+            award.setTeamName(teamName != null ? teamName.trim() : "");
+            if (awardLevel != null && !awardLevel.trim().isEmpty()) {
+                award.setAwardLevel(Integer.parseInt(awardLevel.trim()));
+            }
+            award.setAwardStatus(Award.STATUS_PENDING);
+            award.setCreatedBy(user.getId());
+            award.setUserId(user.getId());
+            award.setYear(Calendar.getInstance().get(Calendar.YEAR));
+
+            boolean success = awardDAO.insert(award);
+            result.put("success", success);
+            if (success) {
+                result.put("message", "奖项申请已提交，等待管理员审核！");
+            } else {
+                result.put("message", "奖项申请提交失败，请重试");
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "创建奖项出错: " + e.getMessage());
+        }
+        return result;
+    }
+
+    private Map<String, Object> executeListMyAwards(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        List<Award> awards = awardDAO.findByUserId(user.getId());
+
+        if (awards.isEmpty()) {
+            result.put("success", true);
+            result.put("message", "您还没有获奖记录");
+            return result;
+        }
+
+        result.put("success", true);
+        result.put("type", "table");
+        result.put("columns", new String[]{"编号", "奖项名称", "获奖赛事/项目", "获奖等级", "团队", "状态", "申请时间"});
+        result.put("data", awards);
+        result.put("message", "您共有 " + awards.size() + " 条获奖记录");
+        return result;
+    }
+
+    private Map<String, Object> executeListAllAwards(Map<String, String> params) {
+        Map<String, Object> result = new HashMap<>();
+        List<Award> awards = awardDAO.findAll();
+
+        if (awards.isEmpty()) {
+            result.put("success", true);
+            result.put("message", "暂无奖项记录");
+            return result;
+        }
+
+        result.put("success", true);
+        result.put("type", "table");
+        result.put("columns", new String[]{"编号", "奖项名称", "获奖赛事/项目", "获奖等级", "团队", "状态", "申请人", "申请时间"});
+        result.put("data", awards);
+        result.put("message", "共有 " + awards.size() + " 条奖项记录");
         return result;
     }
 
