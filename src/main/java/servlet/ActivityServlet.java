@@ -339,14 +339,24 @@ public class ActivityServlet extends HttpServlet {
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("activityTypes", dictionaryDAO.findByType("ACTIVITY_TYPE"));
+        User user = (User) request.getSession(false).getAttribute("user");
+        String returnUrl = "ADMIN".equalsIgnoreCase(user.getRole()) ? 
+            request.getContextPath() + "/activity?action=manage" : 
+            request.getContextPath() + "/activity?action=myCreatedActivities";
+        request.setAttribute("returnUrl", returnUrl);
         request.getRequestDispatcher("/jsp/admin/activity/edit.jsp").forward(request, response);
     }
 
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String idStr = request.getParameter("id");
+        User user = (User) request.getSession(false).getAttribute("user");
+        String returnUrl = "ADMIN".equalsIgnoreCase(user.getRole()) ? 
+            request.getContextPath() + "/activity?action=manage" : 
+            request.getContextPath() + "/activity?action=myCreatedActivities";
+        
         if (idStr == null || idStr.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/activity?action=manage");
+            response.sendRedirect(returnUrl);
             return;
         }
 
@@ -354,15 +364,16 @@ public class ActivityServlet extends HttpServlet {
             Integer id = Integer.parseInt(idStr);
             Activity activity = activityDAO.findById(id);
             if (activity == null) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=manage");
+                response.sendRedirect(returnUrl);
                 return;
             }
 
             request.setAttribute("activity", activity);
             request.setAttribute("activityTypes", dictionaryDAO.findByType("ACTIVITY_TYPE"));
+            request.setAttribute("returnUrl", returnUrl);
             request.getRequestDispatcher("/jsp/admin/activity/edit.jsp").forward(request, response);
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/activity?action=manage");
+            response.sendRedirect(returnUrl);
         }
     }
 
