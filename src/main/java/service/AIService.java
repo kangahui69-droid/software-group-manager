@@ -1009,7 +1009,7 @@ public class AIService {
         }
         
         result.put("success", true);
-        result.put("message", "以下是当前可报名的活动，请告诉我活动ID：");
+        result.put("message", "以下是当前可报名的活动，请告诉我活动ID，我为您一键报名：");
         result.put("type", "table");
         result.put("columns", new String[]{"ID", "活动名称", "时间", "地点"});
         
