@@ -306,9 +306,9 @@
                     <c:choose>
                         <c:when test="${userRole == 'ADMIN'}">
                             <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]submit_news')">发布新闻</span>
-                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_pending_news')">审核新闻</span>
-                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_pending_activities')">审核活动</span>
-                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_pending_users')">处理招新</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_pending_news')">待审核新闻</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_pending_activities')">待审核活动</span>
+                            <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_pending_users')">待处理招新</span>
                             <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_users')">查看成员</span>
                             <span class="quick-btn" onclick="sendQuickQuestion('[ACTION]statistics')">数据统计</span>
                         </c:when>
@@ -590,9 +590,9 @@
             else if (actionStr === 'view_my_activities') displayText = '我的活动';
             else if (actionStr === 'recent_news') displayText = '小组动态';
             else if (actionStr === 'submit_news') displayText = '发布新闻';
-            else if (actionStr === 'list_pending_news') displayText = '审核新闻';
-            else if (actionStr === 'list_pending_activities') displayText = '审核活动';
-            else if (actionStr === 'list_pending_users') displayText = '处理招新';
+            else if (actionStr === 'list_pending_news') displayText = '待审核新闻';
+            else if (actionStr === 'list_pending_activities') displayText = '待审核活动';
+            else if (actionStr === 'list_pending_users') displayText = '待处理招新';
             else if (actionStr === 'list_all_users') displayText = '查看成员';
             else if (actionStr === 'statistics') displayText = '数据统计';
             else if (actionStr === 'submit_feedback') displayText = '提交反馈';
