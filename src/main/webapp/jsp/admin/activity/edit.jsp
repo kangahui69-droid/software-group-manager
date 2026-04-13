@@ -14,7 +14,7 @@
                 </h2>
             </div>
             <div class="col-auto ms-auto">
-                <a href="${pageContext.request.contextPath}/activity?action=manage" class="btn btn-outline-secondary">
+                <a href="${returnUrl != null ? returnUrl : pageContext.request.contextPath.concat('/activity?action=manage')}" class="btn btn-outline-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="12" x2="11" y2="18"></line><line x1="5" y1="12" x2="11" y2="6"></line></svg>
                     返回列表
                 </a>
@@ -163,7 +163,7 @@
                     </div>
                     <div class="card-footer text-end">
                         <div class="d-flex">
-                            <a href="${pageContext.request.contextPath}/activity?action=manage" class="btn btn-link">取消</a>
+                            <a href="${returnUrl != null ? returnUrl : pageContext.request.contextPath.concat('/activity?action=manage')}" class="btn btn-link">取消</a>
                             <button type="submit" class="btn btn-primary ms-auto">
                                 ${empty activity ? '添加活动' : '保存更改'}
                             </button>
