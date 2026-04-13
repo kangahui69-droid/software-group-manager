@@ -581,6 +581,8 @@
             
             // 根据action显示友好文字
             if (actionStr === 'list_latest_activities') displayText = '查看最新活动';
+            else if (actionStr === 'list_activities') displayText = '查看活动';
+            else if (actionStr === 'list_all_news') displayText = '查看新闻';
             else if (actionStr === 'apply_activity') displayText = '报名活动';
             else if (actionStr === 'create_activity_request') displayText = '申请活动';
             else if (actionStr === 'list_all_projects') displayText = '查看项目';
@@ -593,6 +595,11 @@
             else if (actionStr === 'list_pending_users') displayText = '处理招新';
             else if (actionStr === 'list_all_users') displayText = '查看成员';
             else if (actionStr === 'statistics') displayText = '数据统计';
+            else if (actionStr === 'submit_feedback') displayText = '提交反馈';
+            else if (actionStr === 'submit_award') displayText = '申请奖项';
+            else if (actionStr === 'list_my_awards') displayText = '我的奖项';
+            else if (actionStr === 'view_my_projects') displayText = '我的项目';
+            else if (actionStr === 'view_my_groups') displayText = '我的群聊';
             else displayText = actionStr;
             
             var sessionId = document.getElementById('sessionId').value;
