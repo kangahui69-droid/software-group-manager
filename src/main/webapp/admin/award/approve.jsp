@@ -5,6 +5,193 @@
     <jsp:param name="title" value="奖项列表" />
 </jsp:include>
 
+<style>
+:root {
+    --brand-blue: #1456f0;
+    --font-display: 'Outfit', sans-serif;
+    --font-ui: 'DM Sans', sans-serif;
+    --radius-generous: 16px;
+    --radius-standard: 12px;
+    --radius-comfortable: 10px;
+    --radius-pill: 9999px;
+    --shadow-brand-purple: 0 4px 20px rgba(20, 85, 240, 0.15);
+    --shadow-brand-offset: 0 8px 32px rgba(20, 85, 240, 0.12);
+    --shadow-standard: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --bg-white: #ffffff;
+    --text-dark: #1a1a2e;
+    --text-muted: #6b7280;
+    --border-gray: #e5e7eb;
+    --border-light: #f3f4f6;
+    --primary-light: #eff6ff;
+}
+body {
+    font-family: var(--font-ui);
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f0fe 100%);
+}
+.card {
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-standard);
+    box-shadow: var(--shadow-standard);
+}
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--border-light);
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.card-body {
+    padding: 24px;
+}
+.card-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+}
+.card-actions {
+    display: flex;
+    gap: 8px;
+}
+.form-label {
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+.form-control, .form-select {
+    border: 1px solid var(--border-gray);
+    border-radius: var(--radius-comfortable);
+    padding: 10px 14px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-blue);
+    box-shadow: 0 0 0 3px rgba(20, 85, 240, 0.1);
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--brand-blue) 0%, #1d4ed8 100%);
+    border: none;
+    border-radius: var(--radius-comfortable);
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-brand-purple);
+}
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+.btn-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: var(--radius-comfortable);
+    transition: all 0.2s ease;
+    background: transparent;
+    border: 1px solid transparent;
+}
+.btn-link:hover, .btn-link.active {
+    color: var(--brand-blue);
+    background: var(--primary-light);
+}
+.btn-success {
+    background: #10b981;
+    border: none;
+    border-radius: var(--radius-comfortable);
+    color: #ffffff;
+    font-weight: 500;
+}
+.btn-success:hover {
+    background: #059669;
+}
+.btn-danger {
+    background: #ef4444;
+    border: none;
+    border-radius: var(--radius-comfortable);
+    color: #ffffff;
+    font-weight: 500;
+}
+.btn-danger:hover {
+    background: #dc2626;
+}
+.table {
+    font-family: var(--font-ui);
+}
+.table th {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid var(--border-gray);
+    padding: 14px 16px;
+    background: var(--primary-light);
+}
+.table td {
+    vertical-align: middle;
+    padding: 16px;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+.table tbody tr {
+    transition: background 0.15s ease;
+}
+.table tbody tr:hover {
+    background: #f8fafc;
+}
+.badge {
+    font-weight: 500;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+}
+.bg-yellow {
+    background: #fef3c7;
+    color: #92400e;
+}
+.bg-green {
+    background: #ecfdf5;
+    color: #065f46;
+}
+.bg-red {
+    background: #fef2f2;
+    color: #991b1b;
+}
+.empty-state {
+    padding: 48px 24px;
+    text-align: center;
+}
+.empty-state-icon {
+    font-size: 48px;
+    color: var(--border-gray);
+    margin-bottom: 16px;
+}
+.empty-state h3 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0 0 8px;
+}
+.empty-state p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0;
+}
+</style>
+
 <div class="container-xl">
     <div class="row">
         <div class="col-md-12">
@@ -21,7 +208,6 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- 搜索条件 -->
                     <div class="mb-4">
                         <form method="get" action="${pageContext.request.contextPath}/award" class="row g-3">
                             <input type="hidden" name="action" value="approveList">
@@ -71,7 +257,6 @@
                         </form>
                     </div>
                     
-                    <!-- 奖项列表 -->
                     <div class="table-responsive">
                         <table class="table table-vcenter card-table">
                             <thead>

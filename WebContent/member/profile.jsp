@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html;" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="dao.MemberProfileDAO" %>
 <%@ page import="model.MemberProfile" %>
 <%@ page import="java.text.SimpleDateFormat" %>
@@ -15,7 +14,6 @@
             }
         }
     }
-    // Format birthday for display
     String birthdayDisplay = "";
     Object birthdayObj = session.getAttribute("memberProfile");
     if (birthdayObj != null) {
@@ -34,274 +32,465 @@
     <jsp:param name="title" value="个人中心" />
 </jsp:include>
 
+<style>
+    .member-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
+
+    .member-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .member-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .profile-card {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .profile-card-header {
+        padding: 24px;
+        text-align: center;
+        border-bottom: 1px solid var(--border-light);
+        background: linear-gradient(135deg, rgba(20, 86, 240, 0.05), rgba(96, 165, 250, 0.05));
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: var(--radius-comfortable);
+        object-fit: cover;
+        margin-bottom: 16px;
+        border: 4px solid var(--bg-white);
+        box-shadow: var(--shadow-card-elevated);
+    }
+
+    .profile-avatar-fallback {
+        width: 100px;
+        height: 100px;
+        border-radius: var(--radius-comfortable);
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin: 0 auto 16px;
+    }
+
+    .profile-name {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 4px;
+    }
+
+    .profile-role {
+        font-family: var(--font-ui);
+        font-size: 0.81rem;
+        color: var(--text-muted);
+        text-transform: capitalize;
+    }
+
+    .profile-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 12px;
+        padding: 6px 14px;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-radius: var(--radius-pill);
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .profile-card-body {
+        padding: 20px;
+    }
+
+    .info-card {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .info-card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .info-card-title {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-card-body {
+        padding: 24px;
+    }
+
+    .info-item {
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-family: var(--font-ui);
+        font-size: 0.81rem;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+
+    .info-value {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .function-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .function-card {
+        background: var(--bg-white);
+        border-radius: var(--radius-comfortable);
+        box-shadow: var(--shadow-standard);
+        border: 1px solid var(--border-light);
+        padding: 20px 16px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .function-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-brand-purple);
+        border-color: var(--brand-blue);
+    }
+
+    .function-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-standard);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        font-size: 1.5rem;
+    }
+
+    .function-title {
+        font-family: var(--font-ui);
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: var(--text-dark);
+    }
+
+    @media (max-width: 768px) {
+        .member-hero {
+            padding: 24px;
+        }
+
+        .member-hero-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
 <c:if test="${param.success == '1'}">
-    <div class="alert alert-success alert-dismissible" style="margin: 20px;">
-        <i class="bi bi-check-circle me-2"></i>资料更新成功！
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="container-xl mt-4">
+        <div class="alert alert-success alert-dismissible" style="border-radius: var(--radius-standard);">
+            <i class="bi bi-check-circle me-2"></i>资料更新成功！
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     </div>
 </c:if>
 
-<div class="container-xl">
-    <div class="row">
-        <div class="col-lg-4">
-            <!-- 个人信息卡片 -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex flex-column align-items-center text-center">
-                        <div class="mb-4">
-                            <!-- 头像显示区域 -->
+<div class="page-body">
+    <div class="container-xl">
+        <div class="member-hero">
+            <h1 class="member-hero-title">
+                <i class="bi bi-person-circle me-2"></i>个人中心
+            </h1>
+            <p class="member-hero-subtitle">欢迎回来，<%= (user.getName() != null && !user.getName().isEmpty()) ? user.getName() : user.getUsername() %>！在这里管理您的个人信息和内容</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="profile-card">
+                    <div class="profile-card-header">
+                        <c:choose>
+                            <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
+                                <img src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
+                                     alt="用户头像" class="profile-avatar">
+                            </c:when>
+                            <c:otherwise>
+                                <div class="profile-avatar-fallback">
+                                    ${not empty user.name ? user.name.charAt(0) : '用'}
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                        <div class="profile-name">${user.username}</div>
+                        <div class="profile-role">
                             <c:choose>
-                                <%-- 情况1：有头像文件 --%>
-                                <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
-                                    <img src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
-                                         alt="用户头像"
-                                         class="rounded-circle"
-                                         width="150"
-                                         height="150">
-                                </c:when>
-                                <%-- 情况2：无头像，显示姓名首字 --%>
-                                <c:otherwise>
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
-                                         style="width: 150px; height: 150px; font-size: 60px; font-weight: bold;">
-                                        ${not empty user.name ? user.name.charAt(0) : '用'}
-                                    </div>
-                                </c:otherwise>
+                                <c:when test="${user.role eq 'ADMIN'}">管理员</c:when>
+                                <c:when test="${user.role eq 'MEMBER'}">成员</c:when>
+                                <c:when test="${user.role eq 'TEACHER'}">教师</c:when>
+                                <c:otherwise>${user.role}</c:otherwise>
                             </c:choose>
                         </div>
-                        <div class="mt-3">
-                            <h4>${user.username}</h4>
-                            <p class="text-muted font-size-sm">
-                                <c:choose>
-                                    <c:when test="${user.role eq 'ADMIN'}">管理员</c:when>
-                                    <c:when test="${user.role eq 'MEMBER'}">成员</c:when>
-                                    <c:when test="${user.role eq 'TEACHER'}">教师</c:when>
-                                    <c:otherwise>${user.role}</c:otherwise>
-                                </c:choose>
-                            </p>
-                            <p class="text-muted font-size-sm">
-                                <c:choose>
-                                    <c:when test="${user.userType eq 'TEACHER'}">教师身份</c:when>
-                                    <c:when test="${user.userType eq 'STUDENT'}">学生身份</c:when>
-                                    <c:otherwise>其他身份</c:otherwise>
-                                </c:choose>
-                            </p>
-                            <div class="mt-3">
-                                <a href="${pageContext.request.contextPath}/member/edit-profile.jsp" class="btn btn-primary">编辑资料</a>
-                                <a href="${pageContext.request.contextPath}/member/password-change.jsp" class="btn btn-outline-secondary">修改密码</a>
-                            </div>
+                        <div class="profile-role">
+                            <c:choose>
+                                <c:when test="${user.userType eq 'TEACHER'}">教师身份</c:when>
+                                <c:when test="${user.userType eq 'STUDENT'}">学生身份</c:when>
+                                <c:otherwise>其他身份</c:otherwise>
+                            </c:choose>
+                        </div>
+                        <div class="profile-status">
+                            <i class="bi bi-check-circle-fill"></i>
+                            正式成员
+                        </div>
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="d-flex gap-2">
+                            <a href="${pageContext.request.contextPath}/member/edit-profile.jsp" class="btn-brand flex-grow-1 justify-content-center">
+                                <i class="bi bi-pencil"></i>编辑资料
+                            </a>
+                            <a href="${pageContext.request.contextPath}/member/password-change.jsp" class="btn-outline-brand flex-grow-1 justify-content-center">
+                                <i class="bi bi-lock"></i>修改密码
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card mt-4">
+                    <div class="info-card-header">
+                        <h3 class="info-card-title">
+                            <i class="bi bi-grid-3x3-gap text-brand"></i>我的功能
+                        </h3>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="function-grid">
+                            <a href="${pageContext.request.contextPath}/award?action=list" class="function-card">
+                                <div class="function-icon" style="background: linear-gradient(135deg, #f97316, #fb923c);">
+                                    <i class="bi bi-trophy text-white"></i>
+                                </div>
+                                <div class="function-title">我的奖项</div>
+                            </a>
+                            <a href="${pageContext.request.contextPath}/project?action=myProjects" class="function-card">
+                                <div class="function-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
+                                    <i class="bi bi-kanban text-white"></i>
+                                </div>
+                                <div class="function-title">我的项目</div>
+                            </a>
+                            <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="function-card">
+                                <div class="function-icon" style="background: linear-gradient(135deg, #10b981, #34d399);">
+                                    <i class="bi bi-calendar-check text-white"></i>
+                                </div>
+                                <div class="function-title">我的活动</div>
+                            </a>
+                            <a href="${pageContext.request.contextPath}/group/my-groups" class="function-card">
+                                <div class="function-icon" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+                                    <i class="bi bi-chat-dots text-white"></i>
+                                </div>
+                                <div class="function-title">我的群聊</div>
+                            </a>
+                            <a href="${pageContext.request.contextPath}/resume?action=list" class="function-card">
+                                <div class="function-icon" style="background: linear-gradient(135deg, #ec4899, #f472b6);">
+                                    <i class="bi bi-file-earmark-text text-white"></i>
+                                </div>
+                                <div class="function-title">我的简历</div>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 个人功能入口 -->
-            <div class="card mt-4">
-                <div class="card-body">
-                    <h3 class="card-title">我的功能</h3>
-                    <div class="row row-cards">
-                        <div class="col-6 col-md-6">
-                            <a href="${pageContext.request.contextPath}/award?action=list" class="card card-link">
-                                <div class="card-body p-4 text-center">
-                                    <div class="mb-2">
-                                        <i class="bi bi-trophy h2 text-yellow"></i>
-                                    </div>
-                                    <div class="text-truncate">我的奖项</div>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-6 col-md-6">
-                            <a href="${pageContext.request.contextPath}/project?action=myProjects" class="card card-link">
-                                <div class="card-body p-4 text-center">
-                                    <div class="mb-2">
-                                        <i class="bi bi-kanban h2 text-purple"></i>
-                                    </div>
-                                    <div class="text-truncate">我的项目</div>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-6 col-md-6">
-                            <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="card card-link">
-                                <div class="card-body p-4 text-center">
-                                    <div class="mb-2">
-                                        <i class="bi bi-calendar-check h2 text-green"></i>
-                                    </div>
-                                    <div class="text-truncate">我的活动</div>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-6 col-md-6">
-                            <a href="${pageContext.request.contextPath}/group/my-groups" class="card card-link">
-                                <div class="card-body p-4 text-center">
-                                    <div class="mb-2">
-                                        <i class="bi bi-chat-dots h2 text-primary"></i>
-                                    </div>
-                                    <div class="text-truncate">我的群聊</div>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-6 col-md-6">
-                            <a href="${pageContext.request.contextPath}/resume?action=list" class="card card-link">
-                                <div class="card-body p-4 text-center">
-                                    <div class="mb-2">
-                                        <i class="bi bi-file-earmark-text h2 text-blue"></i>
-                                    </div>
-                                    <div class="text-truncate">我的简历</div>
-                                </div>
-                            </a>
-                        </div>
+            <div class="col-lg-8">
+                <div class="info-card mb-4">
+                    <div class="info-card-header">
+                        <h3 class="info-card-title">
+                            <i class="bi bi-person-vcard text-brand"></i>基本信息
+                        </h3>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-8">
-            <!-- 详细信息 -->
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="mb-4">基本信息</h3>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">用户名</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="8" r="4"></circle><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${user.username}" readonly>
+                    <div class="info-card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">用户名</div>
+                                    <div class="info-value">${user.username}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">角色</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" 
-                                    value="<c:choose><c:when test='${user.role eq \"ADMIN\"}'>管理员</c:when><c:when test='${user.role eq \"MEMBER\"}'>成员</c:when><c:when test='${user.role eq \"TEACHER\"}'>教师</c:when><c:otherwise>${user.role}</c:otherwise></c:choose>" readonly>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">姓名</div>
+                                    <div class="info-value">${user.name}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">姓名</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="8" r="4"></circle><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${user.name}" readonly>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">角色</div>
+                                    <div class="info-value">
+                                        <c:choose>
+                                            <c:when test="${user.role eq 'ADMIN'}">管理员</c:when>
+                                            <c:when test="${user.role eq 'MEMBER'}">成员</c:when>
+                                            <c:when test="${user.role eq 'TEACHER'}">教师</c:when>
+                                            <c:otherwise>${user.role}</c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">电话</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${user.phone}" readonly>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">电话</div>
+                                    <div class="info-value">${user.phone}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">邮箱</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2H5a2 2 0 0 1 -2 -2V7z"></path><polyline points="3 7 12 13 21 7"></polyline></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${user.email}" readonly>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">邮箱</div>
+                                    <div class="info-value">${user.email}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">创建时间</div>
+                                    <div class="info-value">${user.createdAt}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 详细资料 -->
-            <div class="card mt-4">
-                <div class="card-body">
-                    <h3 class="mb-4">详细资料</h3>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">生日</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${birthdayDisplay}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">学号</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M9 9h6v6H9z"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${memberProfile.studentId}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">专业</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${memberProfile.major}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">年级</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${memberProfile.grade}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">个人简介</label>
-                            <div class="input-group">
-                                <span class="input-group-text" style="align-self: flex-start;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                                </span>
-                                <textarea class="form-control" rows="4" readonly><c:out value="${memberProfile.introduction}" default=""/></textarea>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">GitHub</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.3c0 -1.1 -0.4 -2.2 -1.2 -3.1a4 4 0 0 0 -5.8 0c-0.8 0.9 -1.2 2 -1.2 3.1V21"></path><path d="M12 22c5.5 0 10 -4 10 -10c0 -2.2 -0.7 -4.3 -2 -6.1"></path></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${memberProfile.github}" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">博客</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${memberProfile.blog}" readonly>
-                            </div>
-                        </div>
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <h3 class="info-card-title">
+                            <i class="bi bi-file-earmark-person text-brand"></i>详细资料
+                        </h3>
                     </div>
-                </div>
-            </div>
-
-            <!-- 创建时间 -->
-            <div class="card mt-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">创建时间</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${user.createdAt}" readonly>
+                    <div class="info-card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">生日</div>
+                                    <div class="info-value">${birthdayDisplay}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">最后更新</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 4 -4l-4.5 -4.5a1.5 1.5 0 0 0 -4 4l-10.5 10.5v4"></path><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"></line></svg>
-                                </span>
-                                <input type="text" class="form-control" value="${memberProfile.updatedAt}" readonly>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">学号</div>
+                                    <div class="info-value">${memberProfile.studentId}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">专业</div>
+                                    <div class="info-value">${memberProfile.major}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">年级</div>
+                                    <div class="info-value">${memberProfile.grade}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">GitHub</div>
+                                    <div class="info-value">${memberProfile.github}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">博客</div>
+                                    <div class="info-value">${memberProfile.blog}</div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="info-item">
+                                    <div class="info-label">个人简介</div>
+                                    <div class="info-value">${memberProfile.introduction}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">最后更新</div>
+                                    <div class="info-value">${memberProfile.updatedAt}</div>
+                                </div>
                             </div>
                         </div>
                     </div>

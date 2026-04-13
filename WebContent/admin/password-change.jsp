@@ -4,106 +4,268 @@
     <jsp:param name="title" value="修改密码" />
 </jsp:include>
 
-<div class="container-xl">
-    <div class="row">
-        <div class="col-12">
-            <div class="page-header">
-                <h1 class="page-title">修改密码</h1>
-                <div class="page-subtitle">保障账户安全</div>
-            </div>
+<style>
+    .page-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
+
+    .page-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .page-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .form-card {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        padding: 32px;
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+    }
+
+    .form-card-title {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-label-design {
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .input-design {
+        border-radius: var(--radius-standard);
+        border: 1px solid var(--border-gray);
+        padding: 12px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .input-design:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+        outline: none;
+    }
+
+    .btn-primary-design {
+        background: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 0.94rem;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary-design:hover {
+        background: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-secondary-design {
+        background: var(--bg-light-gray);
+        color: var(--text-dark);
+        border-radius: var(--radius-standard);
+        padding: 12px 24px;
+        font-weight: 500;
+        font-size: 0.94rem;
+        border: 1px solid var(--border-gray);
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-secondary-design:hover {
+        background: var(--border-gray);
+        color: var(--text-dark);
+    }
+
+    .tip-card {
+        background: var(--bg-white);
+        border-radius: var(--radius-comfortable);
+        padding: 24px;
+        box-shadow: var(--shadow-standard);
+        border: 1px solid var(--border-light);
+        height: 100%;
+    }
+
+    .tip-card-title {
+        font-family: var(--font-display);
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .tip-item:last-child {
+        border-bottom: none;
+    }
+
+    .tip-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-standard);
+        background: rgba(20, 86, 240, 0.1);
+        color: var(--brand-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.875rem;
+    }
+
+    .tip-text {
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .alert-design {
+        border-radius: var(--radius-standard);
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .alert-danger-design {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #dc2626;
+    }
+
+    .alert-success-design {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: #059669;
+    }
+
+    @media (max-width: 768px) {
+        .page-hero {
+            padding: 24px;
+        }
+
+        .page-hero-title {
+            font-size: 1.5rem;
+        }
+
+        .form-card {
+            padding: 24px;
+        }
+    }
+</style>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="page-hero">
+            <h1 class="page-hero-title">
+                <i class="bi bi-lock me-2"></i>修改密码
+            </h1>
+            <p class="page-hero-subtitle">保障账户安全，定期更换密码</p>
         </div>
-    </div>
-    
-    <c:if test="${not empty error}">
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-danger" role="alert">
-                    ${error}
-                </div>
+
+        <c:if test="${not empty error}">
+            <div class="alert-design alert-danger-design" role="alert">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <span>${error}</span>
             </div>
-        </div>
-    </c:if>
-    
-    <c:if test="${not empty success}">
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-success" role="alert">
-                    ${success}
-                </div>
+        </c:if>
+
+        <c:if test="${not empty success}">
+            <div class="alert-design alert-success-design" role="alert">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>${success}</span>
             </div>
-        </div>
-    </c:if>
-    
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-body">
-                    <form id="passwordForm" method="post"
-                        action="${pageContext.request.contextPath}/admin/password">
+        </c:if>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <h3 class="form-card-title">
+                        <i class="bi bi-shield-lock text-brand"></i>密码设置
+                    </h3>
+                    <form id="passwordForm" method="post" action="${pageContext.request.contextPath}/admin/password">
                         <div class="mb-4">
-                            <h3 class="mb-3">密码设置</h3>
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">原密码</label>
-                                    <input type="password" class="form-control"
-                                        name="oldPassword" placeholder="请输入当前密码" required>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">新密码</label>
-                                    <input type="password" class="form-control"
-                                        name="newPassword" placeholder="请输入新密码（不少于6位）" required minlength="6">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">确认新密码</label>
-                                    <input type="password" class="form-control"
-                                        name="confirmPassword" placeholder="请再次输入新密码" required>
-                                </div>
-                            </div>
+                            <label class="form-label-design" for="oldPassword">原密码</label>
+                            <input type="password" class="input-design" id="oldPassword" name="oldPassword" placeholder="请输入当前密码" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label-design" for="newPassword">新密码</label>
+                            <input type="password" class="input-design" id="newPassword" name="newPassword" placeholder="请输入新密码（不少于6位）" required minlength="6">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label-design" for="confirmPassword">确认新密码</label>
+                            <input type="password" class="input-design" id="confirmPassword" name="confirmPassword" placeholder="请再次输入新密码" required>
                         </div>
 
-                        <div class="d-flex justify-content-end">
-                            <a href="${pageContext.request.contextPath}/admin/profile.jsp"
-                                class="btn btn-secondary me-2">返回</a>
-                            <button type="submit" class="btn btn-primary">修改密码</button>
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="${pageContext.request.contextPath}/admin/profile.jsp" class="btn-secondary-design">返回</a>
+                            <button type="submit" class="btn-primary-design">修改密码</button>
                         </div>
                     </form>
                 </div>
             </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="card-title">修改提示</h3>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                class="icon me-2 text-info" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                            </svg>
-                            密码修改需要提供原密码进行验证
-                        </li>
-                        <li class="list-group-item">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                class="icon me-2 text-info" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                            </svg>
-                            新密码长度不少于6位
-                        </li>
-                    </ul>
+            <div class="col-lg-4">
+                <div class="tip-card">
+                    <h3 class="tip-card-title">
+                        <i class="bi bi-info-circle text-brand"></i>修改提示
+                    </h3>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="bi bi-check2"></i>
+                        </div>
+                        <div class="tip-text">密码修改需要提供原密码进行验证</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="bi bi-check2"></i>
+                        </div>
+                        <div class="tip-text">新密码长度不少于6位</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="bi bi-check2"></i>
+                        </div>
+                        <div class="tip-text">建议使用字母、数字和符号的组合</div>
+                    </div>
                 </div>
             </div>
         </div>
