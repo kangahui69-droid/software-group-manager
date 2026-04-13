@@ -26,10 +26,10 @@ public class AIClientUtil {
 
     private AIClientUtil() {
         gson = new GsonBuilder().create();
-        provider = Config.getProperty("ai.provider", "wenxin");
-        apiUrl = Config.getProperty("ai.api.url", "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions");
-        apiKey = Config.getProperty("ai.api.key", "");
-        model = Config.getProperty("ai.model", "ernie-4.0-8k-latest");
+        provider = Config.getProperty("ai.provider", "volcengine");
+        apiUrl = Config.getProperty("ai.api.url", "https://ark.cn-beijing.volces.com/api/v3/chat/completions");
+        apiKey = Config.getProperty("ai.api.key", "285de049-e86b-4305-9449-73c2acc516b1");
+        model = Config.getProperty("ai.model", "doubao-pro-32k");
     }
 
     public static AIClientUtil getInstance() {
@@ -58,6 +58,8 @@ public class AIClientUtil {
                     return chatWithQwen(systemPrompt, userMessage);
                 case "openai":
                     return chatWithOpenAI(systemPrompt, userMessage);
+                case "volcengine":
+                    return chatWithVolcEngine(systemPrompt, userMessage);
                 default:
                     return getDefaultResponse(userMessage);
             }
@@ -269,6 +271,65 @@ public class AIClientUtil {
             }
         }
         return "抱歉，无法获取AI回复。";
+    }
+
+    private String chatWithVolcEngine(String systemPrompt, String userMessage) throws Exception {
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(createMessage("system", systemPrompt));
+        messages.add(createMessage("user", userMessage));
+        
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        
+        HttpPost request = new HttpPost(apiUrl);
+        request.setHeader("Authorization", "Bearer " + apiKey);
+        request.setHeader("Content-Type", "application/json");
+        request.setEntity(new StringEntity(gson.toJson(requestBody), StandardCharsets.UTF_8));
+        
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(30000)
+                .setSocketTimeout(60000)
+                .build();
+        request.setConfig(requestConfig);
+        
+        try (CloseableHttpClient client = HttpClients.custom()
+                .setRedirectStrategy(new LaxRedirectStrategy())
+                .build()) {
+            HttpResponse response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            System.out.println("[AIClient] VolcEngine response status: " + statusCode);
+            System.out.println("[AIClient] VolcEngine response: " + responseBody);
+            
+            if (statusCode != 200) {
+                return "火山引擎服务错误: HTTP " + statusCode + " - " + responseBody;
+            }
+            
+            Map<String, Object> respMap = gson.fromJson(responseBody, Map.class);
+            
+            if (respMap.containsKey("choices")) {
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) respMap.get("choices");
+                if (choices != null && !choices.isEmpty()) {
+                    Map<String, Object> choice = choices.get(0);
+                    if (choice.containsKey("message")) {
+                        Map<String, Object> message = (Map<String, Object>) choice.get("message");
+                        return (String) message.get("content");
+                    }
+                }
+            }
+            
+            if (respMap.containsKey("error")) {
+                Object error = respMap.get("error");
+                if (error instanceof Map) {
+                    Map<String, Object> errorMap = (Map<String, Object>) error;
+                    return "火山引擎服务错误: " + (errorMap.get("message") != null ? errorMap.get("message") : errorMap.toString());
+                }
+                return "火山引擎服务错误: " + error.toString();
+            }
+            
+            return responseBody;
+        }
     }
 
     private String postJson(String url, String json) throws Exception {
