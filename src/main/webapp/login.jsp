@@ -125,9 +125,10 @@
             transform: translateY(-50%);
             color: var(--text-muted);
             font-size: 1rem;
+            pointer-events: none;
         }
 
-        .input-group-design .form-control:not(:last-child) {
+        .input-group-design .form-control {
             padding-left: 44px;
         }
 
@@ -292,10 +293,6 @@
                         登录
                     </button>
                 </form>
-
-                <div class="login-divider">
-                    <span>或</span>
-                </div>
             </div>
 
             <div class="login-footer">

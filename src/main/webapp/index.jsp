@@ -5,6 +5,8 @@
     <jsp:param name="active" value="home" />
 </jsp:include>
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
+
 <style>
     .hero-section {
         padding: 80px 0;
