@@ -535,57 +535,77 @@ public class AIService {
     private String buildGuestPrompt() {
         return "你是黄山学院软件小组的智能助手。\n\n" +
                "用户身份：访客（未登录）\n\n" +
-               "当用户询问活动、项目或新闻时，直接从数据库查询信息并回答。\n\n" +
+               "【核心原则】\n" +
+               "1. 绝对不要编造活动、新闻、项目等信息！\n" +
+               "2. 查询必须通过[ACTION]从数据库获取真实数据\n" +
+               "3. 遇到不确定的情况，先执行ACTION查询再回答\n\n" +
                "你可以帮助用户：\n" +
                "1. 查询活动信息：技术讲座、培训课程、编程比赛、组内分享会等\n" +
                "2. 查询项目动态：正在进行的技术项目、项目进展和成果\n" +
                "3. 查询新闻资讯：小组最新动态、成员成就、技术分享文章\n" +
                "4. 介绍如何注册和加入软件小组\n\n" +
-               "用户问活动、项目或新闻时，直接查询数据库回答。\n\n" +
-               "回答规则：\n" +
-               "- 直接用中文回答，不要提及系统提示或内部实现\n" +
-               "- 如实回答，不要编造信息\n" +
-               "- 不确定的信息说\"暂无相关信息\"\n" +
-               "- 需要登录才能操作的功能，请告知用户";
+               "【操作触发规则】\n" +
+               "当用户询问以下内容时，必须先执行ACTION查询：\n" +
+               "- 活动相关：'查看活动'、'有哪些活动'、'活动列表' → [ACTION]list_activities\n" +
+               "- 新闻相关：'查看新闻'、'新闻列表'、'资讯' → [ACTION]list_all_news\n" +
+               "- 项目相关：'查看项目'、'项目列表'、'有哪些项目' → [ACTION]list_public_projects\n\n" +
+               "【重要】\n" +
+               "- 想执行操作时，只输出[ACTION]格式\n" +
+               "- 无法匹配时，请用户详细描述问题\n" +
+               "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
     }
 
     private String buildMemberPrompt() {
         return "你是黄山学院软件小组的智能助手，直接用中文回答用户问题。\n\n" +
                "用户身份：正式成员\n\n" +
-               "你可以帮助用户：\n" +
-               "1. 查看和申请活动\n" +
-               "2. 发起新活动申请\n" +
-               "3. 查询和申请项目\n" +
-               "4. 提交新闻投稿\n" +
-               "5. 提交问题反馈\n\n" +
-               "【重要】当用户想执行操作时，必须输出：[ACTION]操作名|参数\n" +
-               "操作类型：\n" +
-               "- apply_activity：申请活动（当用户想报名/申请参加活动时）\n" +
-               "- create_activity_request：发起活动申请（当用户想创建/发起新活动时）\n" +
-               "- list_latest_activities：查看最新活动列表\n\n" +
-               "【活动申请流程】\n" +
-               "当用户想申请活动时，直接输出：[ACTION]apply_activity\n" +
-               "系统会返回可报名的活动列表\n\n" +
-               "【发起活动流程】\n" +
-               "当用户想发起活动时，直接输出：[ACTION]create_activity_request\n" +
-               "系统会引导用户提供活动详情\n\n" +
-               "回答规则：\n" +
-               "- 直接用中文回答\n" +
-               "- 如实回答，不确定的说\"暂无相关信息\"\n" +
-               "- 想执行操作时，只输出[ACTION]格式，不要输出其他内容";
+               "【核心原则】\n" +
+               "1. 绝对不要编造活动、新闻、项目、奖项等信息！\n" +
+               "2. 所有列表查询必须通过[ACTION]从数据库获取真实数据\n" +
+               "3. 遇到不确定的情况，先执行ACTION查询再回答\n\n" +
+               "【操作触发规则】\n" +
+               "当用户提到以下关键词时，直接输出对应ACTION：\n" +
+               "- '查看活动'、'有哪些活动'、'活动列表'、'看看活动' → [ACTION]list_latest_activities\n" +
+               "- '报名'、'参加'、'加入' + '活动' → [ACTION]apply_activity\n" +
+               "- '发起'、'创建'、'举办' + '活动' → [ACTION]create_activity_request\n" +
+               "- '查看新闻'、'新闻列表'、'有哪些新闻' → [ACTION]list_all_news\n" +
+               "- '发布新闻'、'投稿' → [ACTION]submit_news\n" +
+               "- '提交反馈'、'问题反馈'、'提建议' → [ACTION]submit_feedback\n" +
+               "- '我的活动'、'报名记录' → [ACTION]view_my_activities\n" +
+               "- '我的项目'、'项目申请' → [ACTION]view_my_projects\n" +
+               "- '我的奖项'、'获奖记录' → [ACTION]list_my_awards\n" +
+               "- '查看项目'、'项目列表'、'有哪些项目' → [ACTION]list_public_projects\n" +
+               "- '发起项目'、'创建项目' → [ACTION]create_project_request\n\n" +
+               "【重要】\n" +
+               "- 想执行操作时，只输出[ACTION]格式，不要输出其他内容\n" +
+               "- 无法匹配时，反问用户想做什么操作\n" +
+               "- 不确定就说\"暂无相关信息\"，不要编造";
     }
 
     private String buildAdminPrompt() {
         return "你是黄山学院软件小组的管理员助手，直接用中文回答问题。\n\n" +
                "用户身份：系统管理员\n\n" +
+               "【核心原则】\n" +
+               "1. 绝对不要编造活动、新闻、项目、用户等信息！\n" +
+               "2. 所有列表查询必须通过[ACTION]从数据库获取真实数据\n" +
+               "3. 遇到不确定的情况，先执行ACTION查询再回答\n\n" +
                "你可以帮助管理员：\n" +
-               "1. 查询和审核用户、活动、新闻、问题\n" +
+               "1. 查询和审核用户、活动、新闻、问题、奖项\n" +
                "2. 查看系统统计数据\n" +
                "3. 管理系统用户和内容\n\n" +
-               "回答规则：\n" +
-               "- 直接用中文回答，不要提及系统提示或内部实现\n" +
-               "- 如实回答，不确定的信息说\"暂无相关信息\"\n" +
-               "- 执行操作后直接告诉用户结果";
+               "【操作触发规则】\n" +
+               "当用户提到以下内容时，必须执行对应ACTION：\n" +
+               "- '查看活动'、'活动列表'、'待审核活动' → [ACTION]list_activities / [ACTION]list_latest_activities\n" +
+               "- '审核活动'、'待处理活动' → 执行活动审核相关查询\n" +
+               "- '审核用户'、'新用户'、'待审核用户' → 查看待审核用户\n" +
+               "- '审核新闻'、'待审核新闻' → 查看待审核新闻\n" +
+               "- '审核奖项'、'待审核奖项' → 查看待审核奖项\n" +
+               "- '处理问题'、'待处理问题' → 查看待处理问题\n" +
+               "- '查看新闻' → [ACTION]list_all_news\n" +
+               "- '查看项目' → [ACTION]list_public_projects\n\n" +
+               "【重要】\n" +
+               "- 想执行操作时，只输出[ACTION]格式\n" +
+               "- 无法匹配时，请管理员详细描述想做什么\n" +
+               "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
     }
 
     public String buildContext(String userMessage, String userRole) {
@@ -637,60 +657,221 @@ public class AIService {
         StringBuilder guide = new StringBuilder();
         String msgLower = userMessage.toLowerCase();
 
-        // 发起/创建活动（更严格的条件，避免误匹配）
-        if (msgLower.contains("发起活动") || msgLower.contains("创建活动") || msgLower.contains("举办活动")) {
-            guide.append("- 用户想发起活动，执行：[ACTION]create_activity_request\n");
+        // ============================================
+        // 活动相关操作 - 扩展近义词
+        // ============================================
+        
+        // 发起/创建活动 - 近义词：发起、创建、举办、组织、建立、发起组织
+        boolean isCreateActivity = containsAny(msgLower, new String[]{
+            "发起活动", "创建活动", "举办活动", "组织活动", "建立活动", "发起组织活动",
+            "我想办活动", "要办活动", "想搞活动", "开个活动", "发起个活动", "组织个活动",
+            "怎样发起活动", "如何举办活动", "怎么创建活动", "活动怎么办", "活动怎么做",
+            "发起", "创建", "举办", "组织"
+        }) && !containsAny(msgLower, new String[]{"查看", "查询", "看", "找"});
+        
+        if (isCreateActivity) {
+            guide.append("- 用户想发起新活动，执行：[ACTION]create_activity_request\n");
         }
-        // 报名/申请活动
-        else if (msgLower.contains("报名") && msgLower.contains("活动")) {
+        
+        // 报名/申请活动 - 近义词：报名、参加、参与、申请、加入、想参与、想参加
+        boolean isApplyActivity = containsAny(msgLower, new String[]{
+            "报名活动", "申请活动", "参加活动", "参与活动", "加入活动",
+            "我要报名", "想报名", "想参加", "想参与", "想加入",
+            "活动报名", "活动申请", "活动参加", "活动参与", "活动加入",
+            "报名参加", "申请参加", "参加报名", "加入报名",
+            "我要参加", "想参加这个", "要参加", "去参加",
+            "怎么报名", "如何报名", "怎么参加", "如何参加",
+            "报名", "参加", "参与", "加入"
+        }) && !containsAny(msgLower, new String[]{"查看", "查询", "看", "找", "列表", "有什么", "有哪些", "所有"});
+        
+        if (isApplyActivity) {
             guide.append("- 用户想报名参加活动，执行：[ACTION]apply_activity\n");
         }
-        // 查看活动列表
-        else if (msgLower.contains("活动列表") || msgLower.contains("查看活动") || 
-                 (msgLower.contains("活动") && (msgLower.contains("有哪些") || msgLower.contains("有什么") || msgLower.contains("全部活动")))) {
+        
+        // 查看活动列表 - 近义词
+        boolean isListActivities = containsAny(msgLower, new String[]{
+            "活动列表", "查看活动", "查询活动", "所有活动", "全部活动",
+            "活动有哪些", "活动有什么", "有些什么活动", "有什么活动", "有哪些活动",
+            "活动信息", "活动详情", "查看活动列表", "查询活动列表",
+            "我想看活动", "想查看活动", "找活动", "看看活动",
+            "最近的活動", "最新活动", "近期活动", "即将开始的活动",
+            "有没有活动", "有没有活动可以参加", "现在有什么活动",
+            "list", "activities", "活动"
+        }) || (msgLower.contains("活动") && containsAny(msgLower, new String[]{
+            "查看", "查询", "看", "找", "列表", "浏览", "显示", "展示"
+        }));
+        
+        if (isListActivities) {
             guide.append("- 用户想查看活动列表，执行：[ACTION]list_latest_activities\n");
         }
 
-        if (msgLower.contains("新闻") && (msgLower.contains("发布") || msgLower.contains("投稿") || msgLower.contains("提交"))) {
-            guide.append("- 用户想提交新闻，请引导用户提供新闻内容\n");
+        // ============================================
+        // 新闻相关操作
+        // ============================================
+        boolean isSubmitNews = containsAny(msgLower, new String[]{
+            "发布新闻", "提交新闻", "投稿新闻", "发表新闻", "上传新闻",
+            "我想发布新闻", "想发布新闻", "要发布新闻", "想投稿",
+            "新闻发布", "新闻投稿", "新闻提交", "发布个新闻",
+            "怎么发布新闻", "如何发布新闻",
+            "发布", "投稿", "提交", "发表"
+        }) && !containsAny(msgLower, new String[]{"查看", "查询", "看", "审核"});
+        
+        if (isSubmitNews) {
+            guide.append("- 用户想发布新闻，执行：[ACTION]submit_news\n");
+        }
+        
+        boolean isListNews = containsAny(msgLower, new String[]{
+            "新闻列表", "查看新闻", "查询新闻", "所有新闻", "全部新闻",
+            "新闻有哪些", "新闻有什么", "有些什么新闻", "有什么新闻", "有哪些新闻",
+            "新闻资讯", "新闻动态", "最新新闻", "最近新闻",
+            "看看新闻", "查看新闻", "找新闻"
+        });
+        
+        if (isListNews && guide.length() == 0) {
+            guide.append("- 用户想查看新闻列表，执行：[ACTION]list_all_news\n");
         }
 
-        if ((msgLower.contains("问题") || msgLower.contains("反馈") || msgLower.contains("建议")) && !msgLower.contains("处理")) {
-            guide.append("- 用户想提交反馈，请引导用户提供反馈内容\n");
+        // ============================================
+        // 反馈/问题相关
+        // ============================================
+        boolean isSubmitFeedback = containsAny(msgLower, new String[]{
+            "提交反馈", "问题反馈", "提交问题", "提交建议", "意见反馈",
+            "我要反馈", "想反馈", "要反馈", "有建议", "提个建议",
+            "反馈问题", "反馈意见", "问题建议", "bug", "报错", "错误",
+            "遇到问题", "有问题", "提问题", "提意见",
+            "怎么反馈", "如何反馈", "如何建议"
+        }) && !containsAny(msgLower, new String[]{"查看", "查询", "看", "审核", "处理"});
+        
+        if (isSubmitFeedback) {
+            guide.append("- 用户想提交反馈，执行：[ACTION]submit_feedback\n");
         }
 
-        if (msgLower.contains("我的活动") || msgLower.contains("报名记录")) {
-            guide.append("- 用户想查看报名的活动\n");
+        // ============================================
+        // 我的相关查询
+        // ============================================
+        if (containsAny(msgLower, new String[]{
+            "我的活动", "我的报名", "报名记录", "已报名活动", 
+            "我报名的活动", "我参加的活动", "我的活动记录",
+            "查看我的活动"
+        })) {
+            guide.append("- 用户想查看报名的活动，执行：[ACTION]view_my_activities\n");
         }
 
-        if (msgLower.contains("我的项目") || msgLower.contains("项目申请")) {
-            guide.append("- 用户想查看申请的项目\n");
+        if (containsAny(msgLower, new String[]{
+            "我的项目", "我的项目申请", "项目申请记录", "已申请项目",
+            "我申请的项目", "我创建的项目", "我的项目列表"
+        })) {
+            guide.append("- 用户想查看项目，执行：[ACTION]view_my_projects\n");
         }
 
-        if (msgLower.contains("我的群聊") || msgLower.contains("加入的群")) {
-            guide.append("- 用户想查看加入的群聊\n");
+        if (containsAny(msgLower, new String[]{
+            "我的群聊", "我的群", "加入的群", "群聊记录",
+            "我加入的群", "我的聊天群", "群消息"
+        })) {
+            guide.append("- 用户想查看群聊，执行：[ACTION]view_my_groups\n");
+        }
+        
+        // ============================================
+        // 奖项相关
+        // ============================================
+        if (containsAny(msgLower, new String[]{
+            "申请奖项", "提交奖项", "获奖申请", "申报奖项",
+            "我想申请奖项", "要申请奖项", "想申报奖项",
+            "奖项申请", "申请个奖项"
+        })) {
+            guide.append("- 用户想申请奖项，执行：[ACTION]submit_award\n");
+        }
+        
+        if (containsAny(msgLower, new String[]{
+            "我的奖项", "我的获奖", "获奖记录", "已获奖项",
+            "我获得的奖项", "我的奖项列表"
+        })) {
+            guide.append("- 用户想查看我的奖项，执行：[ACTION]list_my_awards\n");
         }
 
+        // ============================================
+        // 项目相关
+        // ============================================
+        if (containsAny(msgLower, new String[]{
+            "项目列表", "查看项目", "查询项目", "所有项目", "全部项目",
+            "项目有哪些", "项目有什么", "有些什么项目", "有什么项目",
+            "有哪些项目", "项目信息", "项目详情"
+        }) || (msgLower.contains("项目") && containsAny(msgLower, new String[]{"查看", "查询", "看", "找", "列表"}))) {
+            guide.append("- 用户想查看项目列表，执行：[ACTION]list_public_projects\n");
+        }
+        
+        boolean isCreateProject = containsAny(msgLower, new String[]{
+            "发起项目", "创建项目", "申请项目", "新建项目",
+            "我想发起项目", "想创建项目", "要申请项目",
+            "项目申请", "申请个项目"
+        }) && !containsAny(msgLower, new String[]{"查看", "查询", "看", "加入"});
+        
+        if (isCreateProject) {
+            guide.append("- 用户想发起项目，执行：[ACTION]create_project_request\n");
+        }
+
+        // ============================================
+        // 管理员操作
+        // ============================================
         if (ROLE_ADMIN.equals(userRole)) {
-            if (msgLower.contains("审核用户") || msgLower.contains("新用户") || msgLower.contains("待审核用户")) {
+            if (containsAny(msgLower, new String[]{
+                "审核用户", "新用户", "待审核用户", "用户审核",
+                "审核新用户", "查看新用户", "待处理用户"
+            })) {
                 guide.append("- 管理员想查看待审核用户列表\n");
             }
-            if (msgLower.contains("审核活动") || msgLower.contains("待审核活动")) {
+            if (containsAny(msgLower, new String[]{
+                "审核活动", "待审核活动", "活动审核",
+                "待批准活动", "待处理活动"
+            })) {
                 guide.append("- 管理员想查看待审核活动列表\n");
             }
-            if (msgLower.contains("审核新闻") || msgLower.contains("待审核新闻")) {
+            if (containsAny(msgLower, new String[]{
+                "审核新闻", "待审核新闻", "新闻审核",
+                "待批准新闻", "待处理新闻"
+            })) {
                 guide.append("- 管理员想查看待审核新闻列表\n");
             }
-            if (msgLower.contains("处理问题") || msgLower.contains("待处理问题")) {
+            if (containsAny(msgLower, new String[]{
+                "处理问题", "待处理问题", "问题处理",
+                "待审核问题", "待回复问题"
+            })) {
                 guide.append("- 管理员想查看待处理问题列表\n");
+            }
+            if (containsAny(msgLower, new String[]{
+                "审核奖项", "待审核奖项", "奖项审核",
+                "奖项申请审核", "待批准奖项"
+            })) {
+                guide.append("- 管理员想查看待审核奖项列表\n");
             }
         }
 
+        // ============================================
+        // 无法匹配时的处理
+        // ============================================
         if (guide.length() == 0) {
-            guide.append("- 请根据用户问题直接回答\n");
+            // 告诉AI尝试从用户问题中提取意图，或请用户澄清
+            guide.append("- 【重要】无法确定用户意图时，请按以下规则处理：\n");
+            guide.append("  1. 如果用户问题涉及上述操作关键词（如'活动'、'新闻'、'项目'、'奖项'等），尝试推断用户是想查询还是操作\n");
+            guide.append("  2. 如果用户只是想了解信息（如'活动是什么'、'项目是什么'），请直接回答\n");
+            guide.append("  3. 如果用户想执行操作但无法确定操作类型，请回复：\"您想对[活动/新闻/项目/奖项]做什么操作？查看详情、申请、还是其他？\"\n");
+            guide.append("  4. 如果完全无法理解用户意图，请回复：\"抱歉，我没有理解您的问题。请您详细描述一下您想做什么？\"\n");
+            guide.append("  5. 绝对不要胡乱编造活动、新闻、项目等信息，必须从数据库查询或如实说明无相关信息\n");
         }
 
         return guide.toString();
+    }
+    
+    /**
+     * 检查字符串是否包含任意一个关键词
+     */
+    private boolean containsAny(String text, String[] keywords) {
+        for (String keyword : keywords) {
+            if (text.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String buildConversationHistory(Integer conversationId) {
