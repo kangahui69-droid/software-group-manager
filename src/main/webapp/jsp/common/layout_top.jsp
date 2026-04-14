@@ -13,6 +13,7 @@
             <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler-vendors.min.css"
                 rel="stylesheet" />
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+            <link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
@@ -364,6 +365,13 @@
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-calendar-plus"></i></span>
                                                     <span class="nav-link-title">活动申请</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item ${param.active == 'myProjects' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/project?action=list">
+                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
+                                                            class="bi bi-kanban"></i></span>
+                                                    <span class="nav-link-title">项目申请</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item ${param.active == 'group' ? 'active' : ''}">
