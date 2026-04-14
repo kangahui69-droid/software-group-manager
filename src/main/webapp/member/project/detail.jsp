@@ -4,6 +4,7 @@
 <jsp:include page="../../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="项目详情" />
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
 
 <style>
     .member-hero {
