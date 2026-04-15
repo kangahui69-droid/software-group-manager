@@ -24,7 +24,7 @@
         body {
             font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             min-height: 100vh;
-            background: #ffffff;
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8f0fe 100%);
         }
 
         .login-container {
@@ -39,7 +39,7 @@
             align-items: center;
             justify-content: center;
             padding: 40px;
-            background: #ffffff;
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8f0fe 100%);
         }
 
         .login-form-wrapper {

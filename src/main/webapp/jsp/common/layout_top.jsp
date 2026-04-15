@@ -38,6 +38,29 @@
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                 }
                 
+                /* 导航菜单项样式 */
+                .navbar-nav .nav-item {
+                    margin-right: 0.25rem;
+                }
+                .navbar-nav .nav-link {
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.5rem;
+                    transition: all 0.3s ease;
+                    border-bottom: none !important;
+                }
+                .navbar-nav .nav-item::after {
+                    display: none !important;
+                }
+                .navbar-nav .nav-link:hover {
+                    box-shadow: 0 4px 16px rgba(32, 107, 196, 0.4);
+                }
+                .navbar-nav .nav-link:active {
+                    box-shadow: 0 4px 16px rgba(32, 107, 196, 0.4);
+                }
+                .navbar-nav .nav-item.active .nav-link {
+                    box-shadow: 0 4px 16px rgba(32, 107, 196, 0.4);
+                }
+                
                 /* 空状态图标动画效果 */
                 .empty-img i {
                     animation: pulse 2s infinite;
