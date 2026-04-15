@@ -5,201 +5,108 @@
 </jsp:include>
 
 <style>
-    .page-hero {
-        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
-        border-radius: var(--radius-generous);
-        padding: 32px 40px;
-        margin-bottom: 32px;
-        color: white;
-    }
+.admin-hero {
+    background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+    border-radius: var(--radius-generous);
+    padding: 32px 40px;
+    margin-bottom: 32px;
+    color: white;
+}
 
-    .page-hero-title {
-        font-family: var(--font-display);
-        font-size: 1.75rem;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
+.admin-hero-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
 
-    .page-hero-subtitle {
-        font-family: var(--font-ui);
-        font-size: 0.94rem;
-        opacity: 0.9;
-    }
+.admin-hero-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.94rem;
+    opacity: 0.9;
+}
 
-    .form-card {
-        background: var(--bg-white);
-        border-radius: var(--radius-generous);
-        padding: 32px;
-        box-shadow: var(--shadow-brand-purple);
-        border: none;
-    }
+.tip-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-comfortable);
+    padding: 24px;
+    box-shadow: var(--shadow-standard);
+    border: 1px solid var(--border-light);
+    height: 100%;
+}
 
-    .form-card-title {
-        font-family: var(--font-display);
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 24px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+.tip-card-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-    .form-label-design {
-        font-family: var(--font-ui);
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--text-dark);
-        margin-bottom: 8px;
-        display: block;
-    }
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+}
 
-    .input-design {
-        border-radius: var(--radius-standard);
-        border: 1px solid var(--border-gray);
-        padding: 12px 16px;
-        font-family: var(--font-ui);
-        font-size: 0.94rem;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
+.tip-item:last-child {
+    border-bottom: none;
+}
 
-    .input-design:focus {
-        border-color: var(--brand-blue);
-        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
-        outline: none;
-    }
+.tip-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-standard);
+    background: rgba(20, 86, 240, 0.1);
+    color: var(--brand-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.875rem;
+}
 
-    .btn-primary-design {
-        background: var(--brand-blue);
-        color: white;
-        border-radius: var(--radius-standard);
-        padding: 12px 24px;
-        font-weight: 600;
-        font-size: 0.94rem;
-        border: none;
-        transition: all 0.3s ease;
-    }
+.tip-text {
+    font-family: var(--font-ui);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
 
-    .btn-primary-design:hover {
-        background: var(--primary-600);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-standard);
-    }
+.alert-design {
+    border-radius: var(--radius-standard);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
-    .btn-secondary-design {
-        background: var(--bg-light-gray);
-        color: var(--text-dark);
-        border-radius: var(--radius-standard);
-        padding: 12px 24px;
-        font-weight: 500;
-        font-size: 0.94rem;
-        border: 1px solid var(--border-gray);
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
+.alert-danger-design {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+}
 
-    .btn-secondary-design:hover {
-        background: var(--border-gray);
-        color: var(--text-dark);
-    }
-
-    .tip-card {
-        background: var(--bg-white);
-        border-radius: var(--radius-comfortable);
-        padding: 24px;
-        box-shadow: var(--shadow-standard);
-        border: 1px solid var(--border-light);
-        height: 100%;
-    }
-
-    .tip-card-title {
-        font-family: var(--font-display);
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .tip-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 12px 0;
-        border-bottom: 1px solid var(--border-light);
-    }
-
-    .tip-item:last-child {
-        border-bottom: none;
-    }
-
-    .tip-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: var(--radius-standard);
-        background: rgba(20, 86, 240, 0.1);
-        color: var(--brand-blue);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-size: 0.875rem;
-    }
-
-    .tip-text {
-        font-family: var(--font-ui);
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-        line-height: 1.5;
-    }
-
-    .alert-design {
-        border-radius: var(--radius-standard);
-        padding: 16px 20px;
-        margin-bottom: 24px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .alert-danger-design {
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.2);
-        color: #dc2626;
-    }
-
-    .alert-success-design {
-        background: rgba(16, 185, 129, 0.1);
-        border: 1px solid rgba(16, 185, 129, 0.2);
-        color: #059669;
-    }
-
-    @media (max-width: 768px) {
-        .page-hero {
-            padding: 24px;
-        }
-
-        .page-hero-title {
-            font-size: 1.5rem;
-        }
-
-        .form-card {
-            padding: 24px;
-        }
-    }
+.alert-success-design {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #059669;
+}
 </style>
 
 <div class="page-body">
     <div class="container-xl">
-        <div class="page-hero">
-            <h1 class="page-hero-title">
+        <div class="admin-hero">
+            <h1 class="admin-hero-title">
                 <i class="bi bi-lock me-2"></i>修改密码
             </h1>
-            <p class="page-hero-subtitle">保障账户安全，定期更换密码</p>
+            <p class="admin-hero-subtitle">保障账户安全，定期更换密码</p>
         </div>
 
         <c:if test="${not empty error}">
@@ -218,8 +125,8 @@
 
         <div class="row g-4">
             <div class="col-lg-8">
-                <div class="form-card">
-                    <h3 class="form-card-title">
+                <div class="card-design" style="background: var(--bg-white); border-radius: var(--radius-generous); padding: 32px; box-shadow: var(--shadow-brand-purple); border: none;">
+                    <h3 class="card-title-design" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--text-dark); margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
                         <i class="bi bi-shield-lock text-brand"></i>密码设置
                     </h3>
                     <form id="passwordForm" method="post" action="${pageContext.request.contextPath}/admin/password">
@@ -237,8 +144,8 @@
                         </div>
 
                         <div class="d-flex justify-content-end gap-3">
-                            <a href="${pageContext.request.contextPath}/admin/profile.jsp" class="btn-secondary-design">返回</a>
-                            <button type="submit" class="btn-primary-design">修改密码</button>
+                            <a href="${pageContext.request.contextPath}/admin/profile.jsp" class="btn btn-outline-brand">返回</a>
+                            <button type="submit" class="btn btn-brand">修改密码</button>
                         </div>
                     </form>
                 </div>

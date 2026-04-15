@@ -3,27 +3,234 @@
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="问题反馈管理" />
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
+<style>
+    .admin-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
 
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">
-                    问题反馈管理
-                </h2>
-            </div>
-        </div>
-    </div>
-</div>
+    .admin-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .admin-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body-design {
+        padding: 0;
+    }
+
+    .card-header-design {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .card-title-design {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-sm-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-sm-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+    }
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .btn-success-design {
+        background-color: #10b981;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-success-design:hover {
+        background-color: #059669;
+        color: white;
+    }
+
+    .btn-danger-design {
+        background-color: #ef4444;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-danger-design:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+
+    .table-design {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-design th {
+        font-family: var(--font-ui);
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-bottom: 2px solid var(--border-gray);
+        padding: 14px 20px;
+        text-align: left;
+        font-size: 0.81rem;
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .table-design td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+    }
+
+    .table-design tbody tr:hover {
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .badge-design {
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+    }
+
+    .input-design {
+        border-radius: var(--radius-standard);
+        border: 1px solid var(--border-gray);
+        padding: 10px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .input-design:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+        outline: none;
+    }
+
+    .form-label-design {
+        font-family: var(--font-ui);
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.875rem;
+    }
+</style>
 
 <div class="page-body">
     <div class="container-xl">
-        <div class="card mb-3">
-            <div class="card-body">
+        <div class="admin-hero">
+            <h1 class="admin-hero-title">
+                <i class="bi bi-exclamation-triangle me-2"></i>问题反馈管理
+            </h1>
+            <p class="admin-hero-subtitle">查看和处理用户反馈的问题</p>
+        </div>
+
+        <div class="card-design mb-3">
+            <div class="card-body-design">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">筛选分类</label>
-                        <select class="form-select" id="categoryFilter">
+                        <label class="form-label-design">筛选分类</label>
+                        <select class="input-design" id="categoryFilter">
                             <option value="">全部</option>
                             <option value="VERIFIED">属实</option>
                             <option value="UNVERIFIED">待验证</option>
@@ -31,8 +238,8 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">筛选状态</label>
-                        <select class="form-select" id="statusFilter">
+                        <label class="form-label-design">筛选状态</label>
+                        <select class="input-design" id="statusFilter">
                             <option value="">全部</option>
                             <option value="PENDING">待处理</option>
                             <option value="SOLVING">正在解决</option>
@@ -41,15 +248,15 @@
                         </select>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
-                        <button type="button" class="btn btn-primary w-100" onclick="loadReports()">筛选</button>
+                        <button type="button" class="btn-brand w-100" onclick="loadReports()">筛选</button>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="card">
+        <div class="card-design">
             <div class="table-responsive">
-                <table class="table table-vcenter card-table table-striped">
+                <table class="table-design">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -85,26 +292,26 @@
                                 <td>
                                     <c:choose>
                                         <c:when test="${report.reporterType == 'GUEST'}">
-                                            <span class="badge bg-secondary">游客</span>
+                                            <span class="badge-design" style="background: rgba(107, 114, 128, 0.1); color: #6b7280;">游客</span>
                                         </c:when>
                                         <c:when test="${report.reporterType == 'MEMBER'}">
-                                            <span class="badge bg-info">成员</span>
+                                            <span class="badge-design" style="background: rgba(59, 130, 246, 0.1); color: #2563eb;">成员</span>
                                         </c:when>
                                         <c:when test="${report.reporterType == 'ADMIN'}">
-                                            <span class="badge bg-primary">管理员</span>
+                                            <span class="badge-design" style="background: rgba(139, 92, 246, 0.1); color: #7c3aed;">管理员</span>
                                         </c:when>
                                     </c:choose>
                                 </td>
                                 <td>
                                     <c:choose>
                                         <c:when test="${report.category == 'VERIFIED'}">
-                                            <span class="badge bg-danger">属实</span>
+                                            <span class="badge-design" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">属实</span>
                                         </c:when>
                                         <c:when test="${report.category == 'UNVERIFIED'}">
-                                            <span class="badge bg-warning">待验证</span>
+                                            <span class="badge-design" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">待验证</span>
                                         </c:when>
                                         <c:when test="${report.category == 'INVALID'}">
-                                            <span class="badge bg-success">不属实</span>
+                                            <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #059669;">不属实</span>
                                         </c:when>
                                     </c:choose>
                                 </td>
@@ -113,16 +320,16 @@
                                         <c:when test="${report.category == 'VERIFIED'}">
                                             <c:choose>
                                                 <c:when test="${report.status == 'PENDING'}">
-                                                    <span class="badge bg-warning">待处理</span>
+                                                    <span class="badge-design" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">待处理</span>
                                                 </c:when>
                                                 <c:when test="${report.status == 'SOLVING'}">
-                                                    <span class="badge bg-info">正在解决</span>
+                                                    <span class="badge-design" style="background: rgba(59, 130, 246, 0.1); color: #2563eb;">正在解决</span>
                                                 </c:when>
                                                 <c:when test="${report.status == 'SOLVED'}">
-                                                    <span class="badge bg-success">已解决</span>
+                                                    <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #059669;">已解决</span>
                                                 </c:when>
                                                 <c:when test="${report.status == 'UNSOLVED'}">
-                                                    <span class="badge bg-secondary">未解决</span>
+                                                    <span class="badge-design" style="background: rgba(107, 114, 128, 0.1); color: #6b7280;">未解决</span>
                                                 </c:when>
                                             </c:choose>
                                         </c:when>
@@ -136,7 +343,7 @@
                                 </td>
                                 <td>${report.createdAt}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" onclick="showDetail(${report.id})">查看</button>
+                                    <button class="btn-sm-brand" onclick="showDetail(${report.id})">查看</button>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -147,7 +354,6 @@
     </div>
 </div>
 
-<!-- 详情模态框 -->
 <dialog id="detailModal" class="modal modal-blur fade" style="display: none;">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -156,10 +362,9 @@
                 <button type="button" class="btn-close" onclick="closeDetailModal()"></button>
             </div>
             <div class="modal-body" id="modalContent">
-                <!-- 动态加载 -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
+                <button type="button" class="btn-outline-brand" onclick="closeDetailModal()">关闭</button>
             </div>
         </div>
     </div>
@@ -245,16 +450,16 @@ function displayDetail(report) {
     html += '</div>';
     html += '<hr>';
     html += '<div class="mb-3"><strong>分类：</strong>';
-    html += '<select class="form-select" id="reportCategory" style="display:inline;width:auto;">' + categoryOptions[report.category] + '</select></div>';
+    html += '<select class="input-design" id="reportCategory" style="display:inline;width:auto;">' + categoryOptions[report.category] + '</select></div>';
     html += '<div class="mb-3" id="statusSection"><strong>状态：</strong>';
     if (canChangeStatus) {
-        html += '<select class="form-select" id="reportStatus" style="display:inline;width:auto;">' + statusOptions[report.status] + '</select>';
+        html += '<select class="input-design" id="reportStatus" style="display:inline;width:auto;">' + statusOptions[report.status] + '</select>';
     } else {
-        html += '<span class="badge bg-secondary">' + (report.category === 'UNVERIFIED' ? '待验证无状态' : '不属实无状态') + '</span>';
+        html += '<span class="badge-design" style="background: rgba(107, 114, 128, 0.1); color: #6b7280;">' + (report.category === 'UNVERIFIED' ? '待验证无状态' : '不属实无状态') + '</span>';
     }
     html += '</div>';
     html += '<div class="mb-3"><strong>管理员备注：</strong>';
-    html += '<textarea class="form-control" id="adminComment" rows="3">' + escapeHtml(report.adminComment || '') + '</textarea></div>';
+    html += '<textarea class="input-design" id="adminComment" rows="3">' + escapeHtml(report.adminComment || '') + '</textarea></div>';
     html += '<input type="hidden" id="reportId" value="' + report.id + '">';
     
     document.getElementById('modalContent').innerHTML = html;
@@ -298,3 +503,5 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 </script>
+
+<jsp:include page="../../common/layout_bottom.jsp" />

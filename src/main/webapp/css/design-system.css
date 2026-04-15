@@ -94,6 +94,102 @@ body {
     box-shadow: var(--shadow-standard);
 }
 
+.btn-sm-brand {
+    background-color: var(--brand-blue);
+    color: white;
+    border-radius: var(--radius-standard);
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: none;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-sm-brand:hover {
+    background-color: var(--primary-600);
+    color: white;
+}
+
+.btn-outline-brand {
+    background: transparent;
+    color: var(--brand-blue);
+    border: 1px solid var(--brand-blue);
+    border-radius: var(--radius-standard);
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-outline-brand:hover {
+    background: var(--brand-blue);
+    color: white;
+}
+
+.btn-success-design {
+    background-color: #10b981;
+    color: white;
+    border-radius: var(--radius-standard);
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-success-design:hover {
+    background-color: #059669;
+    color: white;
+}
+
+.btn-danger-design {
+    background-color: #ef4444;
+    color: white;
+    border-radius: var(--radius-standard);
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-danger-design:hover {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-outline-danger {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    border-radius: var(--radius-standard);
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-outline-danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
 .btn-pill {
     border-radius: var(--radius-pill);
     padding: 11px 20px;
@@ -137,6 +233,22 @@ body {
 .card-design:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-brand-offset);
+}
+
+.card-header-design {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-light);
+    background: rgba(20, 86, 240, 0.03);
+}
+
+.card-body-design {
+    padding: 24px;
+}
+
+.card-footer-design {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-light);
+    background: rgba(20, 86, 240, 0.03);
 }
 
 .card-flat {
@@ -233,6 +345,15 @@ body {
     border-color: var(--brand-blue);
     box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
     outline: none;
+}
+
+.form-label-design {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    display: block;
+    font-size: 0.875rem;
 }
 
 .link-primary {
@@ -365,6 +486,48 @@ body {
 
 .animate-float {
     animation: float 3s ease-in-out infinite;
+}
+
+.admin-hero {
+    background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+    border-radius: var(--radius-generous);
+    padding: 32px 40px;
+    margin-bottom: 32px;
+    color: white;
+}
+
+.admin-hero-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.admin-hero-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.94rem;
+    opacity: 0.9;
+}
+
+.member-hero {
+    background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+    border-radius: var(--radius-generous);
+    padding: 32px 40px;
+    margin-bottom: 32px;
+    color: white;
+}
+
+.member-hero-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.member-hero-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.94rem;
+    opacity: 0.9;
 }
 
 @keyframes float {

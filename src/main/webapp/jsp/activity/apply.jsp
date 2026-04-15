@@ -109,6 +109,11 @@
                 <h2 class="page-title">申请活动</h2>
                 <p class="page-subtitle">填写活动信息提交申请，等待管理员审核</p>
             </div>
+            <div class="col-auto">
+                <a href="${pageContext.request.contextPath}/activity/list" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>返回
+                </a>
+            </div>
         </div>
     </div>
 </div>

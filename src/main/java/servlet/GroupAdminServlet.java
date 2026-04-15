@@ -5,6 +5,7 @@ import dao.GroupMessageDAO;
 import dao.GroupMemberDAO;
 import dao.UserGroupDAO;
 import model.ActivityGroup;
+import model.GroupMember;
 import model.GroupMessage;
 import model.User;
 import util.AuthHelper;
@@ -54,6 +55,9 @@ public class GroupAdminServlet extends HttpServlet {
             case "delete":
                 deleteGroup(req, resp);
                 break;
+            case "joinAsAdmin":
+                joinAsAdmin(req, resp);
+                break;
             default:
                 listGroups(req, resp);
         }
@@ -88,16 +92,57 @@ public class GroupAdminServlet extends HttpServlet {
     }
 
     private void listGroups(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        User currentUser = (User) req.getSession().getAttribute("user");
         List<ActivityGroup> groups = groupDAO.findAll();
+        java.util.Map<Integer, Boolean> memberStatus = new java.util.HashMap<>();
+        for (ActivityGroup group : groups) {
+            boolean isMember = memberDAO.isMember(group.getId(), currentUser.getId());
+            memberStatus.put(group.getId(), isMember);
+        }
         req.setAttribute("groups", groups);
+        req.setAttribute("memberStatus", memberStatus);
         req.getRequestDispatcher("/jsp/admin/group/groupList.jsp").forward(req, resp);
     }
 
     private void listMyGroups(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         User currentUser = (User) req.getSession().getAttribute("user");
-        List<ActivityGroup> groups = groupDAO.findByOwnerId(currentUser.getId());
-        req.setAttribute("groups", groups);
-        req.getRequestDispatcher("/jsp/admin/group/groupList.jsp").forward(req, resp);
+        
+        java.util.List<model.UserGroup> userGroups = new java.util.ArrayList<>();
+        
+        List<ActivityGroup> ownedGroups = groupDAO.findByOwnerId(currentUser.getId());
+        for (ActivityGroup group : ownedGroups) {
+            model.UserGroup ug = new model.UserGroup();
+            ug.setGroupId(group.getId());
+            ug.setGroupName(group.getGroupName());
+            ug.setOwnerId(currentUser.getId());
+            ug.setMemberCount(memberDAO.countByGroupId(group.getId()));
+            userGroups.add(ug);
+        }
+        
+        List<GroupMember> memberGroups = memberDAO.findByUserId(currentUser.getId());
+        for (GroupMember gm : memberGroups) {
+            ActivityGroup group = groupDAO.findById(gm.getGroupId());
+            if (group != null) {
+                boolean alreadyAdded = false;
+                for (model.UserGroup ug : userGroups) {
+                    if (ug.getGroupId().equals(group.getId())) {
+                        alreadyAdded = true;
+                        break;
+                    }
+                }
+                if (!alreadyAdded) {
+                    model.UserGroup ug = new model.UserGroup();
+                    ug.setGroupId(group.getId());
+                    ug.setGroupName(group.getGroupName());
+                    ug.setOwnerId(group.getGroupOwnerId());
+                    ug.setMemberCount(memberDAO.countByGroupId(group.getId()));
+                    userGroups.add(ug);
+                }
+            }
+        }
+        
+        req.setAttribute("userGroups", userGroups);
+        req.getRequestDispatcher("/jsp/group/my-groups.jsp").forward(req, resp);
     }
 
     private void showGroupDetail(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -266,6 +311,35 @@ public class GroupAdminServlet extends HttpServlet {
             groupDAO.delete(groupId);
 
             resp.sendRedirect(req.getContextPath() + "/group/admin?action=list&success=" + URLEncoder.encode("群聊已删除", "UTF-8"));
+        } catch (NumberFormatException e) {
+            resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
+        }
+    }
+
+    private void joinAsAdmin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String groupIdStr = req.getParameter("groupId");
+        User currentUser = (User) req.getSession().getAttribute("user");
+
+        if (groupIdStr == null || groupIdStr.isEmpty()) {
+            resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
+            return;
+        }
+
+        try {
+            int groupId = Integer.parseInt(groupIdStr);
+            ActivityGroup group = groupDAO.findById(groupId);
+            
+            if (group == null) {
+                resp.sendRedirect(req.getContextPath() + "/group/admin?action=list&error=" + URLEncoder.encode("群聊不存在", "UTF-8"));
+                return;
+            }
+
+            if (!memberDAO.isMember(groupId, currentUser.getId())) {
+                memberDAO.insertMember(groupId, currentUser.getId());
+                userGroupDAO.insertUserToGroup(currentUser.getId(), groupId);
+            }
+
+            resp.sendRedirect(req.getContextPath() + "/group/chat/" + groupId);
         } catch (NumberFormatException e) {
             resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");
         }

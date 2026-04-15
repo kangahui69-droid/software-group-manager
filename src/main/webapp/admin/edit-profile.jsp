@@ -20,126 +20,27 @@
 </jsp:include>
 
 <style>
-:root {
-    --brand-blue: #1456f0;
-    --font-display: 'Outfit', sans-serif;
-    --font-ui: 'DM Sans', sans-serif;
-    --radius-generous: 16px;
-    --radius-standard: 12px;
-    --radius-comfortable: 10px;
-    --radius-pill: 9999px;
-    --shadow-brand-purple: 0 4px 20px rgba(20, 85, 240, 0.15);
-    --shadow-brand-offset: 0 8px 32px rgba(20, 85, 240, 0.12);
-    --shadow-standard: 0 2px 8px rgba(0, 0, 0, 0.06);
-    --bg-white: #ffffff;
-    --text-dark: #1a1a2e;
-    --text-muted: #6b7280;
-    --border-gray: #e5e7eb;
-    --border-light: #f3f4f6;
-    --primary-light: #eff6ff;
-    --primary-600: #2563eb;
+.admin-hero {
+    background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+    border-radius: var(--radius-generous);
+    padding: 32px 40px;
+    margin-bottom: 32px;
+    color: white;
 }
-body {
-    font-family: var(--font-ui);
-    background: linear-gradient(135deg, #f8fafc 0%, #e8f0fe 100%);
-}
-.page-header {
-    background: transparent;
-    padding: 24px 0;
-}
-.page-pretitle {
-    font-family: var(--font-ui);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.page-title {
+
+.admin-hero-title {
     font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin: 0;
-}
-.card {
-    background: var(--bg-white);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-standard);
-    box-shadow: var(--shadow-standard);
-}
-.card-body {
-    padding: 24px;
-}
-.card-title {
-    font-family: var(--font-display);
-    font-size: 18px;
+    font-size: 1.75rem;
     font-weight: 600;
-    color: var(--text-dark);
-}
-.form-label {
-    font-weight: 500;
-    color: var(--text-dark);
     margin-bottom: 8px;
 }
-.input-group {
-    border-radius: var(--radius-comfortable);
-    overflow: hidden;
+
+.admin-hero-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.94rem;
+    opacity: 0.9;
 }
-.input-group-text {
-    background: var(--primary-light);
-    border: 1px solid var(--border-gray);
-    border-right: none;
-    padding: 10px 14px;
-}
-.input-group-text svg {
-    color: var(--brand-blue);
-}
-.form-control {
-    border: 1px solid var(--border-gray);
-    border-radius: var(--radius-comfortable);
-    padding: 10px 14px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-.form-control:focus {
-    border-color: var(--brand-blue);
-    box-shadow: 0 0 0 3px rgba(20, 85, 240, 0.1);
-}
-textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
-}
-.btn-primary {
-    background: linear-gradient(135deg, var(--brand-blue) 0%, #1d4ed8 100%);
-    border: none;
-    border-radius: var(--radius-comfortable);
-    padding: 10px 20px;
-    font-weight: 600;
-    font-size: 14px;
-    color: #ffffff;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-brand-purple);
-}
-.btn-secondary {
-    background: var(--bg-white);
-    border: 1px solid var(--border-gray);
-    border-radius: var(--radius-comfortable);
-    padding: 10px 20px;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.btn-secondary:hover {
-    border-color: var(--brand-blue);
-    color: var(--brand-blue);
-}
+
 .avatar-preview {
     width: 120px;
     height: 120px;
@@ -147,68 +48,69 @@ textarea.form-control {
     object-fit: cover;
     border: 4px solid var(--primary-light);
 }
+
 .section-title {
     font-family: var(--font-display);
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-dark);
     margin-bottom: 16px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--primary-light);
 }
+
 .tips-card {
     background: var(--primary-light);
     border: 1px solid rgba(20, 85, 240, 0.1);
     border-radius: var(--radius-standard);
 }
+
 .tips-card .card-body {
     padding: 20px;
 }
+
 .list-group-item {
     border: none;
     padding: 10px 0;
     border-bottom: 1px solid var(--border-light);
 }
+
 .list-group-item:last-child {
     border-bottom: none;
 }
+
 .list-group-item .icon {
     color: var(--brand-blue);
 }
+
 .alert-custom {
     border-radius: var(--radius-comfortable);
     padding: 16px;
     margin-bottom: 20px;
 }
+
 .alert-success {
-    background: #ecfdf5;
-    border: 1px solid #d1fae5;
-    color: #065f46;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #059669;
 }
+
 .alert-danger {
-    background: #fef2f2;
-    border: 1px solid #fee2e2;
-    color: #991b1b;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #dc2626;
 }
 </style>
 
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <div class="page-pretitle">
-                    个人设置
-                </div>
-                <h2 class="page-title">
-                    编辑资料
-                </h2>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="page-body">
     <div class="container-xl">
+        <div class="admin-hero">
+            <h1 class="admin-hero-title">
+                <i class="bi bi-pencil me-2"></i>编辑资料
+            </h1>
+            <p class="admin-hero-subtitle">修改您的个人信息和资料</p>
+        </div>
+
         <div class="row">
             <c:if test="${not empty sessionScope.error}">
                 <div class="col-12">
@@ -228,8 +130,8 @@ textarea.form-control {
             </c:if>
             <div class="row">
                 <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-body">
+                    <div class="card-design">
+                        <div class="card-body-design">
                             <form id="profileForm" method="post"
                                 action="${pageContext.request.contextPath}/admin/api/profile/update"
                                 enctype="multipart/form-data">
@@ -243,7 +145,7 @@ textarea.form-control {
                                         </div>
                                         <div id="avatarUploadContainer" style="display: none;">
                                             <label for="avatarUpload"
-                                                class="btn btn-primary">上传新头像</label>
+                                                class="btn btn-brand">上传新头像</label>
                                             <input type="file" id="avatarUpload" name="avatar"
                                                 accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                                                 style="display: none;">
@@ -256,24 +158,14 @@ textarea.form-control {
                                     <h3 class="section-title">基本信息</h3>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">用户名</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="8" r="4"></circle><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></svg>
-                                                </span>
-                                                <input type="text" class="form-control" name="username"
-                                                    value="${user.username}" disabled>
-                                            </div>
+                                            <label class="form-label-design">用户名</label>
+                                            <input type="text" class="input-design" name="username"
+                                                value="${user.username}" disabled>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">角色</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                                                </span>
-                                                <input type="text" class="form-control"
-                                                    value="${user.role}" disabled>
-                                            </div>
+                                            <label class="form-label-design">角色</label>
+                                            <input type="text" class="input-design"
+                                                value="${user.role}" disabled>
                                         </div>
                                     </div>
                                 </div>
@@ -282,98 +174,58 @@ textarea.form-control {
                                     <h3 class="section-title">个人信息</h3>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">姓名</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="8" r="4"></circle><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></svg>
-                                                </span>
-                                                <input type="text" class="form-control profile-field"
-                                                    name="name" value="${user != null ? user.name : ''}"
-                                                    placeholder="请输入姓名" disabled>
-                                            </div>
+                                            <label class="form-label-design">姓名</label>
+                                            <input type="text" class="input-design profile-field"
+                                                name="name" value="${user != null ? user.name : ''}"
+                                                placeholder="请输入姓名" disabled>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">电话</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"></path></svg>
-                                                </span>
-                                                <input type="text" class="form-control profile-field"
-                                                    name="phone"
-                                                    value="${user != null ? user.phone : ''}"
-                                                    placeholder="请输入电话" disabled>
-                                            </div>
+                                            <label class="form-label-design">电话</label>
+                                            <input type="text" class="input-design profile-field"
+                                                name="phone"
+                                                value="${user != null ? user.phone : ''}"
+                                                placeholder="请输入电话" disabled>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">邮箱</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2H5a2 2 0 0 1 -2 -2V7z"></path><polyline points="3 7 12 13 21 7"></polyline></svg>
-                                                </span>
-                                                <input type="email" class="form-control profile-field"
-                                                    name="email"
-                                                    value="${user != null ? user.email : ''}"
-                                                    placeholder="请输入邮箱" disabled>
-                                            </div>
+                                            <label class="form-label-design">邮箱</label>
+                                            <input type="email" class="input-design profile-field"
+                                                name="email"
+                                                value="${user != null ? user.email : ''}"
+                                                placeholder="请输入邮箱" disabled>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">职称</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="3" y="7" width="18" height="10" rx="2"></rect><path d="M7 7V5a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v2"></path></svg>
-                                                </span>
-                                                <input type="text" class="form-control profile-field"
-                                                    name="title"
-                                                    value="${adminProfile != null ? adminProfile.title : ''}"
-                                                    placeholder="请输入职称" disabled>
-                                            </div>
+                                            <label class="form-label-design">职称</label>
+                                            <input type="text" class="input-design profile-field"
+                                                name="title"
+                                                value="${adminProfile != null ? adminProfile.title : ''}"
+                                                placeholder="请输入职称" disabled>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">部门</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                                                </span>
-                                                <input type="text" class="form-control profile-field"
-                                                    name="department"
-                                                    value="${adminProfile != null ? adminProfile.department : ''}"
-                                                    placeholder="请输入部门" disabled>
-                                            </div>
+                                            <label class="form-label-design">部门</label>
+                                            <input type="text" class="input-design profile-field"
+                                                name="department"
+                                                value="${adminProfile != null ? adminProfile.department : ''}"
+                                                placeholder="请输入部门" disabled>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">学历</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 1.657 3.134 3 7 3s7-1.343 7-3v-5"></path></svg>
-                                                </span>
-                                                <input type="text" class="form-control profile-field"
-                                                    name="education"
-                                                    value="${adminProfile != null ? adminProfile.education : ''}"
-                                                    placeholder="请输入学历" disabled>
-                                            </div>
+                                            <label class="form-label-design">学历</label>
+                                            <input type="text" class="input-design profile-field"
+                                                name="education"
+                                                value="${adminProfile != null ? adminProfile.education : ''}"
+                                                placeholder="请输入学历" disabled>
                                         </div>
                                         <div class="col-md-12 mb-3">
-                                            <label class="form-label">研究领域</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                                                </span>
-                                                <input type="text" class="form-control profile-field"
-                                                    name="researchArea"
-                                                    value="${adminProfile != null ? adminProfile.researchArea : ''}"
-                                                    placeholder="请输入研究领域" disabled>
-                                            </div>
+                                            <label class="form-label-design">研究领域</label>
+                                            <input type="text" class="input-design profile-field"
+                                                name="researchArea"
+                                                value="${adminProfile != null ? adminProfile.researchArea : ''}"
+                                                placeholder="请输入研究领域" disabled>
                                         </div>
                                         <div class="col-md-12 mb-3">
-                                            <label class="form-label">个人简介</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text" style="align-self: flex-start; padding-top: 12px;">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                                </span>
-                                                <textarea class="form-control profile-field" name="bio"
-                                                    rows="4" placeholder="请输入个人简介"
-                                                    disabled>${adminProfile != null ? adminProfile.bio : ''}</textarea>
-                                            </div>
+                                            <label class="form-label-design">个人简介</label>
+                                            <textarea class="input-design profile-field" name="bio"
+                                                rows="4" placeholder="请输入个人简介"
+                                                disabled>${adminProfile != null ? adminProfile.bio : ''}</textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -381,12 +233,12 @@ textarea.form-control {
                                 <div class="d-flex justify-content-end">
                                     <div id="editProfileContainer">
                                         <button type="button" id="editProfileBtn"
-                                            class="btn btn-primary">编辑资料</button>
+                                            class="btn btn-brand">编辑资料</button>
                                     </div>
                                     <div id="formButtons" style="display: none;">
                                         <button type="button" id="cancelEditBtn"
-                                            class="btn btn-secondary me-2">取消</button>
-                                        <button type="submit" class="btn btn-primary">保存修改</button>
+                                            class="btn btn-outline-brand me-2">取消</button>
+                                        <button type="submit" class="btn btn-brand">保存修改</button>
                                     </div>
                                 </div>
                             </form>
@@ -394,32 +246,16 @@ textarea.form-control {
                     </div>
                 </div>
                 <div class="col-lg-4">
-                    <div class="card tips-card">
-                        <div class="card-body">
-                            <h3 class="card-title">修改提示</h3>
+                    <div class="card-design tips-card">
+                        <div class="card-body-design">
+                            <h3 class="card-title-design">修改提示</h3>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item d-flex align-items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="icon me-2" width="18" height="18"
-                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <circle cx="12" cy="12" r="9"></circle>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                        <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                                    </svg>
+                                    <i class="bi bi-info-circle me-2" style="color: var(--brand-blue);"></i>
                                     用户名不可修改
                                 </li>
                                 <li class="list-group-item d-flex align-items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="icon me-2" width="18" height="18"
-                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <circle cx="12" cy="12" r="9"></circle>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                        <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                                    </svg>
+                                    <i class="bi bi-info-circle me-2" style="color: var(--brand-blue);"></i>
                                     头像大小不能超过500KB
                                 </li>
                             </ul>
