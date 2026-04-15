@@ -3,21 +3,64 @@
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="添加群聊成员" />
 </jsp:include>
-
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
 <style>
-    .page-title {
+    .admin-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
+
+    .admin-hero-title {
         font-family: var(--font-display);
-        font-size: 1.94rem;
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .admin-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body-design {
+        padding: 0;
+    }
+
+    .card-header-design {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .card-title-design {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
         font-weight: 600;
         color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
-    
-    .btn-back {
-        background: var(--bg-light-gray);
-        color: var(--text-dark);
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
         border-radius: var(--radius-standard);
         padding: 10px 20px;
-        font-weight: 500;
+        font-weight: 600;
         border: none;
         transition: all 0.3s ease;
         text-decoration: none;
@@ -25,257 +68,191 @@
         align-items: center;
         gap: 8px;
     }
-    
-    .btn-back:hover {
-        background: var(--border-gray);
-        color: var(--text-dark);
-    }
-    
-    .info-card {
-        background: var(--bg-white);
-        border-radius: var(--radius-generous);
-        box-shadow: var(--shadow-brand-purple);
-        border: none;
-        overflow: hidden;
-        margin-bottom: 24px;
-    }
-    
-    .info-card-header {
-        background: linear-gradient(135deg, var(--brand-blue) 0%, var(--primary-500) 100%);
-        padding: 20px 24px;
-    }
-    
-    .info-card-title {
-        font-family: var(--font-display);
-        font-size: 1.125rem;
-        font-weight: 600;
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
         color: white;
-        margin: 0;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
     }
-    
-    .info-card-body {
-        padding: 24px;
-    }
-    
-    .form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-    }
-    
-    .form-item {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .form-label {
-        font-weight: 500;
-        color: var(--text-dark);
-        font-size: 0.88rem;
-    }
-    
-    .form-control-plaintext {
-        font-size: 0.94rem;
-        color: var(--text-dark);
-        padding: 0;
-    }
-    
-    .participants-card {
-        background: var(--bg-white);
-        border-radius: var(--radius-generous);
-        box-shadow: var(--shadow-brand-purple);
-        border: none;
-        overflow: hidden;
-        margin-bottom: 24px;
-    }
-    
-    .participants-card-header {
-        background: var(--bg-light-gray);
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--border-light);
-    }
-    
-    .participants-card-title {
-        font-family: var(--font-display);
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin: 0;
-    }
-    
-    .participants-card-body {
-        padding: 24px;
-    }
-    
-    .participant-checkbox-item {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        background: var(--bg-light-gray);
+
+    .btn-sm-brand {
+        background-color: var(--brand-blue);
+        color: white;
         border-radius: var(--radius-standard);
-        margin-bottom: 12px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 2px solid transparent;
-    }
-    
-    .participant-checkbox-item:hover {
-        background: rgba(20, 86, 240, 0.05);
-        border-color: rgba(20, 86, 240, 0.2);
-    }
-    
-    .participant-checkbox-item input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        margin-right: 12px;
-        accent-color: var(--brand-blue);
-    }
-    
-    .participant-checkbox-item label {
-        flex: 1;
-        cursor: pointer;
-        font-size: 0.88rem;
-        color: var(--text-dark);
-        margin: 0;
-    }
-    
-    .participant-name {
-        font-weight: 500;
-    }
-    
-    .participant-info {
-        color: var(--text-muted);
-        font-size: 0.81rem;
-    }
-    
-    .participant-pending {
-        color: #d97706;
+        padding: 6px 12px;
         font-size: 0.75rem;
-        margin-left: 8px;
-    }
-    
-    .btn-submit {
-        background: var(--brand-blue);
-        color: white;
-        border-radius: var(--radius-standard);
-        padding: 12px 28px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-submit:hover {
-        background: var(--primary-600);
-        color: white;
-    }
-    
-    .btn-cancel {
-        background: var(--bg-light-gray);
-        color: var(--text-dark);
-        border-radius: var(--radius-standard);
-        padding: 12px 24px;
         font-weight: 500;
         border: none;
         transition: all 0.3s ease;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
-    
-    .btn-cancel:hover {
-        background: var(--border-gray);
-        color: var(--text-dark);
+
+    .btn-sm-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
     }
-    
-    .existing-members-card {
-        background: var(--bg-white);
-        border-radius: var(--radius-comfortable);
-        box-shadow: var(--shadow-standard);
-        border: 1px solid var(--border-light);
-        overflow: hidden;
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
-    
-    .existing-members-header {
-        background: var(--bg-light-gray);
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--border-light);
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
     }
-    
-    .existing-members-title {
-        font-family: var(--font-display);
-        font-size: 0.94rem;
+
+    .btn-success-design {
+        background-color: #10b981;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-success-design:hover {
+        background-color: #059669;
+        color: white;
+    }
+
+    .btn-danger-design {
+        background-color: #ef4444;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-danger-design:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+
+    .table-design {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-design th {
+        font-family: var(--font-ui);
         font-weight: 600;
-        color: var(--text-dark);
-        margin: 0;
-    }
-    
-    .existing-members-body {
-        padding: 16px 20px;
-    }
-    
-    .existing-members-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .existing-members-list li {
-        padding: 8px 0;
         color: var(--text-secondary);
-        font-size: 0.88rem;
+        border-bottom: 2px solid var(--border-gray);
+        padding: 14px 20px;
+        text-align: left;
+        font-size: 0.81rem;
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .table-design td {
+        padding: 16px 20px;
+        vertical-align: middle;
         border-bottom: 1px solid var(--border-light);
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
     }
-    
-    .existing-members-list li:last-child {
-        border-bottom: none;
+
+    .table-design tbody tr:hover {
+        background: rgba(20, 86, 240, 0.03);
     }
-    
-    .empty-state {
-        text-align: center;
-        padding: 40px 24px;
-        color: var(--text-muted);
-        font-size: 0.88rem;
+
+    .badge-design {
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+    }
+
+    .input-design {
+        border-radius: var(--radius-standard);
+        border: 1px solid var(--border-gray);
+        padding: 10px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .input-design:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+        outline: none;
+    }
+
+    .form-label-design {
+        font-family: var(--font-ui);
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.875rem;
     }
 </style>
 
-<div class="page-header d-print-none">
+<div class="page-body">
     <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">添加群聊成员 - ${group.groupName}</h2>
-            </div>
-            <div class="col-auto ms-auto d-print-none">
-                <a href="${pageContext.request.contextPath}/group/admin?action=chat&id=${group.id}" class="btn-back">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="12" x2="11" y2="18"></line><line x1="5" y1="12" x2="11" y2="6"></line></svg>
-                    返回群聊
+        <div class="admin-hero">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="admin-hero-title">
+                        <i class="bi bi-person-plus me-2"></i>添加群聊成员 - ${group.groupName}
+                    </h1>
+                    <p class="admin-hero-subtitle">为群聊添加新成员</p>
+                </div>
+                <a href="${pageContext.request.contextPath}/group/admin?action=detail&id=${groupId}" class="btn btn-outline-brand" style="color: white; border-color: white;">
+                    <i class="bi bi-arrow-left me-1"></i>返回
                 </a>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="page-body">
-    <div class="container-xl">
-        <div class="card info-card">
-            <div class="card-header info-card-header">
-                <h3 class="info-card-title">群信息</h3>
+        <div class="card-design">
+            <div class="card-header-design" style="background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));">
+                <h3 class="card-title-design" style="color: white;">群信息</h3>
             </div>
-            <div class="card-body info-card-body">
-                <div class="form-grid">
-                    <div class="form-item">
-                        <label class="form-label">群聊名称</label>
-                        <p class="form-control-plaintext">${group.groupName}</p>
+            <div class="card-body-design">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label class="form-label-design">群聊名称</label>
+                        <p style="font-size: 0.94rem; color: var(--text-dark); padding: 0;">${group.groupName}</p>
                     </div>
-                    <div class="form-item">
-                        <label class="form-label">所属活动</label>
-                        <p class="form-control-plaintext">${group.activityName}</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label class="form-label-design">所属活动</label>
+                        <p style="font-size: 0.94rem; color: var(--text-dark); padding: 0;">${group.activityName}</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card participants-card">
-            <div class="card-header participants-card-header">
-                <h3 class="participants-card-title">
+        <div class="card-design" style="margin-top: 24px;">
+            <div class="card-header-design" style="background: var(--bg-light-gray); border-bottom: 1px solid var(--border-light);">
+                <h3 class="card-title-design">
                     <c:choose>
                         <c:when test="${not empty participants}">
                             已报名的参与者 (${not empty participants ? participants.size() : 0})
@@ -286,10 +263,10 @@
                     </c:choose>
                 </h3>
             </div>
-            <div class="card-body participants-card-body">
+            <div class="card-body-design">
                 <c:choose>
                     <c:when test="${empty participants}">
-                        <div class="empty-state">
+                        <div style="text-align: center; padding: 40px 24px; color: var(--text-muted); font-size: 0.88rem;">
                             <p>该群聊没有关联的活动，或活动暂无报名参与者。</p>
                             <p>请通过其他方式邀请成员。</p>
                         </div>
@@ -300,19 +277,19 @@
                             <input type="hidden" name="groupId" value="${group.id}">
                             
                             <div class="mb-3">
-                                <label class="form-label" style="margin-bottom: 16px;">选择要加入群聊的参与者（默认全部选中）</label>
+                                <label class="form-label-design" style="margin-bottom: 16px;">选择要加入群聊的参与者（默认全部选中）</label>
                                 <div>
                                     <c:forEach var="p" items="${participants}">
                                         <c:if test="${!existingMemberIds.contains(p.userId)}">
-                                            <div class="participant-checkbox-item">
-                                                <input type="checkbox" name="selectedUsers" value="${p.userId}" id="user_${p.userId}" checked>
-                                                <label for="user_${p.userId}">
-                                                    <span class="participant-name">${not empty p.userName ? p.userName : '用户'}${p.userId}</span>
+                                            <div class="participant-checkbox-item" style="display: flex; align-items: center; padding: 12px 16px; background: var(--bg-light-gray); border-radius: var(--radius-generous); margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;">
+                                                <input type="checkbox" name="selectedUsers" value="${p.userId}" id="user_${p.userId}" checked style="width: 18px; height: 18px; margin-right: 12px; accent-color: var(--brand-blue);">
+                                                <label for="user_${p.userId}" style="flex: 1; cursor: pointer; font-size: 0.88rem; color: var(--text-dark); margin: 0;">
+                                                    <span style="font-weight: 500;">${not empty p.userName ? p.userName : '用户'}${p.userId}</span>
                                                     <c:if test="${not empty p.studentId}">
-                                                        <span class="participant-info"> (${p.studentId})</span>
+                                                        <span style="color: var(--text-muted); font-size: 0.81rem;"> (${p.studentId})</span>
                                                     </c:if>
                                                     <c:if test="${p.status == 'pending'}">
-                                                        <span class="participant-pending">[待审核]</span>
+                                                        <span style="color: #d97706; font-size: 0.75rem; margin-left: 8px;">[待审核]</span>
                                                     </c:if>
                                                 </label>
                                             </div>
@@ -322,8 +299,8 @@
                             </div>
                             
                             <div style="display: flex; gap: 12px; margin-top: 24px;">
-                                <button type="submit" class="btn-submit">添加选中成员</button>
-                                <a href="${pageContext.request.contextPath}/group/admin?action=chat&id=${group.id}" class="btn-cancel">取消</a>
+                                <button type="submit" class="btn-brand">添加选中成员</button>
+                                <a href="${pageContext.request.contextPath}/group/admin?action=chat&id=${group.id}" class="btn-outline-brand">取消</a>
                             </div>
                         </form>
                     </c:otherwise>
@@ -332,16 +309,16 @@
         </div>
         
         <c:if test="${not empty existingMemberIds}">
-        <div class="card existing-members-card">
-            <div class="existing-members-header">
-                <h3 class="existing-members-title">已在群中的成员</h3>
+        <div class="card-design" style="margin-top: 24px;">
+            <div class="card-header-design" style="background: var(--bg-light-gray); border-bottom: 1px solid var(--border-light);">
+                <h3 class="card-title-design">已在群中的成员</h3>
             </div>
-            <div class="existing-members-body">
+            <div class="card-body-design">
                 <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 12px;">以下成员已在群中：</p>
-                <ul class="existing-members-list">
+                <ul style="list-style: none; padding: 0; margin: 0;">
                     <c:forEach var="member" items="${participants}">
                         <c:if test="${existingMemberIds.contains(member.userId)}">
-                            <li>${not empty member.userName ? member.userName : '用户'}${member.userId}</li>
+                            <li style="padding: 8px 0; color: var(--text-secondary); font-size: 0.88rem; border-bottom: 1px solid var(--border-light);">${not empty member.userName ? member.userName : '用户'}${member.userId}</li>
                         </c:if>
                     </c:forEach>
                 </ul>

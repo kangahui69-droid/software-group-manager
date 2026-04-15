@@ -6,325 +6,482 @@
     <jsp:param name="title" value="学习中心"/>
     <jsp:param name="active" value="study"/>
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
 
-            <div class="page-wrapper">
-                <div class="page-body">
-                    <div class="container-xl">
-                        <!-- 页面标题 -->
-                        <div class="page-header d-print-none">
-                            <div class="row align-items-center">
-                                <div class="col">
-                                    <h2 class="page-title">
-                                        <i class="bi bi-book me-2"></i>学习中心
-                                    </h2>
-                                    <div class="text-muted mt-1">
-                                        <fmt:formatDate value="${nowDate}" pattern="yyyy年MM月dd日 EEEE"/>
+<style>
+    .member-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
+
+    .member-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .member-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-header-design {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .card-title-design {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-body-design {
+        padding: 24px;
+    }
+
+    .stat-card {
+        background: var(--bg-white);
+        border-radius: var(--radius-comfortable);
+        padding: 20px;
+        box-shadow: var(--shadow-standard);
+        border: 1px solid var(--border-light);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-brand-purple);
+    }
+
+    .stat-number {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-family: var(--font-ui);
+        font-size: 0.81rem;
+        color: var(--text-muted);
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-danger {
+        background-color: #ef4444;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-danger:hover {
+        background-color: #dc2626;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .avatar-lg-custom {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-comfortable);
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .user-info h4 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 4px;
+    }
+
+    .badge-design {
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+    }
+</style>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="member-hero">
+            <h1 class="member-hero-title">
+                <i class="bi bi-book me-2"></i>学习中心
+            </h1>
+            <p class="member-hero-subtitle">
+                <fmt:formatDate value="${nowDate}" pattern="yyyy年MM月dd日 EEEE"/>
+            </p>
+        </div>
+
+        <c:if test="${not empty error}">
+            <div class="alert alert-danger alert-dismissible">
+                <i class="bi bi-exclamation-circle me-2"></i>${error}
+            </div>
+        </c:if>
+        <c:if test="${not empty autoEnd}">
+            <div class="alert alert-success alert-dismissible">
+                <i class="bi bi-check-circle me-2"></i>${autoEnd}
+            </div>
+        </c:if>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card-design">
+                    <div class="card-header-design">
+                        <h3 class="card-title-design">
+                            <i class="bi bi-display"></i>学习状态
+                        </h3>
+                    </div>
+                    <div class="card-body-design">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-auto">
+                                <div class="avatar-lg-custom">
+                                    ${not empty currentUser.name ? currentUser.name.charAt(0) : currentUser.username.charAt(0)}
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="user-info">
+                                    <h4>${currentUser.name}</h4>
+                                    <div style="color: var(--text-muted);">
+                                        ${currentUser.role == 'MEMBER' ? '成员' : '管理员'}
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-auto text-end">
+                                <c:choose>
+                                    <c:when test="${not empty activeSession}">
+                                        <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">学习中</span>
+                                        <div class="mt-2" style="color: var(--text-muted); font-size: 0.875rem;">
+                                            <i class="bi bi-clock me-1"></i>
+                                            <fmt:formatDate value="${activeSession.checkInTime}" pattern="HH:mm:ss"/> 开始
+                                        </div>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge-design" style="background: rgba(100, 116, 139, 0.1); color: #64748b;">空闲中</span>
+                                        <div class="mt-2" style="color: var(--text-muted); font-size: 0.875rem;">准备开始学习</div>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
                         </div>
 
-                        <!-- 提示信息 -->
-                        <c:if test="${not empty error}">
-                            <div class="alert alert-danger alert-dismissible">
-                                <i class="bi bi-exclamation-circle me-2"></i>${error}
-                            </div>
-                        </c:if>
-                        <c:if test="${not empty autoEnd}">
-                            <div class="alert alert-success alert-dismissible">
-                                <i class="bi bi-check-circle me-2"></i>${autoEnd}
+                        <c:if test="${not empty activeSession}">
+                            <div class="text-center mb-4">
+                                <div class="stat-number" style="color: #10b981;" id="currentDuration">计算中...</div>
                             </div>
                         </c:if>
 
-                        <div class="row row-cards">
-                            <!-- 学习状态卡片 -->
-                            <div class="col-lg-8">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">学习状态</h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <!-- 用户信息 -->
-                                            <div class="col-auto">
-                                                <span class="avatar avatar-lg" style="background: #11998e;">
-                                                    ${not empty currentUser.name ? currentUser.name.charAt(0) : currentUser.username.charAt(0)}
-                                                </span>
-                                            </div>
-                                            <div class="col">
-                                                <h4 class="mb-1">${currentUser.name}</h4>
-                                                <div class="text-muted">
-                                                    ${currentUser.role == 'MEMBER' ? '成员' : '管理员'}
-                                                </div>
-                                            </div>
-                                            <!-- 学习状态 -->
-                                            <div class="col-auto text-end">
-                                                <c:choose>
-                                                    <c:when test="${not empty activeSession}">
-                                                        <div class="badge bg-green">学习中</div>
-                                                        <div class="text-muted mt-1">
-                                                            <i class="bi bi-clock me-1"></i>
-                                                            <fmt:formatDate value="${activeSession.checkInTime}" pattern="HH:mm:ss"/> 开始
-                                                        </div>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <div class="badge bg-secondary">空闲中</div>
-                                                        <div class="text-muted mt-1">准备开始学习</div>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                        </div>
+                        <c:choose>
+                            <c:when test="${not empty activeSession}">
+                                <button class="btn-danger w-100" id="btnEndStudy" onclick="endStudy()">
+                                    <i class="bi bi-stop-fill"></i>结束学习
+                                </button>
+                            </c:when>
+                            <c:otherwise>
+                                <button class="btn-brand w-100" id="btnStartStudy" onclick="startStudy()">
+                                    <i class="bi bi-play-fill"></i>开始学习
+                                </button>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
 
-                                        <!-- 当前学习时长 -->
-                                        <c:if test="${not empty activeSession}">
-                                            <div class="progress mt-3" style="height: 8px;">
-                                                <div class="progress-bar bg-green" style="width: 100%"></div>
-                                            </div>
-                                            <div class="mt-2 text-center">
-                                                <span class="h3 text-green" id="currentDuration">计算中...</span>
-                                            </div>
-                                        </c:if>
-
-                                        <!-- 操作按钮 -->
-                                        <div class="mt-4">
-                                            <c:choose>
-                                                <c:when test="${not empty activeSession}">
-                                                    <button class="btn btn-danger w-100" id="btnEndStudy" onclick="endStudy()">
-                                                        <i class="bi bi-stop-fill me-2"></i>结束学习
-                                                    </button>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <button class="btn btn-green w-100" id="btnStartStudy" onclick="startStudy()">
-                                                        <i class="bi bi-play-fill me-2"></i>开始学习
-                                                    </button>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 学习统计 -->
-                                <div class="row mt-3">
-                                    <div class="col-sm-6 col-lg-3">
-                                        <div class="card">
-                                            <div class="card-body text-center">
-                                                <div class="h1 text-blue mb-1">${todayDuration}</div>
-                                                <div class="text-muted">今日学习(分钟)</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6 col-lg-3">
-                                        <div class="card">
-                                            <div class="card-body text-center">
-                                                <div class="h1 text-green mb-1">${completedToday}</div>
-                                                <div class="text-muted">今日次数</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6 col-lg-3">
-                                        <div class="card">
-                                            <div class="card-body text-center">
-                                                <div class="h1 text-purple mb-1">${weekDuration}</div>
-                                                <div class="text-muted">本周学习(分钟)</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6 col-lg-3">
-                                        <div class="card">
-                                            <div class="card-body text-center">
-                                                <div class="h1 text-orange mb-1">${consecutiveDays}</div>
-                                                <div class="text-muted">连续学习(天)</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 侧边栏 -->
-                            <div class="col-lg-4">
-                                <!-- 学习规则 -->
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="bi bi-info-circle me-1"></i>学习规则
-                                        </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <h5 class="mb-2">签到规则</h5>
-                                        <ul class="list-unstyled text-muted mb-3">
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>6:00-22:00 可随时开始学习</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>18:00 强制签退</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>6:00-18:00 = 早到</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>18:00-19:00 = 正常</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-orange me-2"></i>19:00后 = 迟到</li>
-                                        </ul>
-                                        <h5 class="mb-2">签退规则</h5>
-                                        <ul class="list-unstyled text-muted">
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>21:30前签退 = 早退</li>
-                                            <li class="mb-1"><i class="bi bi-check2 text-green me-2"></i>21:30后签退 = 正常</li>
-                                            <li class="mb-1"><i class="bi bi-x-circle text-red me-2"></i>22:00 系统自动结束</li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <!-- 快捷链接 -->
-                                <div class="card mt-3">
-                                    <div class="card-body">
-                                        <a href="${ctx}/study/list" class="btn btn-outline-primary w-100 mb-2">
-                                            <i class="bi bi-list-ul me-2"></i>学习记录
-                                        </a>
-                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="showRules()">
-                                            <i class="bi bi-question-circle me-2"></i>详细规则
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                <div class="row g-3 mt-3">
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: var(--brand-blue);">${todayDuration}</div>
+                            <div class="stat-label">今日学习(分钟)</div>
                         </div>
-
-                        <!-- 学习规则弹窗 -->
-                        <dialog id="rulesModal" style="border:1px solid #ccc;border-radius:8px;padding:20px;min-width:350px;max-width:500px;">
-                            <div style="text-align:center;">
-                                <h5 class="mb-3">学习规则</h5>
-                            </div>
-                            <div style="text-align:left;">
-                                <h6>签到规则：</h6>
-                                <ul class="mb-3">
-                                    <li>6:00 - 22:00 可随时开始学习</li>
-                                    <li>18:00 强制签退（如在学习中）</li>
-                                    <li>6:00 - 18:00 签到 = 早到</li>
-                                    <li>18:00 - 19:00 签到 = 正常</li>
-                                    <li>19:00 后签到 = 迟到</li>
-                                </ul>
-                                <h6>签退规则：</h6>
-                                <ul class="mb-0">
-                                    <li>21:30 前签退 = 早退</li>
-                                    <li>21:30 后签退 = 正常</li>
-                                    <li>22:00 系统自动结束学习</li>
-                                </ul>
-                            </div>
-                            <div style="text-align:right;margin-top:15px;">
-                                <button type="button" class="btn btn-secondary" onclick="closeRules()">关闭</button>
-                            </div>
-                        </dialog>
-
-                        <script>
-                            function showRules() {
-                                document.getElementById('rulesModal').showModal();
-                            }
-                            function closeRules() {
-                                document.getElementById('rulesModal').close();
-                            }
-                        </script>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #10b981;">${completedToday}</div>
+                            <div class="stat-label">今日次数</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #8b5cf6;">${weekDuration}</div>
+                            <div class="stat-label">本周学习(分钟)</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #f59e0b;">${consecutiveDays}</div>
+                            <div class="stat-label">连续学习(天)</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-    <script>
-        var ctx = '${ctx}';
-        var checkInTime = null;
+            <div class="col-lg-4">
+                <div class="card-design">
+                    <div class="card-header-design">
+                        <h3 class="card-title-design">
+                            <i class="bi bi-info-circle"></i>学习规则
+                        </h3>
+                    </div>
+                    <div class="card-body-design">
+                        <h5 style="font-family: var(--font-display); font-weight: 600; margin-bottom: 12px; color: var(--text-dark);">签到规则</h5>
+                        <ul style="list-style: none; padding: 0; margin: 0 0 20px 0;">
+                            <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-check2" style="color: #10b981;"></i>6:00-22:00 可随时开始学习
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-check2" style="color: #10b981;"></i>18:00 强制签退
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-check2" style="color: #10b981;"></i>6:00-18:00 = 早到
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-check2" style="color: #10b981;"></i>18:00-19:00 = 正常
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-x-circle" style="color: #ef4444;"></i>19:00后 = 迟到
+                            </li>
+                        </ul>
+                        <h5 style="font-family: var(--font-display); font-weight: 600; margin-bottom: 12px; color: var(--text-dark);">签退规则</h5>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-check2" style="color: #10b981;"></i>21:30前签退 = 早退
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-check2" style="color: #10b981;"></i>21:30后签退 = 正常
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary);">
+                                <i class="bi bi-x-circle" style="color: #ef4444;"></i>22:00 系统自动结束
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-        <c:if test="${not empty activeSession}">
-            checkInTime = new Date('<fmt:formatDate value="${activeSession.checkInTime}" pattern="yyyy-MM-dd HH:mm:ss"/>').getTime();
-            setInterval(updateCurrentDuration, 1000);
-        </c:if>
+                <div class="mt-3">
+                    <a href="${ctx}/study/list" class="btn-outline-brand w-100 mb-2" style="justify-content: center;">
+                        <i class="bi bi-list-ul"></i>学习记录
+                    </a>
+                    <button type="button" class="btn-outline-brand w-100" onclick="showRules()" style="justify-content: center;">
+                        <i class="bi bi-question-circle"></i>详细规则
+                    </button>
+                </div>
+            </div>
+        </div>
 
-        function updateCurrentDuration() {
-            if (!checkInTime) return;
+        <dialog id="rulesModal" style="border: 1px solid var(--border-gray); border-radius: var(--radius-comfortable); padding: 24px; min-width: 350px; max-width: 500px; background: var(--bg-white);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h5 style="font-family: var(--font-display); font-weight: 600; color: var(--text-dark); margin: 0;">学习规则</h5>
+            </div>
+            <div style="text-align: left;">
+                <h6 style="font-family: var(--font-display); font-weight: 600; margin-bottom: 12px;">签到规则：</h6>
+                <ul style="margin-bottom: 16px; padding-left: 20px;">
+                    <li>6:00 - 22:00 可随时开始学习</li>
+                    <li>18:00 强制签退（如在学习中）</li>
+                    <li>6:00 - 18:00 签到 = 早到</li>
+                    <li>18:00 - 19:00 签到 = 正常</li>
+                    <li>19:00 后签到 = 迟到</li>
+                </ul>
+                <h6 style="font-family: var(--font-display); font-weight: 600; margin-bottom: 12px;">签退规则：</h6>
+                <ul style="margin-bottom: 0; padding-left: 20px;">
+                    <li>21:30 前签退 = 早退</li>
+                    <li>21:30 后签退 = 正常</li>
+                    <li>22:00 系统自动结束学习</li>
+                </ul>
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="button" class="btn-brand" onclick="closeRules()" style="padding: 8px 16px;">关闭</button>
+            </div>
+        </dialog>
 
-            var now = new Date().getTime();
-            var duration = Math.floor((now - checkInTime) / 1000 / 60);
-            var hours = Math.floor(duration / 60);
-            var minutes = duration % 60;
-            var seconds = Math.floor((now - checkInTime) / 1000) % 60;
+        <script>
+            function showRules() {
+                document.getElementById('rulesModal').showModal();
+            }
+            function closeRules() {
+                document.getElementById('rulesModal').close();
+            }
+        </script>
+    </div>
+</div>
 
-            var text = '';
-            if (hours > 0) {
-                text = hours + ' 小时 ' + minutes + ' 分 ' + seconds + ' 秒';
-            } else if (minutes > 0) {
-                text = minutes + ' 分 ' + seconds + ' 秒';
+<script>
+    var ctx = '${ctx}';
+    var checkInTime = null;
+
+    <c:if test="${not empty activeSession}">
+        checkInTime = new Date('<fmt:formatDate value="${activeSession.checkInTime}" pattern="yyyy-MM-dd HH:mm:ss"/>').getTime();
+        setInterval(updateCurrentDuration, 1000);
+    </c:if>
+
+    function updateCurrentDuration() {
+        if (!checkInTime) return;
+
+        var now = new Date().getTime();
+        var duration = Math.floor((now - checkInTime) / 1000 / 60);
+        var hours = Math.floor(duration / 60);
+        var minutes = duration % 60;
+        var seconds = Math.floor((now - checkInTime) / 1000) % 60;
+
+        var text = '';
+        if (hours > 0) {
+            text = hours + ' 小时 ' + minutes + ' 分 ' + seconds + ' 秒';
+        } else if (minutes > 0) {
+            text = minutes + ' 分 ' + seconds + ' 秒';
+        } else {
+            text = seconds + ' 秒';
+        }
+
+        var el = document.getElementById('currentDuration');
+        if (el) {
+            el.textContent = text;
+        }
+    }
+
+    function startStudy() {
+        var btn = document.getElementById('btnStartStudy');
+        if (btn.disabled) return;
+
+        if (!confirm('确定要开始学习吗？')) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>开始中...';
+
+        fetch(ctx + '/study', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=start'
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
             } else {
-                text = seconds + ' 秒';
-            }
-
-            var el = document.getElementById('currentDuration');
-            if (el) {
-                el.textContent = text;
-            }
-        }
-
-        function startStudy() {
-            var btn = document.getElementById('btnStartStudy');
-            if (btn.disabled) return;
-
-            if (!confirm('确定要开始学习吗？')) return;
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>开始中...';
-
-            fetch(ctx + '/study', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=start'
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert(data.message || '开始学习失败');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-play-fill me-2"></i>开始学习';
-                }
-            })
-            .catch(function(error) {
-                console.error('错误:', error);
-                alert('网络异常，请重试');
+                alert(data.message || '开始学习失败');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-play-fill me-2"></i>开始学习';
-            });
-        }
+                btn.innerHTML = '<i class="bi bi-play-fill"></i>开始学习';
+            }
+        })
+        .catch(function(error) {
+            console.error('错误:', error);
+            alert('网络异常，请重试');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i>开始学习';
+        });
+    }
 
-        function endStudy() {
-            var btn = document.getElementById('btnEndStudy');
-            if (btn.disabled) return;
+    function endStudy() {
+        var btn = document.getElementById('btnEndStudy');
+        if (btn.disabled) return;
 
-            if (!confirm('确定要结束学习吗？')) return;
+        if (!confirm('确定要结束学习吗？')) return;
 
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>结束中...';
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>结束中...';
 
-            fetch(ctx + '/study', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=end'
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    var msg = '学习结束！';
-                    if (data.duration) {
-                        msg += '\n本次学习时长：' + data.duration + ' 分钟';
-                    }
-                    alert(msg);
-                    location.reload();
-                } else {
-                    alert(data.message || '结束学习失败');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-stop-fill me-2"></i>结束学习';
+        fetch(ctx + '/study', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=end'
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var msg = '学习结束！';
+                if (data.duration) {
+                    msg += '\n本次学习时长：' + data.duration + ' 分钟';
                 }
-            })
-            .catch(function(error) {
-                console.error('错误:', error);
-                alert('网络异常，请重试');
+                alert(msg);
+                location.reload();
+            } else {
+                alert(data.message || '结束学习失败');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-stop-fill me-2"></i>结束学习';
-            });
-        }
-    </script>
+                btn.innerHTML = '<i class="bi bi-stop-fill"></i>结束学习';
+            }
+        })
+        .catch(function(error) {
+            console.error('错误:', error);
+            alert('网络异常，请重试');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-stop-fill"></i>结束学习';
+        });
+    }
+</script>
 
 <jsp:include page="/jsp/common/layout_bottom.jsp"/>
