@@ -234,14 +234,16 @@
 
         <div class="card-design mb-3">
             <div class="card-body-design">
-                <form action="${pageContext.request.contextPath}/activity" method="get" class="row g-3">
+                <form action="${pageContext.request.contextPath}/activity" method="get" class="row g-2 p-3">
                     <input type="hidden" name="action" value="manage">
-                    <div class="col-md-3">
-                        <input type="text" name="keyword" class="input-design" placeholder="搜索活动名称、描述、地点" value="${keyword}">
+                    <div class="col-md-4">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">关键词</label>
+                        <input type="text" name="keyword" class="input-design" placeholder="搜索标题/摘要/内容" value="${keyword}">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">类型</label>
                         <select name="activityType" class="input-design">
-                            <option value="">所有类型</option>
+                            <option value="">全部</option>
                             <option value="LECTURE" ${activityType == 'LECTURE' ? 'selected' : ''}>讲座</option>
                             <option value="SEMINAR" ${activityType == 'SEMINAR' ? 'selected' : ''}>讨论会</option>
                             <option value="TEA_PARTY" ${activityType == 'TEA_PARTY' ? 'selected' : ''}>茶话会</option>
@@ -253,28 +255,20 @@
                             <option value="OTHER" ${activityType == 'OTHER' ? 'selected' : ''}>其他</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">状态</label>
                         <select name="status" class="input-design">
-                            <option value="">所有状态</option>
+                            <option value="">全部</option>
                             <option value="upcoming" ${status == 'upcoming' ? 'selected' : ''}>即将开始</option>
                             <option value="ongoing" ${status == 'ongoing' ? 'selected' : ''}>进行中</option>
                             <option value="completed" ${status == 'completed' ? 'selected' : ''}>已结束</option>
                             <option value="canceled" ${status == 'canceled' ? 'selected' : ''}>已取消</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <select name="approvalStatus" class="input-design">
-                            <option value="">所有审批</option>
-                            <option value="pending" ${approvalStatus == 'pending' ? 'selected' : ''}>待审核</option>
-                            <option value="approved" ${approvalStatus == 'approved' ? 'selected' : ''}>已批准</option>
-                            <option value="rejected" ${approvalStatus == 'rejected' ? 'selected' : ''}>已拒绝</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-brand w-100">搜索</button>
-                    </div>
-                    <div class="col-md-2">
-                        <a href="${pageContext.request.contextPath}/activity?action=manage" class="btn btn-outline-brand w-100">重置</a>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-brand w-100">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
                     </div>
                 </form>
             </div>

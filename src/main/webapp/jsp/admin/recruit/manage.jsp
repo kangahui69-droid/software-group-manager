@@ -234,13 +234,13 @@
         </c:if>
         <div class="card-design mb-3">
             <div class="card-body-design">
-                <form method="get" action="${pageContext.request.contextPath}/admin/recruit/manage" class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label-design">关键词</label>
-                        <input type="text" class="input-design" name="keyword" value="${keyword}" placeholder="搜索姓名/学号/手机/邮箱">
+                <form method="get" action="${pageContext.request.contextPath}/admin/recruit/manage" class="row g-2 p-3">
+                    <div class="col-md-4">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">关键词</label>
+                        <input type="text" class="input-design" name="keyword" value="${keyword}" placeholder="搜索标题/摘要/内容">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label-design">年份</label>
+                    <div class="col-md-3">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">类型</label>
                         <select class="input-design" name="year">
                             <option value="">全部</option>
                             <c:forEach var="y" items="${years}">
@@ -248,8 +248,8 @@
                             </c:forEach>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label-design">状态</label>
+                    <div class="col-md-3">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">状态</label>
                         <select class="input-design" name="status">
                             <option value="">全部</option>
                             <option value="1" ${status == '1' ? 'selected' : ''}>待审核</option>
@@ -257,8 +257,10 @@
                             <option value="0" ${status == '0' ? 'selected' : ''}>已拒绝</option>
                         </select>
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn-brand w-100">搜索</button>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn-brand w-100">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
                     </div>
                 </form>
             </div>

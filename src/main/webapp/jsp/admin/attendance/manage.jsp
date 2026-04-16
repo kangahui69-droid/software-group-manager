@@ -275,7 +275,7 @@
         </div>
 
         <div class="card-design">
-            <div class="card-body-design">
+            <div class="card-body-design p-3">
                 <form method="get" action="${ctx}/attendance/manage">
                     <div class="row g-3">
                         <div class="col-md-3">
@@ -298,7 +298,7 @@
                             </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
-                            <button type="submit" class="btn-brand me-2">查询</button>
+                            <button type="submit" class="btn-brand w-100">查询</button>
                         </div>
                     </div>
                 </form>
