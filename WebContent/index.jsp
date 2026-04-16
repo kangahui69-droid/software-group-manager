@@ -370,8 +370,8 @@
                             <div class="feature-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
                                 <i class="bi bi-newspaper text-white"></i>
                             </div>
-                            <h3 class="feature-title">新闻发布</h3>
-                            <p class="feature-desc">发布和查看通知公告、活动新闻、获奖信息等内容</p>
+                            <h3 class="feature-title">新闻管理</h3>
+                            <p class="feature-desc">查看通知公告、活动新闻、获奖信息等内容</p>
                         </div>
                     </div>
                     <div class="col-md-6 col-lg-3">
