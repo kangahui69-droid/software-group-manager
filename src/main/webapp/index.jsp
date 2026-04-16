@@ -372,7 +372,7 @@
                             <div class="feature-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
                                 <i class="bi bi-newspaper text-white"></i>
                             </div>
-                            <h3 class="feature-title">新闻发布</h3>
+                            <h3 class="feature-title">新闻管理</h3>
                             <p class="feature-desc">发布和查看通知公告、活动新闻、获奖信息等内容</p>
                         </div>
                     </div>
@@ -448,13 +448,13 @@
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a href="${pageContext.request.contextPath}/news?type=tech" class="quick-link-card">
-                            <div class="quick-link-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
-                                <i class="bi bi-lightbulb"></i>
+                        <a href="${pageContext.request.contextPath}/ai?action=chat" class="quick-link-card">
+                            <div class="quick-link-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                                <i class="bi bi-robot"></i>
                             </div>
                             <div class="quick-link-content">
-                                <div class="quick-link-title">技术分享</div>
-                                <div class="quick-link-desc">阅读技术干货文章</div>
+                                <div class="quick-link-title">AI助手</div>
+                                <div class="quick-link-desc">智能问答助手</div>
                             </div>
                             <i class="bi bi-arrow-right quick-link-arrow"></i>
                         </a>

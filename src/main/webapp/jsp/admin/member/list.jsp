@@ -319,18 +319,18 @@
                                         ${user.status == 1 ? '启用' : '禁用'}
                                     </span>
                                 </td>
-                                <td>
-                                    <div class="btn-list flex-nowrap">
+                                <td style="white-space: nowrap;">
+                                    <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
                                         <a href="${pageContext.request.contextPath}/admin/member/?action=view&id=${user.id}" 
                                            class="btn-sm-brand">查看</a>
                                         <c:if test="${user.id != currentUserId}">
                                             <form action="${pageContext.request.contextPath}/admin/member/" method="POST" 
-                                                  onsubmit="return confirm('确定要删除吗？')">
+                                                  onsubmit="return confirm('确定要删除吗？')" style="display: inline-block; margin: 0;">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="${user.id}">
                                                 <button type="submit" class="btn-danger-design btn-sm">删除</button>
                                             </form>
-                                            <form action="${pageContext.request.contextPath}/admin/member/" method="POST" class="ms-1">
+                                            <form action="${pageContext.request.contextPath}/admin/member/" method="POST" style="display: inline-block; margin: 0;">
                                                 <input type="hidden" name="action" value="${user.status == 1 ? 'disable' : 'enable'}">
                                                 <input type="hidden" name="id" value="${user.id}">
                                                 <button type="submit" class="${user.status == 1 ? 'btn-outline-brand' : 'btn-success-design'} btn-sm">
@@ -338,7 +338,7 @@
                                                 </button>
                                             </form>
                                         </c:if>
-                                        <form action="${pageContext.request.contextPath}/admin/member/" method="POST" class="ms-1">
+                                        <form action="${pageContext.request.contextPath}/admin/member/" method="POST" style="display: inline-block; margin: 0;">
                                             <input type="hidden" name="action" value="resetPassword">
                                             <input type="hidden" name="id" value="${user.id}">
                                             <button type="submit" class="btn-outline-brand btn-sm" onclick="return confirm('确定要重置密码为123456吗？')">
