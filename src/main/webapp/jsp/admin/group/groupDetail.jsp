@@ -252,28 +252,28 @@
                     </div>
                     <div class="card-body-design">
                         <ul style="list-style: none; padding: 0; margin: 0;">
-                            <li style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                                <span style="color: var(--text-muted); font-size: 0.88rem;">群聊名称</span>
-                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">${group.groupName}</span>
+                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                                <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">群聊名称</span>
+                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 80px);">${group.groupName}</span>
                             </li>
-                            <li style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                                <span style="color: var(--text-muted); font-size: 0.88rem;">所属活动</span>
-                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">${group.activityName}</span>
+                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                                <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">所属活动</span>
+                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 80px);">${group.activityName}</span>
                             </li>
-                            <li style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                                <span style="color: var(--text-muted); font-size: 0.88rem;">群主</span>
-                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">${group.ownerName}</span>
+                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                                <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">群主</span>
+                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 80px);">${group.ownerName}</span>
                             </li>
-                            <li style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                                <span style="color: var(--text-muted); font-size: 0.88rem;">成员数</span>
+                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                                <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">成员数</span>
                                 <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">${group.memberCount}</span>
                             </li>
-                            <li style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                                <span style="color: var(--text-muted); font-size: 0.88rem;">创建时间</span>
-                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">${group.createdAt}</span>
+                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                                <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">创建时间</span>
+                                <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 80px);">${group.createdAt}</span>
                             </li>
-                            <li style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                                <span style="color: var(--text-muted); font-size: 0.88rem;">状态</span>
+                            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                                <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">状态</span>
                                 <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">
                                     <c:choose>
                                         <c:when test="${group.isMuted == 1}">
@@ -286,13 +286,13 @@
                                 </span>
                             </li>
                             <c:if test="${group.isMuted == 1}">
-                                <li style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                                    <span style="color: var(--text-muted); font-size: 0.88rem;">禁言原因</span>
-                                    <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">${group.muteReason}</span>
+                                <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                                    <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">禁言原因</span>
+                                    <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 80px);">${group.muteReason}</span>
                                 </li>
-                                <li style="display: flex; justify-content: space-between; padding: 12px 0;">
-                                    <span style="color: var(--text-muted); font-size: 0.88rem;">禁言截止</span>
-                                    <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem;">${group.mutedUntil}</span>
+                                <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;">
+                                    <span style="color: var(--text-muted); font-size: 0.88rem; flex-shrink: 0; width: 65px;">禁言截止</span>
+                                    <span style="color: var(--text-dark); font-weight: 500; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 80px);">${group.mutedUntil}</span>
                                 </li>
                             </c:if>
                         </ul>

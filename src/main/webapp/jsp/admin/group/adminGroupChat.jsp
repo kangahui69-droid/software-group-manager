@@ -309,27 +309,37 @@
                         <h5 class="group-info-title" style="font-family: var(--font-display); font-size: 1rem; font-weight: 600; color: var(--text-dark); margin: 0;">群信息</h5>
                     </div>
                     <div class="group-info-body" style="padding: 20px;">
-                        <div class="group-info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
-                            <span class="group-info-label" style="color: var(--text-muted);">群名称</span>
-                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500;">${group.groupName}</span>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">群名称</span>
+                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">${group.groupName}</span>
                         </div>
-                        <div class="group-info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
-                            <span class="group-info-label" style="color: var(--text-muted);">群主</span>
-                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500;">${group.ownerName}</span>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">所属活动</span>
+                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">${group.activityName}</span>
                         </div>
-                        <c:if test="${not empty group.activityName}">
-                            <div class="group-info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
-                                <span class="group-info-label" style="color: var(--text-muted);">所属活动</span>
-                                <span class="group-info-value" style="color: var(--text-dark); font-weight: 500;">${group.activityName}</span>
-                            </div>
-                        </c:if>
-                        <div class="group-info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
-                            <span class="group-info-label" style="color: var(--text-muted);">成员数</span>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">群主</span>
+                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">${group.ownerName}</span>
+                        </div>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">成员数</span>
                             <span class="group-info-value" style="color: var(--text-dark); font-weight: 500;">${members.size()}</span>
                         </div>
-                        <div class="group-info-item" style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 0.88rem;">
-                            <span class="group-info-label" style="color: var(--text-muted);">创建时间</span>
-                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500;"><fmt:formatDate value="${group.createdAt}" pattern="yyyy-MM-dd" /></span>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">创建时间</span>
+                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><fmt:formatDate value="${group.createdAt}" pattern="yyyy-MM-dd HH:mm:ss" /></span>
+                        </div>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">状态</span>
+                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500;"><span class="badge-design" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">已禁言</span></span>
+                        </div>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">禁言原因</span>
+                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">${group.muteReason}</span>
+                        </div>
+                        <div class="group-info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; font-size: 0.88rem;">
+                            <span class="group-info-label" style="color: var(--text-muted); flex-shrink: 0;">禁言截止</span>
+                            <span class="group-info-value" style="color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><fmt:formatDate value="${group.muteEndTime}" pattern="yyyy-MM-dd HH:mm:ss" /></span>
                         </div>
                     </div>
                 </div>
