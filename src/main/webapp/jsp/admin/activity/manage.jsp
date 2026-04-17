@@ -155,6 +155,26 @@
         color: white;
     }
 
+    .btn-outline-danger-design {
+        background: transparent;
+        color: #ef4444;
+        border: 1px solid #ef4444;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-outline-danger-design:hover {
+        background: #ef4444;
+        color: white;
+    }
+
     .table-design {
         width: 100%;
         border-collapse: collapse;
@@ -172,7 +192,7 @@
     }
 
     .table-design td {
-        padding: 16px 20px;
+        padding: 12px 16px;
         vertical-align: middle;
         border-bottom: 1px solid var(--border-light);
         font-family: var(--font-ui);
@@ -182,9 +202,12 @@
     
     .table-design td:first-child {
         white-space: normal;
-        max-width: 300px;
+        max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
 
     .table-design tbody tr:hover {
@@ -387,17 +410,17 @@
                                     <fmt:formatDate value="${a.registrationStartTime}" pattern="MM-dd HH:mm" /> ~ 
                                     <fmt:formatDate value="${a.registrationEndTime}" pattern="MM-dd HH:mm" />
                                 </td>
-                                <td>
-                                    <div class="btn-list flex-nowrap">
+                                <td style="white-space: nowrap; min-width: 220px;">
+                                    <div style="display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto;">
                                         <c:choose>
                                             <c:when test="${a.approvalStatus == 'pending'}">
-                                                <a href="${pageContext.request.contextPath}/activity?action=approveActivity&id=${a.id}" class="btn btn-sm btn-success-design" onclick="return confirm('确定要批准此活动吗？')">批准</a>
-                                                <a href="${pageContext.request.contextPath}/activity?action=rejectActivity&id=${a.id}" class="btn btn-sm btn-danger-design" onclick="return confirm('确定要拒绝此活动吗？')">拒绝</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=approveActivity&id=${a.id}" class="btn btn-sm btn-success-design" onclick="return confirm('确定要批准此活动吗？')" style="flex-shrink: 0;">批准</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=rejectActivity&id=${a.id}" class="btn btn-sm btn-danger-design" onclick="return confirm('确定要拒绝此活动吗？')" style="flex-shrink: 0;">拒绝</a>
                                             </c:when>
                                             <c:otherwise>
-                                                <a href="${pageContext.request.contextPath}/activity?action=participants&id=${a.id}" class="btn btn-sm btn-brand">报名管理</a>
-                                                <a href="${pageContext.request.contextPath}/activity?action=edit&id=${a.id}" class="btn btn-sm btn-outline-brand">编辑</a>
-                                                <a href="${pageContext.request.contextPath}/activity?action=delete&id=${a.id}" class="btn btn-sm btn-outline-danger-design" onclick="return confirm('确定要删除此活动吗？')">删除</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=participants&id=${a.id}" class="btn btn-sm btn-brand" style="flex-shrink: 0;">报名管理</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=edit&id=${a.id}" class="btn btn-sm btn-outline-brand" style="flex-shrink: 0;">编辑</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=delete&id=${a.id}" class="btn btn-sm btn-outline-danger-design" onclick="return confirm('确定要删除此活动吗？')" style="flex-shrink: 0;">删除</a>
                                             </c:otherwise>
                                         </c:choose>
                                     </div>
