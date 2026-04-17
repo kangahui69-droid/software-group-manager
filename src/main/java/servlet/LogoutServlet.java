@@ -26,15 +26,21 @@ public class LogoutServlet extends HttpServlet {
         if (session != null) {
             User currentUser = (User) session.getAttribute("user");
             if (currentUser != null) {
+                System.out.println("[LogoutServlet] 用户登出: " + currentUser.getUsername() + ", ID: " + currentUser.getId());
                 try {
                     // 结束用户进行中的学习时段
-                    studyDAO.endStudyForUser(currentUser.getId());
+                    int updated = studyDAO.endStudyForUser(currentUser.getId());
+                    System.out.println("[LogoutServlet] 已结束用户 " + currentUser.getId() + " 的学习会话, 更新行数: " + updated);
                 } catch (Exception e) {
-                    // 忽略错误，不影响登出流程
                     System.err.println("登出时结束学习时段失败: " + e.getMessage());
+                    e.printStackTrace();
                 }
+            } else {
+                System.out.println("[LogoutServlet] session中的user为null");
             }
             session.invalidate();
+        } else {
+            System.out.println("[LogoutServlet] session为null");
         }
         response.sendRedirect(request.getContextPath() + "/login.jsp");
     }

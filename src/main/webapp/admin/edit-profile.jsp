@@ -147,8 +147,7 @@
                                             <label for="avatarUpload"
                                                 class="btn btn-brand">上传新头像</label>
                                             <input type="file" id="avatarUpload" name="avatar"
-                                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                                                style="display: none;">
+                                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
                                             <p class="text-muted mt-2" style="font-size: 13px;">支持JPG、PNG、GIF格式，大小不超过500KB</p>
                                         </div>
                                     </div>
