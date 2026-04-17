@@ -430,6 +430,8 @@ public class GroupServlet extends HttpServlet {
             return;
         }
 
+        System.out.println("[群聊文件上传] 文件名: " + fileName + ", 大小: " + filePart.getSize() + ", 类型: " + filePart.getContentType());
+
         String uploadPath = getServletContext().getRealPath("/" + UPLOAD_BASE_DIR);
         File uploadDir = new File(uploadPath);
         if (!uploadDir.exists()) {
@@ -439,8 +441,16 @@ public class GroupServlet extends HttpServlet {
         String uniqueFileName = System.currentTimeMillis() + "_" + fileName;
         String filePath = uploadPath + File.separator + uniqueFileName;
 
+        System.out.println("[群聊文件上传] 上传路径: " + filePath);
+
         try (InputStream input = filePart.getInputStream()) {
             Files.copy(input, new File(filePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("[群聊文件上传] 文件保存成功");
+        } catch (Exception e) {
+            System.out.println("[群聊文件上传] 文件保存失败: " + e.getMessage());
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "文件上传失败");
+            return;
         }
 
         FileStorage fileStorage = new FileStorage();
@@ -448,11 +458,18 @@ public class GroupServlet extends HttpServlet {
         fileStorage.setOriginalName(fileName);
         fileStorage.setStoredName(uniqueFileName);
         fileStorage.setFilePath("/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
-        fileStorage.setFileType(filePart.getContentType());
+        fileStorage.setFileType(filePart.getContentType() != null ? filePart.getContentType() : "application/octet-stream");
         fileStorage.setFileSize(filePart.getSize());
         fileStorage.setCategory("group_file");
 
         Integer fileId = fileStorageDAO.insert(fileStorage);
+        System.out.println("[群聊文件上传] 文件记录ID: " + fileId);
+
+        if (fileId == null) {
+            System.out.println("[群聊文件上传] 文件记录插入失败");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "文件记录保存失败");
+            return;
+        }
 
         GroupMessage message = new GroupMessage();
         message.setGroupId(groupId);
@@ -462,7 +479,7 @@ public class GroupServlet extends HttpServlet {
         message.setFileId(fileId);
         message.setFileName(fileName);
         message.setFileSize(filePart.getSize());
-        message.setFileType(filePart.getContentType());
+        message.setFileType(filePart.getContentType() != null ? filePart.getContentType() : "application/octet-stream");
         message.setFilePath("/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
 
         messageDAO.insert(message);
@@ -472,11 +489,22 @@ public class GroupServlet extends HttpServlet {
 
     private String extractFileName(Part part) {
         String contentDisp = part.getHeader("content-disposition");
+        if (contentDisp == null) {
+            return null;
+        }
         String[] items = contentDisp.split("; ");
         for (String s : items) {
             if (s.startsWith("filename=")) {
                 try {
-                    return URLDecoder.decode(s.substring(s.indexOf("=") + 2, s.length() - 1), "UTF-8");
+                    String fileName = s.substring(s.indexOf("=") + 2, s.length() - 1);
+                    if (fileName.isEmpty()) {
+                        return null;
+                    }
+                    int lastSlash = Math.max(fileName.lastIndexOf('/'), fileName.lastIndexOf('\\'));
+                    if (lastSlash > 0) {
+                        fileName = fileName.substring(lastSlash + 1);
+                    }
+                    return URLDecoder.decode(fileName, "UTF-8");
                 } catch (Exception e) {
                     e.printStackTrace();
                     return null;
@@ -521,6 +549,10 @@ public class GroupServlet extends HttpServlet {
         String fileName = request.getParameter("fileName");
 
         if (fileIdStr == null) {
+            fileIdStr = request.getParameter("id");
+        }
+
+        if (fileIdStr == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "文件ID不能为空");
             return;
         }
@@ -533,8 +565,25 @@ public class GroupServlet extends HttpServlet {
             return;
         }
 
+        System.out.println("[群聊文件下载] fileId: " + fileId + ", 文件名: " + fileStorage.getOriginalName());
+        System.out.println("[群聊文件下载] storedName: " + fileStorage.getStoredName());
+        System.out.println("[群聊文件下载] filePath: " + fileStorage.getFilePath());
+
         String filePath = getServletContext().getRealPath(fileStorage.getFilePath());
         File file = new File(filePath);
+
+        System.out.println("[群聊文件下载] 实际路径: " + filePath);
+        System.out.println("[群聊文件下载] 文件存在: " + file.exists());
+
+        if (!file.exists()) {
+            String altPath = getServletContext().getRealPath("/localstorage/group_files/" + fileStorage.getStoredName());
+            File altFile = new File(altPath);
+            System.out.println("[群聊文件下载] 尝试备用路径: " + altPath + ", 存在: " + altFile.exists());
+            if (altFile.exists()) {
+                file = altFile;
+                filePath = altPath;
+            }
+        }
 
         if (!file.exists()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "文件不存在");
@@ -543,12 +592,12 @@ public class GroupServlet extends HttpServlet {
 
         response.setContentType("application/octet-stream");
         response.setContentLengthLong(fileStorage.getFileSize());
-        
+
         String downloadFileName = fileStorage.getOriginalName();
         if (fileName != null && !fileName.isEmpty()) {
             downloadFileName = fileName;
         }
-        
+
         response.setHeader("Content-Disposition", "attachment; filename=\"" + java.net.URLEncoder.encode(downloadFileName, "UTF-8") + "\"");
 
         try (InputStream input = new FileInputStream(file);
