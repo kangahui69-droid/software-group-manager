@@ -177,6 +177,14 @@
         border-bottom: 1px solid var(--border-light);
         font-family: var(--font-ui);
         font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    
+    .table-design td:first-child {
+        white-space: normal;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .table-design tbody tr:hover {
@@ -189,6 +197,7 @@
         font-weight: 500;
         padding: 4px 12px;
         border-radius: var(--radius-pill);
+        white-space: nowrap;
     }
 
     .input-design {

@@ -5,6 +5,8 @@ import dao.AIMessageDAO;
 import dao.AIKnowledgeBaseDAO;
 import dao.AIFaqStatisticsDAO;
 import dao.ActivityDAO;
+import dao.ActivityGroupDAO;
+import dao.GroupMemberDAO;
 import dao.ActivityParticipantDAO;
 import dao.AwardDAO;
 import dao.NewsDAO;
@@ -18,6 +20,7 @@ import model.AIMessage;
 import model.AIKnowledgeBase;
 import model.AIFaqStatistics;
 import model.Activity;
+import model.ActivityGroup;
 import model.Award;
 import model.News;
 import model.Project;
@@ -48,6 +51,8 @@ public class AIService {
     private AIKnowledgeBaseDAO knowledgeBaseDAO = new AIKnowledgeBaseDAO();
     private AIFaqStatisticsDAO faqStatsDAO = new AIFaqStatisticsDAO();
     private ActivityDAO activityDAO = new ActivityDAO();
+    private ActivityGroupDAO groupDAO = new ActivityGroupDAO();
+    private GroupMemberDAO groupMemberDAO = new GroupMemberDAO();
     private ActivityParticipantDAO activityParticipantDAO = new ActivityParticipantDAO();
     private NewsDAO newsDAO = new NewsDAO();
     private AwardDAO awardDAO = new AwardDAO();
@@ -1223,6 +1228,8 @@ public class AIService {
                     return executeRejectNews(params);
                 case "submit_news":
                     return executeSubmitNews(params, user);
+                case "create_activity":
+                    return executeCreateActivity(params, user);
                 case "list_all_awards":
                     return executeListAllAwards(params);
                 case "list_pending_problems":
@@ -1792,28 +1799,30 @@ public class AIService {
     private Map<String, Object> executeCreateActivity(Map<String, String> params, User user) {
         Map<String, Object> result = new HashMap<>();
         String title = params.get("name");
-        String description = params.get("desc");
-        String activityType = params.get("type");
+        String description = params.get("description");
+        String activityType = params.get("activity_type");
         String location = params.get("location");
-        String activityStartTime = params.get("start");
-        String activityEndTime = params.get("end");
+        String activityStartTime = params.get("start_time");
+        String activityEndTime = params.get("end_time");
         String registrationStartTime = params.get("reg_start");
         String registrationEndTime = params.get("reg_end");
-        String maxParticipantsStr = params.get("max");
+        String maxParticipantsStr = params.get("max_participants");
+        String createGroupChatStr = params.get("createGroupChat");
 
         if (title == null || title.trim().isEmpty()) {
             result.put("success", false);
-            result.put("message", "活动名称不能为空");
+            result.put("need_more_info", true);
+            result.put("message", "请提供以下信息来完成活动发布：\n活动名称、地点、时间");
             return result;
         }
 
         Activity activity = new Activity();
         activity.setTitle(title.trim());
         activity.setDescription(description != null ? description.trim() : "");
-        activity.setActivityType(activityType != null ? activityType : "其他");
+        activity.setActivityType(activityType != null ? activityType : "OTHER");
         activity.setLocation(location != null ? location.trim() : "");
         activity.setCreatorId(user.getId());
-        activity.setApprovalStatus("pending");
+        activity.setApprovalStatus("approved");
         activity.setStatus("upcoming");
         activity.setMaxParticipants(0);
 
@@ -1834,16 +1843,31 @@ public class AIService {
             if (maxParticipantsStr != null && !maxParticipantsStr.isEmpty()) {
                 activity.setMaxParticipants(Integer.parseInt(maxParticipantsStr));
             }
-} catch (Exception e) {
+        } catch (Exception e) {
         }
 
         boolean success = activityDAO.insert(activity);
-        result.put("success", success);
         if (success) {
-            result.put("message", "活动创建成功，等待管理员审核");
+            boolean createGroup = "true".equalsIgnoreCase(createGroupChatStr);
+            if (createGroup) {
+                ActivityGroup group = new ActivityGroup();
+                group.setGroupName(title.trim() + " 交流群");
+                group.setGroupOwnerId(user.getId());
+                group.setActivityId(activity.getId());
+                group.setCreatedAt(new Date());
+                if (groupDAO.insert(group)) {
+                    ActivityGroup createdGroup = groupDAO.findByActivityId(activity.getId());
+                    if (createdGroup != null) {
+                        groupMemberDAO.insertOwner(createdGroup.getId(), user.getId());
+                        userGroupDAO.insertUserToGroup(user.getId(), createdGroup.getId());
+                    }
+                }
+            }
+            result.put("message", "活动创建成功！" + (createGroup ? " 已同时创建活动群聊，您已设置为群主。" : ""));
         } else {
             result.put("message", "活动创建失败，请重试");
         }
+        result.put("success", success);
         return result;
     }
 

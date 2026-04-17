@@ -24,7 +24,7 @@ import java.util.List;
  * 统一文件接口Servlet
  */
 @WebServlet(name = "FileStorageServlet", urlPatterns = "/file")
-@MultipartConfig(maxFileSize = 1024 * 1024 * 10) // 10MB
+@MultipartConfig(maxFileSize = 1024 * 1024 * 100, maxRequestSize = 1024 * 1024 * 100)
 public class FileStorageServlet extends HttpServlet {
     private FileStorageDAO fileStorageDAO = new FileStorageDAO();
     private final String UPLOAD_BASE_DIR = "localstorage/files";

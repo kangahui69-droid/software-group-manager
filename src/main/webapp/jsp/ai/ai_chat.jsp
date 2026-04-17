@@ -601,6 +601,10 @@
                                 <span class="quick-btn-text">"帮我发布一条新闻"</span>
                                 <span class="quick-btn-category">发布新闻</span>
                             </div>
+                            <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]create_activity')">
+                                <span class="quick-btn-text">"帮我发布一个活动"</span>
+                                <span class="quick-btn-category">发布活动</span>
+                            </div>
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_pending_news')">
                                 <span class="quick-btn-text">"查看待审核新闻"</span>
                                 <span class="quick-btn-category">待审核新闻</span>
@@ -664,6 +668,10 @@
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_activities')">
                                 <span class="quick-btn-text">"查看近期活动"</span>
                                 <span class="quick-btn-category">查看活动</span>
+                            </div>
+                            <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]recent_news')">
+                                <span class="quick-btn-text">"查看小组动态"</span>
+                                <span class="quick-btn-category">小组动态</span>
                             </div>
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_news')">
                                 <span class="quick-btn-text">"查看新闻动态"</span>
@@ -808,8 +816,9 @@
                 convertedAction = 'list_activities';
             } else if (msgLower.includes('报名活动') || msgLower.includes('活动报名') || msgLower.includes('我要报名')) {
                 convertedAction = 'apply_activity';
-            } else if (msgLower.includes('申请活动') || msgLower.includes('创建活动') || msgLower.includes('发起活动') ||
-                msgLower.includes('举办活动') || msgLower.includes('活动申请')) {
+            } else if (msgLower.includes('发布活动') || msgLower.includes('活动发布') || msgLower.includes('发起活动')) {
+                convertedAction = 'create_activity';
+            } else if (msgLower.includes('申请活动') || msgLower.includes('创建活动') || msgLower.includes('举办活动') || msgLower.includes('活动申请')) {
                 convertedAction = 'create_activity_request';
             } else if (msgLower.includes('我的活动') || msgLower.includes('已报名活动') || msgLower.includes('我报名的活动')) {
                 convertedAction = 'view_my_activities';
@@ -872,6 +881,7 @@
                 'list_all_users': '正在获取成员列表...',
                 'list_all_news': '正在获取新闻列表...',
                 'apply_activity': '正在处理您的报名请求...',
+                'create_activity': '正在发布活动...',
                 'create_activity_request': '正在创建活动...',
                 'submit_news': '正在发布新闻...',
                 'submit_award': '正在申请奖项...',
@@ -1250,8 +1260,8 @@
         
         pendingActionType.value = actionType;
         
-        if (actionType === 'create_activity_request') {
-            title.textContent = '申请活动';
+        if (actionType === 'create_activity' || actionType === 'create_activity_request') {
+            title.textContent = actionType === 'create_activity' ? '发布活动' : '申请活动';
             container.innerHTML = buildActivityForm();
         } else if (actionType === 'create_project_request') {
             title.textContent = '申请项目';
@@ -1315,6 +1325,13 @@
                '<div class="info-form-group">' +
                '<label>活动描述</label>' +
                '<textarea id="act_description" rows="3" placeholder="请输入活动描述"></textarea>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>' +
+               '<input type="checkbox" id="act_create_group_chat" checked style="margin-right: 8px;">' +
+               '同时创建活动群聊' +
+               '</label>' +
+               '<div class="text-muted small" style="margin-left: 20px;">创建后可在群聊中管理并添加成员</div>' +
                '</div>';
     }
     
@@ -1443,7 +1460,7 @@
         var sessionId = document.getElementById('sessionId').value;
         var params = '';
         
-        if (actionType === 'create_activity_request') {
+        if (actionType === 'create_activity' || actionType === 'create_activity_request') {
             var name = document.getElementById('act_name').value;
             var location = document.getElementById('act_location').value;
             var type = document.getElementById('act_type').value;
@@ -1453,6 +1470,7 @@
             var regEnd = document.getElementById('act_reg_end').value;
             var max = document.getElementById('act_max_participants').value;
             var desc = document.getElementById('act_description').value;
+            var createGroupChat = document.getElementById('act_create_group_chat').checked ? 'true' : 'false';
             
             if (!name || !location || !startTime || !endTime) {
                 alert('请填写必填项（活动名称、活动地点、开始时间、结束时间）');
@@ -1468,6 +1486,7 @@
             if (regEnd) params += '|reg_end=' + encodeURIComponent(regEnd);
             if (max) params += '|max_participants=' + encodeURIComponent(max);
             if (desc) params += '|description=' + encodeURIComponent(desc);
+            params += '|createGroupChat=' + createGroupChat;
         } else if (actionType === 'create_project_request') {
             var name = document.getElementById('proj_name').value;
             var desc = document.getElementById('proj_description').value;
@@ -1608,9 +1627,9 @@
             html = '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
             html += '<thead><tr>';
             var colMapping = {
-                '编号': 'id', '标题': 'title', '发布时间': 'createdAt',
-                'ID': 'ID', '活动名称': '活动名称', '类型': '类型', '时间': '时间', '地点': '地点', '开始时间': '开始时间', '结束时间': '结束时间', '报名时间': '报名时间',
-                '状态': '状态', '姓名': 'name', '角色': 'role', '学号': 'studentId'
+                '编号': '编号', '标题': '标题', '类型': '类型', '发布时间': '发布时间',
+                'ID': 'id', '活动名称': 'name', '时间': 'startTime', '地点': 'location', '开始时间': 'startTime', '结束时间': 'endTime', '报名时间': 'regTime',
+                '状态': 'status', '姓名': 'name', '角色': 'role', '学号': 'studentId'
             };
             data.columns.forEach(function(col) {
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 500;">' + col + '</th>';

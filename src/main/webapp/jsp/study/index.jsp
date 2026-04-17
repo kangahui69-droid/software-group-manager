@@ -211,14 +211,14 @@
                         <div class="row align-items-center mb-4">
                             <div class="col-auto">
                                 <div class="avatar-lg-custom">
-                                    ${not empty currentUser.name ? currentUser.name.charAt(0) : currentUser.username.charAt(0)}
+                                    ${not empty sessionScope.user.name ? sessionScope.user.name.charAt(0) : sessionScope.user.username.charAt(0)}
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="user-info">
-                                    <h4>${currentUser.name}</h4>
+                                    <h4>${not empty sessionScope.user.name ? sessionScope.user.name : sessionScope.user.username}</h4>
                                     <div style="color: var(--text-muted);">
-                                        ${currentUser.role == 'MEMBER' ? '成员' : '管理员'}
+                                        ${sessionScope.user.role == 'MEMBER' ? '成员' : (sessionScope.user.role == 'ADMIN' ? '管理员' : '教师')}
                                     </div>
                                 </div>
                             </div>
@@ -418,6 +418,9 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>开始中...';
 
+        console.log('Starting study, ctx:', ctx);
+        console.log('Fetching:', ctx + '/study');
+
         fetch(ctx + '/study', {
             method: 'POST',
             headers: {
@@ -425,11 +428,16 @@
             },
             body: 'action=start'
         })
-        .then(function(response) { return response.json(); })
+        .then(function(response) {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            return response.json();
+        })
         .then(function(data) {
+            console.log('Response data:', data);
             if (data.success) {
                 alert(data.message);
-                location.reload();
+                location.reload(true);
             } else {
                 alert(data.message || '开始学习失败');
                 btn.disabled = false;
@@ -444,7 +452,7 @@
         });
     }
 
-    function endStudy() {
+        function endStudy() {
         var btn = document.getElementById('btnEndStudy');
         if (btn.disabled) return;
 
@@ -460,15 +468,20 @@
             },
             body: 'action=end'
         })
-        .then(function(response) { return response.json(); })
+        .then(function(response) {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            return response.json();
+        })
         .then(function(data) {
+            console.log('Response data:', data);
             if (data.success) {
                 var msg = '学习结束！';
                 if (data.duration) {
                     msg += '\n本次学习时长：' + data.duration + ' 分钟';
                 }
                 alert(msg);
-                location.reload();
+                location.reload(true);
             } else {
                 alert(data.message || '结束学习失败');
                 btn.disabled = false;
