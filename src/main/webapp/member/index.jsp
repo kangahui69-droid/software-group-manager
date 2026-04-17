@@ -20,29 +20,9 @@
     <jsp:param name="title" value="个人中心" />
 </jsp:include>
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
+
 <style>
-:root {
-    --brand-blue: #1456f0;
-    --font-display: 'Outfit', sans-serif;
-    --font-ui: 'DM Sans', sans-serif;
-    --radius-generous: 16px;
-    --radius-standard: 12px;
-    --radius-comfortable: 10px;
-    --radius-pill: 9999px;
-    --shadow-brand-purple: 0 4px 20px rgba(20, 85, 240, 0.15);
-    --shadow-brand-offset: 0 8px 32px rgba(20, 85, 240, 0.12);
-    --shadow-standard: 0 2px 8px rgba(0, 0, 0, 0.06);
-    --bg-white: #ffffff;
-    --text-dark: #1a1a2e;
-    --text-muted: #6b7280;
-    --border-gray: #e5e7eb;
-    --border-light: #f3f4f6;
-    --primary-light: #eff6ff;
-}
-body {
-    font-family: var(--font-ui);
-    background: linear-gradient(135deg, #f8fafc 0%, #e8f0fe 100%);
-}
 .page-header {
     background: transparent;
     padding: 24px 0;
@@ -50,15 +30,21 @@ body {
 .page-title {
     font-family: var(--font-display);
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--text-dark);
     margin: 0;
 }
 .card {
     background: var(--bg-white);
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-standard);
+    border-radius: var(--radius-generous);
     box-shadow: var(--shadow-standard);
+    overflow: hidden;
+    transition: all 0.25s ease;
+}
+.card:hover {
+    box-shadow: var(--shadow-card-elevated);
+    transform: translateY(-2px);
 }
 .card-body {
     padding: 24px;
@@ -72,12 +58,24 @@ body {
     border-radius: 50%;
 }
 .bg-blue-lt {
-    background: var(--primary-light);
+    background: #eff6ff;
     color: var(--brand-blue);
 }
 .bg-green-lt {
     background: #ecfdf5;
-    color: #065f46;
+    color: #059669;
+}
+.bg-purple-lt {
+    background: #f3e8ff;
+    color: #7c3aed;
+}
+.bg-yellow-lt {
+    background: #fef9c3;
+    color: #ca8a04;
+}
+.bg-orange-lt {
+    background: #fff7ed;
+    color: #ea580c;
 }
 .badge {
     font-weight: 500;
@@ -85,49 +83,121 @@ body {
     padding: 5px 12px;
     border-radius: var(--radius-pill);
 }
+.badge-primary {
+    background: var(--brand-blue);
+    color: white;
+}
 .card-btn {
     display: block;
     padding: 14px 24px;
     text-align: center;
-    background: var(--primary-light);
+    background: #f8fafc;
     color: var(--brand-blue);
     font-weight: 600;
     font-size: 14px;
     text-decoration: none;
     border-top: 1px solid var(--border-light);
     transition: all 0.2s ease;
-    border-radius: 0 0 var(--radius-standard) var(--radius-standard);
 }
 .card-btn:hover {
     background: var(--brand-blue);
     color: #ffffff;
 }
 .card-sm {
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
 }
 .card-sm:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-brand-offset);
+    box-shadow: var(--shadow-card-elevated);
+}
+.card-sm .icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    transition: all 0.25s ease;
+}
+.card-sm:hover .icon-wrap {
+    transform: scale(1.05);
 }
 .list-group-item {
     border: none;
-    padding: 14px 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border-light);
     transition: all 0.15s ease;
+    background: transparent;
 }
 .list-group-item:last-child {
     border-bottom: none;
 }
 .list-group-item-action:hover {
-    background: var(--primary-light);
+    background: #f8fafc;
+    color: var(--brand-blue);
+    padding-left: 24px;
+}
+.text-blue { color: var(--brand-blue) !important; }
+.text-green { color: #059669 !important; }
+.text-purple { color: #7c3aed !important; }
+.text-orange { color: #ea580c !important; }
+.text-yellow { color: #ca8a04 !important; }
+.quick-link-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+}
+.quick-link-card:hover {
+    border-color: var(--brand-blue);
+    box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+}
+.profile-section {
+    background: linear-gradient(135deg, var(--brand-blue) 0%, var(--primary-600) 100%);
+    padding: 28px 24px;
+    border-radius: var(--radius-generous) var(--radius-generous) 0 0;
+    color: white;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.profile-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+}
+.profile-section .avatar-xl {
+    border: 4px solid white;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.profile-section h3 {
+    color: white;
+    margin-top: 12px;
+}
+.profile-section .badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.section-header i {
+    font-size: 20px;
     color: var(--brand-blue);
 }
-.list-group-item-action .text-blue { color: var(--brand-blue); }
-.list-group-item-action .text-green { color: #10b981; }
-.list-group-item-action .text-primary { color: var(--brand-blue); }
-.list-group-item-action .text-orange { color: #f97316; }
-.list-group-item-action .text-yellow { color: #eab308; }
-.list-group-item-action .text-purple { color: #8b5cf6; }
+.section-header h3 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+}
 </style>
 
 <div class="page-header d-print-none">
@@ -145,117 +215,153 @@ body {
 <div class="page-body">
     <div class="container-xl">
         <div class="row row-cards">
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-5 col-lg-4">
                 <div class="card">
-                    <div class="card-body p-4 text-center">
+                    <div class="profile-section">
                         <% if (memberProfile != null && memberProfile.getAvatarFileId() != null) { %>
                             <img src="${pageContext.request.contextPath}/file?action=view&id=<%=memberProfile.getAvatarFileId()%>" 
                                  alt="用户头像" class="avatar avatar-xl mb-3 avatar-rounded">
                         <% } else { %>
-                            <span class="avatar avatar-xl mb-3 avatar-rounded bg-blue-lt">
+                            <span class="avatar avatar-xl mb-3 avatar-rounded" style="background: rgba(255,255,255,0.2); color: white;">
                                 <%= (user.getName() != null && !user.getName().isEmpty()) ? user.getName().substring(0,1) : user.getUsername().substring(0,1).toUpperCase() %>
                             </span>
                         <% } %>
-                        <h3 class="m-0 mb-1" style="font-family: var(--font-display); font-weight: 600;">
+                        <h3 style="font-family: var(--font-display); font-weight: 600;">
                             <%= (user.getName() != null && !user.getName().isEmpty()) ? user.getName() : user.getUsername() %>
                         </h3>
-                        <div class="text-muted text-capitalize" style="font-size: 14px;">
+                        <div class="text-white-50 text-capitalize" style="font-size: 14px;">
                             <%= user.getRole().toLowerCase() %>
                         </div>
                         <div class="mt-3">
-                            <span class="badge bg-green-lt">正式成员</span>
+                            <span class="badge badge-primary">正式成员</span>
                         </div>
                     </div>
-                    <a href="profile.jsp" class="card-btn">查看个人资料</a>
-                </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-light);">
-                        <h3 class="card-title mb-0" style="font-size: 16px;">快速链接</h3>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        <a href="profile.jsp" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="bi bi-person-circle me-3"></i> 个人中心
-                        </a>
-                        <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="bi bi-calendar-check me-3"></i> 我的活动
-                        </a>
-                        <a href="${pageContext.request.contextPath}/group/my-groups" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="bi bi-chat-dots me-3"></i> 我的群聊
-                        </a>
-                        <a href="${pageContext.request.contextPath}/project?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="bi bi-briefcase me-3"></i> 我的项目
-                        </a>
-                        <a href="${pageContext.request.contextPath}/award?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="bi bi-award me-3"></i> 我的奖项
-                        </a>
-                        <a href="resume.jsp" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
-                            <i class="bi bi-file-earmark-person me-3"></i> 我的简历
-                        </a>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <a href="profile.jsp" class="list-group-item list-group-item-action d-flex align-items-center">
+                                <i class="bi bi-person me-3 text-blue"></i> 个人资料
+                            </a>
+                            <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="list-group-item list-group-item-action d-flex align-items-center">
+                                <i class="bi bi-calendar-check me-3 text-green"></i> 我的活动
+                            </a>
+                            <a href="${pageContext.request.contextPath}/group/my-groups" class="list-group-item list-group-item-action d-flex align-items-center">
+                                <i class="bi bi-chat-dots me-3 text-purple"></i> 我的群聊
+                            </a>
+                            <a href="${pageContext.request.contextPath}/project?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
+                                <i class="bi bi-briefcase me-3 text-blue"></i> 我的项目
+                            </a>
+                            <a href="${pageContext.request.contextPath}/award?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
+                                <i class="bi bi-award me-3 text-yellow"></i> 我的奖项
+                            </a>
+                            <a href="resume.jsp" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
+                                <i class="bi bi-file-earmark-person me-3 text-orange"></i> 我的简历
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-lg-8">
+            <div class="col-md-7 col-lg-8">
+                <div class="section-header">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <h3>我的功能</h3>
+                </div>
                 <div class="row row-cards">
-                    <div class="col-12">
-                        <div class="card card-sm">
+                    <div class="col-sm-6 col-md-6">
+                        <a href="${pageContext.request.contextPath}/project?action=list" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <span class="bg-blue text-white avatar"><i class="bi bi-briefcase"></i></span>
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap bg-blue-lt">
+                                        <i class="bi bi-briefcase text-blue"></i>
                                     </div>
-                                    <div class="col">
-                                        <div class="font-weight-medium" style="font-weight: 600;">我的项目</div>
-                                        <div class="text-muted" style="font-size: 14px;"><a href="${pageContext.request.contextPath}/project?action=list" class="text-reset">查看 & 管理申请</a></div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的项目</div>
+                                        <div class="text-muted" style="font-size: 13px;">查看 & 管理申请</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
-                    <div class="col-12">
-                        <div class="card card-sm">
+                    <div class="col-sm-6 col-md-6">
+                        <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <span class="bg-green text-white avatar"><i class="bi bi-calendar-check"></i></span>
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap bg-green-lt">
+                                        <i class="bi bi-calendar-check text-green"></i>
                                     </div>
-                                    <div class="col">
-                                        <div class="font-weight-medium" style="font-weight: 600;">我的活动</div>
-                                        <div class="text-muted" style="font-size: 14px;"><a href="${pageContext.request.contextPath}/activity?action=myActivities" class="text-reset">查看我的报名活动</a></div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的活动</div>
+                                        <div class="text-muted" style="font-size: 13px;">查看报名活动</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
-                    <div class="col-12">
-                        <div class="card card-sm">
+                    <div class="col-sm-6 col-md-6">
+                        <a href="${pageContext.request.contextPath}/award?action=list" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <span class="bg-yellow text-white avatar"><i class="bi bi-award"></i></span>
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap bg-yellow-lt">
+                                        <i class="bi bi-award text-yellow"></i>
                                     </div>
-                                    <div class="col">
-                                        <div class="font-weight-medium" style="font-weight: 600;">我的奖项</div>
-                                        <div class="text-muted" style="font-size: 14px;"><a href="${pageContext.request.contextPath}/award?action=list" class="text-reset">荣誉证书管理</a></div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的奖项</div>
+                                        <div class="text-muted" style="font-size: 13px;">荣誉证书管理</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
-                    <div class="col-12">
-                        <div class="card card-sm">
+                    <div class="col-sm-6 col-md-6">
+                        <a href="resume.jsp" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <span class="bg-azure text-white avatar"><i class="bi bi-file-earmark-person"></i></span>
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap bg-purple-lt">
+                                        <i class="bi bi-file-earmark-person text-purple"></i>
                                     </div>
-                                    <div class="col">
-                                        <div class="font-weight-medium" style="font-weight: 600;">我的简历</div>
-                                        <div class="text-muted" style="font-size: 14px;"><a href="resume.jsp" class="text-reset">在线简历维护</a></div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的简历</div>
+                                        <div class="text-muted" style="font-size: 13px;">在线简历维护</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="section-header mt-4">
+                    <i class="bi bi-lightning-charge"></i>
+                    <h3>快捷操作</h3>
+                </div>
+                <div class="row row-cards">
+                    <div class="col-sm-6">
+                        <a href="${pageContext.request.contextPath}/ai?action=chat" class="card card-sm d-block text-decoration-none quick-link-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap bg-blue-lt">
+                                        <i class="bi bi-robot text-blue"></i>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">AI智能助手</div>
+                                        <div class="text-muted" style="font-size: 13px;">有问题找小AI</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="${pageContext.request.contextPath}/activity?action=list" class="card card-sm d-block text-decoration-none quick-link-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap bg-green-lt">
+                                        <i class="bi bi-calendar-plus text-green"></i>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">浏览活动</div>
+                                        <div class="text-muted" style="font-size: 13px;">查看可报名活动</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
