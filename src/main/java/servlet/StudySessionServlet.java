@@ -233,25 +233,20 @@ public class StudySessionServlet extends HttpServlet {
                 resp.getWriter().write("{\"success\":false,\"message\":\"您已有进行中的学习时段，请先结束\"}");
                 return;
             }
+            
+            // 判断是否在学习时间段内（6:00-22:00）
+            if (hour < 6 || hour >= 22) {
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().write("{\"success\":false,\"message\":\"学习时间为每日6:00-22:00，请在该时间段内开始学习\"}");
+                return;
+            }
 
             // 判断签到状态（根据实际签到时间判定）
             String checkStatus = "NORMAL"; // 默认正常
             if (hour >= 6 && hour < 18) {
-                // 6:00-18:00 之间开始算早到
-                checkStatus = "EARLY";
-            } else if (hour >= 18 && hour < 19) {
-                // 18:00-19:00 之间开始算正常
-                checkStatus = "NORMAL";
+                checkStatus = "EARLY"; // 6:00-18:00 早到
             } else if (hour >= 19) {
-                // 19:00之后算迟到
-                checkStatus = "LATE";
-            }
-
-            // 22:00之后不能开始
-            if (hour >= 22) {
-                resp.setContentType("application/json;charset=UTF-8");
-                resp.getWriter().write("{\"success\":false,\"message\":\"今日学习时间已结束，请明天再来\"}");
-                return;
+                checkStatus = "LATE"; // 19:00之后迟到
             }
 
             // 创建新的学习时段

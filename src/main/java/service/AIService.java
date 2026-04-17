@@ -933,7 +933,7 @@ public class AIService {
         Map<String, Object> result = new HashMap<>();
         result.put("success", false);
 
-        if ("list_all_news".equals(actionType) || "recent_news".equals(actionType) || "list_activities".equals(actionType) || "list_latest_activities".equals(actionType)) {
+        if ("list_all_news".equals(actionType) || "recent_news".equals(actionType) || "list_activities".equals(actionType) || "list_latest_activities".equals(actionType) || "get_organization_info".equals(actionType)) {
             return executePublicQuery(actionType, params);
         }
 
@@ -1006,6 +1006,8 @@ public class AIService {
                 return executeListActivities(params, null);
             case "list_latest_activities":
                 return executeListLatestActivities(params);
+            case "get_organization_info":
+                return executeGetOrganizationInfo(params);
         }
         Map<String, Object> result = new HashMap<>();
         result.put("success", false);
@@ -1088,6 +1090,14 @@ public class AIService {
             count++;
         }
         result.put("data", data);
+        return result;
+    }
+
+    private Map<String, Object> executeGetOrganizationInfo(Map<String, String> params) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("type", "text");
+        result.put("message", "黄山学院软件小组介绍：\n\n黄山学院软件小组是一个由计算机相关专业学生组成的学术组织，致力于软件开发学习与实践。小组提供以下服务：\n\n1. 学习资源分享\n2. 项目实战锻炼\n3. 技术交流活动\n4. 竞赛指导培训\n5. 就业经验分享\n\n如需了解更多，请浏览网站首页或联系管理员。");
         return result;
     }
 

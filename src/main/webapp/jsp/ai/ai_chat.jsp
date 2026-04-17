@@ -801,6 +801,9 @@
             else if (msgLower.includes('成员') || msgLower.includes('用户') || msgLower.includes('成员列表') ||
                 msgLower.includes('所有成员') || msgLower.includes('成员信息') || msgLower.includes('小组成员')) {
                 convertedAction = 'list_all_users';
+            } else if (msgLower.includes('小组介绍') || msgLower.includes('软件小组介绍') || 
+                msgLower.includes('组织介绍') || msgLower.includes('团队介绍') || msgLower.includes('关于小组')) {
+                convertedAction = 'get_organization_info';
             }
             
             // 报名相关
@@ -881,6 +884,7 @@
                 'list_all_awards': '正在获取奖项列表...',
                 'view_my_activities': '正在获取我的活动...',
                 'view_my_projects': '正在获取我的项目...',
+                'get_organization_info': '正在获取小组介绍...',
                 'pending_feature': '正在处理...'
             };
             var loadingText = actionLabels[convertedAction.split('|')[0]] || '正在处理...';
@@ -984,6 +988,7 @@
             else if (actionStr === 'list_my_awards') displayText = '我的奖项';
             else if (actionStr === 'view_my_projects') displayText = '我的项目';
             else if (actionStr === 'view_my_groups') displayText = '我的群聊';
+            else if (actionStr === 'get_organization_info') displayText = '小组介绍';
             else displayText = actionStr;
             
             var sessionId = document.getElementById('sessionId').value;

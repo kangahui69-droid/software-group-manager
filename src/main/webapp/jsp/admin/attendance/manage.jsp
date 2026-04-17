@@ -221,11 +221,18 @@
 
 <div class="page-body">
     <div class="container-xl">
-        <div class="admin-hero">
-            <h1 class="admin-hero-title">
-                <i class="bi bi-book me-2"></i>学习管理
-            </h1>
-            <p class="admin-hero-subtitle">查看和管理学习记录</p>
+        <div class="admin-hero" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 class="admin-hero-title">
+                    <i class="bi bi-book me-2"></i>学习管理
+                </h1>
+                <p class="admin-hero-subtitle">查看和管理学习记录</p>
+            </div>
+            <div>
+                <button type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="location.reload();">
+                    <i class="bi bi-arrow-clockwise"></i> 刷新页面
+                </button>
+            </div>
         </div>
 
         <c:if test="${not empty error}">
