@@ -40,7 +40,7 @@ import javax.servlet.http.Part;
  * 群聊Servlet
  */
 @WebServlet("/group/*")
-@MultipartConfig(maxFileSize = 1024 * 1024 * 10)
+@MultipartConfig(maxFileSize = 1024 * 1024 * 100, maxRequestSize = 1024 * 1024 * 100)
 public class GroupServlet extends HttpServlet {
 
     private ActivityGroupDAO groupDAO = new ActivityGroupDAO();

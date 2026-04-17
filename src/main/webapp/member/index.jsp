@@ -253,8 +253,8 @@
                             <a href="${pageContext.request.contextPath}/award?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
                                 <i class="bi bi-award me-3 text-yellow"></i> 我的奖项
                             </a>
-                            <a href="resume.jsp" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
-                                <i class="bi bi-file-earmark-person me-3 text-orange"></i> 我的简历
+                            <a href="${pageContext.request.contextPath}/study" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
+                                <i class="bi bi-book me-3 text-blue"></i> 学习中心
                             </a>
                         </div>
                     </div>
@@ -312,15 +312,15 @@
                         </a>
                     </div>
                     <div class="col-sm-6 col-md-6">
-                        <a href="resume.jsp" class="card card-sm d-block text-decoration-none">
+                        <a href="${pageContext.request.contextPath}/study" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
-                                    <div class="icon-wrap bg-purple-lt">
-                                        <i class="bi bi-file-earmark-person text-purple"></i>
+                                    <div class="icon-wrap bg-blue-lt">
+                                        <i class="bi bi-book text-blue"></i>
                                     </div>
                                     <div class="ms-3">
-                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的简历</div>
-                                        <div class="text-muted" style="font-size: 13px;">在线简历维护</div>
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">学习中心</div>
+                                        <div class="text-muted" style="font-size: 13px;">在线学习资源</div>
                                     </div>
                                 </div>
                             </div>
