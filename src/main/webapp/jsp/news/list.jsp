@@ -97,10 +97,19 @@
 <div class="page-body">
     <div class="container-xl">
         <div class="member-hero">
-            <h1 class="member-hero-title">
-                <i class="bi bi-newspaper me-2"></i>${pageTitle}
-            </h1>
-            <p class="member-hero-subtitle">查看最新的新闻动态</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="member-hero-title">
+                        <i class="bi bi-newspaper me-2"></i>${pageTitle}
+                    </h1>
+                    <p class="member-hero-subtitle">查看最新的新闻动态</p>
+                </div>
+                <c:if test="${activeNav == 'activity'}">
+                    <a href="${pageContext.request.contextPath}/activity?action=list" class="btn-sm-brand">
+                        <i class="bi bi-calendar-event me-1"></i>活动列表
+                    </a>
+                </c:if>
+            </div>
         </div>
 
         <c:choose>
