@@ -655,10 +655,6 @@
                                 <span class="quick-btn-text">"查看我的活动"</span>
                                 <span class="quick-btn-category">我的活动</span>
                             </div>
-                            <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]recent_news')">
-                                <span class="quick-btn-text">"查看小组动态"</span>
-                                <span class="quick-btn-category">小组动态</span>
-                            </div>
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_news')">
                                 <span class="quick-btn-text">"查看新闻动态"</span>
                                 <span class="quick-btn-category">查看新闻</span>
@@ -668,10 +664,6 @@
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_activities')">
                                 <span class="quick-btn-text">"查看近期活动"</span>
                                 <span class="quick-btn-category">查看活动</span>
-                            </div>
-                            <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]recent_news')">
-                                <span class="quick-btn-text">"查看小组动态"</span>
-                                <span class="quick-btn-category">小组动态</span>
                             </div>
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_news')">
                                 <span class="quick-btn-text">"查看新闻动态"</span>
@@ -1628,8 +1620,8 @@
             html += '<thead><tr>';
             var colMapping = {
                 '编号': '编号', '标题': '标题', '类型': '类型', '发布时间': '发布时间',
-                'ID': 'id', '活动名称': 'name', '时间': 'startTime', '地点': 'location', '开始时间': 'startTime', '结束时间': 'endTime', '报名时间': 'regTime',
-                '状态': 'status', '姓名': 'name', '角色': 'role', '学号': 'studentId'
+                'ID': 'ID', '活动名称': '活动名称', '时间': '时间', '地点': '地点', '开始时间': '开始时间', '结束时间': '结束时间', '报名时间': '报名时间',
+                '状态': '状态', '姓名': '姓名', '角色': '角色', '学号': '学号'
             };
             data.columns.forEach(function(col) {
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 500;">' + col + '</th>';
