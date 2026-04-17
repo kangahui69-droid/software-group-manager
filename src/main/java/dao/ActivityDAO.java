@@ -311,7 +311,9 @@ public class ActivityDAO {
     private Activity mapResultSetToActivity(ResultSet rs) throws SQLException {
         Activity activity = new Activity();
         activity.setId(rs.getInt("id"));
-        activity.setTitle(rs.getString("name"));
+        String name = rs.getString("name");
+        System.out.println("[ActivityDAO] mapResultSetToActivity - id=" + activity.getId() + ", name from DB=" + name);
+        activity.setTitle(name);
         activity.setDescription(rs.getString("description"));
         activity.setActivityType(rs.getString("activity_type"));
         

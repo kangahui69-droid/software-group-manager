@@ -66,6 +66,34 @@
             color: white;
         }
 
+        .back-btn {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn:hover {
+            background: #f8fafc;
+            color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .back-btn i {
+            font-size: 18px;
+        }
+
         .brand-name {
             font-size: 24px;
             font-weight: 600;
@@ -530,6 +558,9 @@
         <div class="chat-container">
             <div class="chat-header">
                 <div class="brand-section">
+                    <a href="${pageContext.request.contextPath}/index.jsp" class="back-btn" title="返回首页">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
                     <div class="brand-icon">
                         <i class="bi bi-robot"></i>
                     </div>
@@ -590,6 +621,10 @@
                                 <span class="quick-btn-text">"数据统计概览"</span>
                                 <span class="quick-btn-category">数据统计</span>
                             </div>
+                            <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_news')">
+                                <span class="quick-btn-text">"查看新闻动态"</span>
+                                <span class="quick-btn-category">查看新闻</span>
+                            </div>
                         </c:when>
                         <c:when test="${userRole == 'MEMBER'}">
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_latest_activities')">
@@ -620,12 +655,12 @@
                                 <span class="quick-btn-text">"查看小组动态"</span>
                                 <span class="quick-btn-category">小组动态</span>
                             </div>
+                            <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_news')">
+                                <span class="quick-btn-text">"查看新闻动态"</span>
+                                <span class="quick-btn-category">查看新闻</span>
+                            </div>
                         </c:when>
                         <c:otherwise>
-                            <div class="quick-btn" onclick="sendQuickQuestion('软件小组是做什么的？')">
-                                <span class="quick-btn-text">"软件小组是做什么的？"</span>
-                                <span class="quick-btn-category">小组简介</span>
-                            </div>
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_activities')">
                                 <span class="quick-btn-text">"查看近期活动"</span>
                                 <span class="quick-btn-category">查看活动</span>
@@ -633,10 +668,6 @@
                             <div class="quick-btn" onclick="sendQuickQuestion('[ACTION]list_all_news')">
                                 <span class="quick-btn-text">"查看新闻动态"</span>
                                 <span class="quick-btn-category">查看新闻</span>
-                            </div>
-                            <div class="quick-btn" onclick="sendQuickQuestion('如何登录系统？')">
-                                <span class="quick-btn-text">"如何登录系统？"</span>
-                                <span class="quick-btn-category">如何登录</span>
                             </div>
                         </c:otherwise>
                     </c:choose>
@@ -738,39 +769,87 @@
         
         if (!convertedAction) {
             var msgLower = message.toLowerCase();
-            if (msgLower.includes('动态') || msgLower === '动态列表') {
+            
+            // 新闻相关 - 查看新闻、资讯、动态、公告
+            if (msgLower.includes('动态') || msgLower === '动态列表' || msgLower.includes('最新动态')) {
                 convertedAction = 'recent_news';
-            } else if (msgLower === '新闻' || msgLower === '新闻列表' || msgLower === '查看新闻' || msgLower.includes('新闻列表')) {
+            } else if (msgLower === '新闻' || msgLower === '新闻列表' || msgLower === '查看新闻' || 
+                msgLower.includes('新闻列表') || msgLower.includes('资讯') || msgLower.includes('消息') ||
+                msgLower.includes('有什么新闻') || msgLower.includes('新闻资讯') || msgLower.includes('校内新闻') ||
+                msgLower === '看看新闻' || msgLower === '查询新闻' || msgLower.includes('新闻动态')) {
                 convertedAction = 'list_all_news';
-            } else if (msgLower.includes('活动新闻')) {
+            } else if (msgLower.includes('活动新闻') || msgLower.includes('活动资讯')) {
                 convertedAction = 'list_activities';
-            } else if (msgLower.includes('获奖新闻') || msgLower.includes('奖项新闻')) {
+            } else if (msgLower.includes('获奖新闻') || msgLower.includes('奖项新闻') || msgLower.includes('获奖资讯')) {
                 convertedAction = 'recent_news';
-            } else if (msgLower.includes('公告') || msgLower.includes('通知')) {
+            } else if (msgLower.includes('公告') || msgLower.includes('通知') || msgLower.includes('通告')) {
                 convertedAction = 'recent_news';
-            } else if (msgLower.includes('活动列表') || msgLower === '查看活动' || msgLower === '活动' || msgLower.includes('有什么活动')) {
+            }
+            
+            // 活动相关 - 活动列表、讲座、培训、比赛、分享会
+            else if (msgLower.includes('活动列表') || msgLower === '查看活动' || msgLower === '活动' || 
+                msgLower.includes('有什么活动') || msgLower.includes('最近活动') || msgLower.includes('近期活动') ||
+                msgLower.includes('活动中心') || msgLower.includes('技术讲座') || msgLower.includes('培训') ||
+                msgLower.includes('分享会') || msgLower.includes('编程比赛') || msgLower.includes('比赛') ||
+                msgLower === '看看活动' || msgLower === '查询活动' || msgLower === '活动有哪些') {
                 convertedAction = 'list_activities';
-            } else if (msgLower.includes('成员') || msgLower.includes('用户') || msgLower.includes('成员列表')) {
+            } else if (msgLower.includes('最新活动') || msgLower.includes('最新讲座')) {
+                convertedAction = 'list_latest_activities';
+            }
+            
+            // 成员相关
+            else if (msgLower.includes('成员') || msgLower.includes('用户') || msgLower.includes('成员列表') ||
+                msgLower.includes('所有成员') || msgLower.includes('成员信息') || msgLower.includes('小组成员')) {
                 convertedAction = 'list_all_users';
-            } else if (msgLower.includes('招新') || msgLower.includes('报名参加')) {
+            }
+            
+            // 报名相关
+            else if (msgLower.includes('招新') || msgLower.includes('报名参加') || msgLower.includes('参加活动')) {
                 convertedAction = 'list_activities';
-            } else if (msgLower.includes('报名活动')) {
+            } else if (msgLower.includes('报名活动') || msgLower.includes('活动报名') || msgLower.includes('我要报名')) {
                 convertedAction = 'apply_activity';
-            } else if (msgLower.includes('申请活动')) {
+            } else if (msgLower.includes('申请活动') || msgLower.includes('创建活动') || msgLower.includes('发起活动') ||
+                msgLower.includes('举办活动') || msgLower.includes('活动申请')) {
                 convertedAction = 'create_activity_request';
-            } else if (msgLower.includes('发布新闻') || msgLower === '新闻发布' || msgLower.includes('提交新闻')) {
+            } else if (msgLower.includes('我的活动') || msgLower.includes('已报名活动') || msgLower.includes('我报名的活动')) {
+                convertedAction = 'view_my_activities';
+            }
+            
+            // 新闻发布
+            else if (msgLower.includes('发布新闻') || msgLower === '新闻发布' || msgLower.includes('提交新闻') ||
+                msgLower.includes('投稿') || msgLower.includes('发布资讯') || msgLower.includes('写新闻')) {
                 convertedAction = 'submit_news';
-            } else if (msgLower.includes('查看项目') || msgLower === '项目列表' || msgLower === '所有项目') {
+            }
+            
+            // 项目相关
+            else if (msgLower.includes('查看项目') || msgLower === '项目列表' || msgLower === '所有项目' ||
+                msgLower.includes('项目有哪些') || msgLower.includes('有什么项目') || msgLower.includes('项目中心') ||
+                msgLower === '看看项目' || msgLower.includes('项目动态') || msgLower.includes('项目进展')) {
                 convertedAction = 'list_all_projects';
-            } else if (msgLower.includes('申请项目') || msgLower.includes('提交项目') || msgLower.includes('创建项目') || msgLower.includes('发起项目')) {
+            } else if (msgLower.includes('我的项目') || msgLower.includes('个人项目') || msgLower.includes('我参与的项目')) {
+                convertedAction = 'view_my_projects';
+            } else if (msgLower.includes('申请项目') || msgLower.includes('提交项目') || msgLower.includes('创建项目') || 
+                msgLower.includes('发起项目') || msgLower.includes('新建项目') || msgLower.includes('项目申请')) {
                 convertedAction = 'create_project_request';
-            } else if (msgLower.includes('奖项申请') || msgLower.includes('提交奖项') || msgLower.includes('申请奖项') || msgLower.includes('获奖')) {
+            }
+            
+            // 奖项相关
+            else if (msgLower.includes('奖项申请') || msgLower.includes('提交奖项') || msgLower.includes('申请奖项') ||
+                msgLower.includes('获奖申请') || msgLower.includes('申报奖项') || msgLower.includes('申请获奖')) {
                 convertedAction = 'submit_award';
-            } else if (msgLower.includes('我的奖项') || msgLower.includes('个人奖项') || msgLower.includes('我的获奖')) {
+            } else if (msgLower.includes('我的奖项') || msgLower.includes('个人奖项') || msgLower.includes('我的获奖') ||
+                msgLower.includes('我获得的奖项') || msgLower.includes('获奖情况')) {
                 convertedAction = 'list_my_awards';
-            } else if (msgLower.includes('奖项') || msgLower.includes('获奖')) {
+            } else if (msgLower.includes('奖项列表') || msgLower.includes('获奖列表') || msgLower.includes('所有奖项') ||
+                msgLower.includes('奖项有哪些') || msgLower.includes('获奖名单')) {
+                convertedAction = 'list_all_awards';
+            } else if (msgLower.includes('奖项') || msgLower.includes('获奖') || msgLower.includes('荣誉') || 
+                msgLower.includes('奖状') || msgLower.includes('证书')) {
                 convertedAction = 'list_my_awards';
-            } else if (msgLower.includes('项目')) {
+            }
+            
+            // 项目泛匹配（放最后）
+            else if (msgLower.includes('项目')) {
                 convertedAction = 'list_all_projects';
             }
         }
@@ -789,13 +868,17 @@
             var actionLabels = {
                 'recent_news': '正在获取小组动态...',
                 'list_activities': '正在获取活动列表...',
+                'list_latest_activities': '正在获取最新活动...',
                 'list_all_users': '正在获取成员列表...',
+                'list_all_news': '正在获取新闻列表...',
                 'apply_activity': '正在处理您的报名请求...',
                 'create_activity_request': '正在创建活动...',
                 'submit_news': '正在发布新闻...',
                 'submit_award': '正在申请奖项...',
                 'list_my_awards': '正在获取您的奖项...',
                 'list_all_awards': '正在获取奖项列表...',
+                'view_my_activities': '正在获取我的活动...',
+                'view_my_projects': '正在获取我的项目...',
                 'pending_feature': '正在处理...'
             };
             var loadingText = actionLabels[convertedAction.split('|')[0]] || '正在处理...';
@@ -806,7 +889,7 @@
                 return;
             }
             
-            executeActionFromAI(convertedAction, null, sessionId);
+            executeActionFromAI(convertedAction, assistantContentDiv, sessionId);
             return;
         }
 
@@ -850,7 +933,7 @@
                     
                     if (actionStr.length > 0) {
                         setTimeout(function() {
-                            executeActionFromAI(actionStr, null, sessionId);
+                            executeActionFromAI(actionStr, assistantContentDiv, sessionId);
                         }, 500);
                     }
                 } else {
@@ -1140,6 +1223,7 @@
             
             if (contentDiv) {
                 if (data.success) {
+                    console.log("Rendering success result:", JSON.stringify(data));
                     var resultHtml = formatActionResult(data);
                     contentDiv.innerHTML = resultHtml;
                 } else {
@@ -1172,6 +1256,12 @@
         } else if (actionType === 'create_project_request') {
             title.textContent = '申请项目';
             container.innerHTML = buildProjectForm();
+        } else if (actionType === 'submit_award') {
+            title.textContent = '申请奖项';
+            container.innerHTML = buildAwardForm();
+        } else if (actionType === 'submit_news') {
+            title.textContent = '发布新闻';
+            container.innerHTML = buildNewsForm();
         } else {
             title.textContent = '填写信息';
             container.innerHTML = '<p>该操作暂不支持表单填写</p>';
@@ -1267,6 +1357,87 @@
                '</div>';
     }
     
+    function buildAwardForm() {
+        return '<div class="info-form-group">' +
+               '<label>比赛名称 <span class="text-danger">*</span></label>' +
+               '<input type="text" id="award_competition" placeholder="请输入比赛名称，如：程序设计大赛" required>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>团队名称 <span class="text-danger">*</span></label>' +
+               '<input type="text" id="award_team_name" placeholder="请输入团队名称，多人以逗号分隔" required>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>比赛等级</label>' +
+               '<select id="award_comp_level">' +
+               '<option value="1">国家级</option>' +
+               '<option value="2">省级</option>' +
+               '<option value="3">市级</option>' +
+               '<option value="4">校级</option>' +
+               '<option value="5">院级</option>' +
+               '<option value="6">其他</option>' +
+               '</select>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>奖项等级</label>' +
+               '<select id="award_level">' +
+               '<option value="1">一等奖</option>' +
+               '<option value="2">二等奖</option>' +
+               '<option value="3">三等奖</option>' +
+               '<option value="4">优秀奖</option>' +
+               '<option value="5">其他</option>' +
+               '</select>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>奖项类型</label>' +
+               '<select id="award_type">' +
+               '<option value="1">个人奖</option>' +
+               '<option value="2">团队奖</option>' +
+               '</select>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>比赛时间</label>' +
+               '<input type="date" id="award_comp_time">' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>比赛地点</label>' +
+               '<input type="text" id="award_comp_location" placeholder="请输入比赛地点">' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>届次</label>' +
+               '<input type="text" id="award_comp_session" placeholder="如：第十届">' +
+               '</div>' +
+                '<div class="info-form-group">' +
+                '<label>奖项描述</label>' +
+                '<textarea id="award_description" rows="3" placeholder="请输入奖项描述"></textarea>' +
+                '</div>';
+    }
+    
+    function buildNewsForm() {
+        return '<div class="info-form-group">' +
+               '<label>新闻标题 <span class="text-danger">*</span></label>' +
+               '<input type="text" id="news_title" placeholder="请输入新闻标题" required>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>新闻类型</label>' +
+               '<select id="news_type">' +
+               '<option value="activity">活动新闻</option>' +
+               '<option value="notice">通知公告</option>' +
+               '<option value="tech">技术分享</option>' +
+               '<option value="award">获奖荣誉</option>' +
+               '<option value="recruit">招新招聘</option>' +
+               '<option value="other">其他</option>' +
+               '</select>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>新闻摘要 <span class="text-danger">*</span></label>' +
+               '<textarea id="news_summary" rows="2" placeholder="请输入新闻摘要" required></textarea>' +
+               '</div>' +
+               '<div class="info-form-group">' +
+               '<label>详细内容</label>' +
+               '<textarea id="news_content" rows="4" placeholder="请输入详细内容或指向的链接"></textarea>' +
+               '</div>';
+    }
+    
     document.getElementById('submitInfoBtn').addEventListener('click', function() {
         var actionType = document.getElementById('pendingActionType').value;
         var sessionId = document.getElementById('sessionId').value;
@@ -1318,6 +1489,46 @@
             if (endDate) params += '|expected_end_date=' + encodeURIComponent(endDate);
             if (repoUrl) params += '|repo_url=' + encodeURIComponent(repoUrl);
             if (budget) params += '|budget=' + encodeURIComponent(budget);
+        } else if (actionType === 'submit_award') {
+            var competition = document.getElementById('award_competition').value;
+            var teamName = document.getElementById('award_team_name').value;
+            var compLevel = document.getElementById('award_comp_level').value;
+            var awardLevel = document.getElementById('award_level').value;
+            var awardType = document.getElementById('award_type').value;
+            var compTime = document.getElementById('award_comp_time').value;
+            var compLocation = document.getElementById('award_comp_location').value;
+            var compSession = document.getElementById('award_comp_session').value;
+            var description = document.getElementById('award_description').value;
+            
+            if (!competition || !teamName) {
+                alert('请填写必填项（比赛名称、团队名称）');
+                return;
+            }
+            
+            params = 'competition=' + encodeURIComponent(competition);
+            params += '|teamName=' + encodeURIComponent(teamName);
+            params += '|compLevel=' + encodeURIComponent(compLevel);
+            params += '|awardLevel=' + encodeURIComponent(awardLevel);
+            params += '|awardType=' + encodeURIComponent(awardType);
+            if (compTime) params += '|compTime=' + encodeURIComponent(compTime);
+            if (compLocation) params += '|compLocation=' + encodeURIComponent(compLocation);
+            if (compSession) params += '|compSession=' + encodeURIComponent(compSession);
+            if (description) params += '|description=' + encodeURIComponent(description);
+        } else if (actionType === 'submit_news') {
+            var title = document.getElementById('news_title').value;
+            var type = document.getElementById('news_type').value;
+            var summary = document.getElementById('news_summary').value;
+            var content = document.getElementById('news_content').value;
+            
+            if (!title || !summary) {
+                alert('请填写必填项（新闻标题、新闻摘要）');
+                return;
+            }
+            
+            params = 'title=' + encodeURIComponent(title);
+            params += '|type=' + encodeURIComponent(type);
+            params += '|summary=' + encodeURIComponent(summary);
+            if (content) params += '|content=' + encodeURIComponent(content);
         }
         
         fetch('${pageContext.request.contextPath}/ai?action=execute', {
@@ -1327,20 +1538,18 @@
         })
         .then(response => response.json())
         .then(data => {
+            console.log("Form submit response:", JSON.stringify(data));
             hideFormPanel();
             var messagesDiv = document.getElementById('chatMessages');
-            var lastUserMsg = messagesDiv.querySelector('.message.user:last-child');
-            if (lastUserMsg) {
-                var assistantMsgDiv = createAssistantMessage();
-                messagesDiv.appendChild(assistantMsgDiv);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                var assistantContentDiv = assistantMsgDiv.querySelector('.message-content');
-                if (data.success) {
-                    var resultHtml = formatActionResult(data);
-                    assistantContentDiv.innerHTML = resultHtml;
-                } else {
-                    assistantContentDiv.innerHTML = '<span class="text-danger">' + (data.message || '操作失败') + '</span>';
-                }
+            var assistantMsgDiv = createAssistantMessage();
+            messagesDiv.appendChild(assistantMsgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            var assistantContentDiv = assistantMsgDiv.querySelector('.message-content');
+            if (data.success) {
+                var resultHtml = formatActionResult(data);
+                assistantContentDiv.innerHTML = resultHtml;
+            } else {
+                assistantContentDiv.innerHTML = '<span class="text-danger">' + (data.message || '操作失败') + '</span>';
             }
         })
         .catch(err => {
@@ -1351,6 +1560,7 @@
 
     function formatActionResult(data) {
         var html = '';
+        console.log("formatActionResult called, data.type:", data.type, "data.columns:", data.columns, "data.data:", JSON.stringify(data.data));
         
         if (data.type === 'news_list') {
             html = '<div class="mb-2"><strong>📰 最新新闻</strong></div>';
@@ -1394,13 +1604,13 @@
             } else {
                 html += '<div style="color: #64748b;">暂无新闻</div>';
             }
-        } else if (data.type === 'table' && data.columns && data.data) {
+        } else if (data.type === 'table' && data.columns && data.data && data.data.length > 0) {
             html = '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
             html += '<thead><tr>';
             var colMapping = {
-                '编号': 'id', '标题': 'title', '类型': 'type', '发布时间': 'createdAt',
-                'ID': 'id', '活动名称': 'title', '时间': 'startTime', '地点': 'location',
-                '状态': 'status', '姓名': 'name', '角色': 'role', '学号': 'studentId'
+                '编号': 'id', '标题': 'title', '发布时间': 'createdAt',
+                'ID': 'ID', '活动名称': '活动名称', '类型': '类型', '时间': '时间', '地点': '地点', '开始时间': '开始时间', '结束时间': '结束时间', '报名时间': '报名时间',
+                '状态': '状态', '姓名': 'name', '角色': 'role', '学号': 'studentId'
             };
             data.columns.forEach(function(col) {
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 500;">' + col + '</th>';
@@ -1419,6 +1629,13 @@
                 html += '</tr>';
             });
             html += '</tbody></table></div>';
+if (data.message) {
+                html += '<div style="margin-top: 12px; color: #64748b; font-size: 13px;">' + data.message + '</div>';
+            }
+        } else if (data.type === 'table' && (!data.data || data.data.length === 0)) {
+            html = '<div style="padding: 20px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px;">';
+            html += '<i class="bi bi-inbox" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>';
+            html += (data.message || '暂无相关数据') + '</div>';
         } else if (data.type === 'detail') {
             html = '<div style="padding: 12px; background: #f8fafc; border-radius: 8px;">';
             html += '<div style="font-weight: 500; color: #1e293b; margin-bottom: 8px;">' + (data.message || '详情') + '</div>';

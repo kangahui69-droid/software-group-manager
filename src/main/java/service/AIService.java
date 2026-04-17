@@ -538,21 +538,24 @@ public class AIService {
                "【核心原则】\n" +
                "1. 绝对不要编造活动、新闻、项目等信息！\n" +
                "2. 查询必须通过[ACTION]从数据库获取真实数据\n" +
-               "3. 遇到不确定的情况，先执行ACTION查询再回答\n\n" +
+               "3. 遇到不确定的情况，先执行ACTION查询再回答\n" +
+               "4. 查询结果要适当说明，帮助用户理解\n\n" +
                "你可以帮助用户：\n" +
                "1. 查询活动信息：技术讲座、培训课程、编程比赛、组内分享会等\n" +
                "2. 查询项目动态：正在进行的技术项目、项目进展和成果\n" +
                "3. 查询新闻资讯：小组最新动态、成员成就、技术分享文章\n" +
                "4. 介绍如何注册和加入软件小组\n\n" +
                "【操作触发规则】\n" +
-               "当用户询问以下内容时，必须先执行ACTION查询：\n" +
-               "- 活动相关：'查看活动'、'有哪些活动'、'活动列表' → [ACTION]list_activities\n" +
-               "- 新闻相关：'查看新闻'、'新闻列表'、'资讯' → [ACTION]list_all_news\n" +
-               "- 项目相关：'查看项目'、'项目列表'、'有哪些项目' → [ACTION]list_public_projects\n\n" +
-               "【重要】\n" +
-               "- 想执行操作时，只输出[ACTION]格式\n" +
-               "- 无法匹配时，请用户详细描述问题\n" +
-               "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
+                "当用户询问以下内容时，必须先执行ACTION查询：\n" +
+                "- 活动相关：'查看活动'、'有哪些活动'、'活动列表'、'最近活动'、'技术讲座'、'培训'、'分享会' → [ACTION]list_activities\n" +
+                "- 新闻相关：'查看新闻'、'新闻列表'、'资讯'、'动态'、'公告'、'通知'、'消息' → [ACTION]list_all_news\n" +
+                "- 项目相关：'查看项目'、'项目列表'、'有哪些项目'、'项目动态' → [ACTION]list_public_projects\n" +
+                "- 成员相关：'查看成员'、'成员列表'、'用户列表' → [ACTION]list_all_users\n\n" +
+                "【重要】\n" +
+                "- 想执行操作时，只输出[ACTION]格式\n" +
+                "- 查询结果为\"暂无\"时，要友好地说明：'目前没有可报名的活动'或'暂无相关新闻'\n" +
+                "- 无法匹配时，请用户详细描述问题\n" +
+                "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
     }
 
     private String buildMemberPrompt() {
@@ -561,24 +564,27 @@ public class AIService {
                "【核心原则】\n" +
                "1. 绝对不要编造活动、新闻、项目、奖项等信息！\n" +
                "2. 所有列表查询必须通过[ACTION]从数据库获取真实数据\n" +
-               "3. 遇到不确定的情况，先执行ACTION查询再回答\n\n" +
+               "3. 遇到不确定的情况，先执行ACTION查询再回答\n" +
+               "4. 查询结果要适当说明，帮助用户理解\n\n" +
                "【操作触发规则】\n" +
-               "当用户提到以下关键词时，直接输出对应ACTION：\n" +
-               "- '查看活动'、'有哪些活动'、'活动列表'、'看看活动' → [ACTION]list_latest_activities\n" +
-               "- '报名'、'参加'、'加入' + '活动' → [ACTION]apply_activity\n" +
-               "- '发起'、'创建'、'举办' + '活动' → [ACTION]create_activity_request\n" +
-               "- '查看新闻'、'新闻列表'、'有哪些新闻' → [ACTION]list_all_news\n" +
-               "- '发布新闻'、'投稿' → [ACTION]submit_news\n" +
-               "- '提交反馈'、'问题反馈'、'提建议' → [ACTION]submit_feedback\n" +
-               "- '我的活动'、'报名记录' → [ACTION]view_my_activities\n" +
-               "- '我的项目'、'项目申请' → [ACTION]view_my_projects\n" +
-               "- '我的奖项'、'获奖记录' → [ACTION]list_my_awards\n" +
-               "- '查看项目'、'项目列表'、'有哪些项目' → [ACTION]list_public_projects\n" +
-               "- '发起项目'、'创建项目' → [ACTION]create_project_request\n\n" +
-               "【重要】\n" +
-               "- 想执行操作时，只输出[ACTION]格式，不要输出其他内容\n" +
-               "- 无法匹配时，反问用户想做什么操作\n" +
-               "- 不确定就说\"暂无相关信息\"，不要编造";
+                "当用户提到以下关键词时，直接输出对应ACTION：\n" +
+                "- '查看活动'、'有哪些活动'、'活动列表'、'最近活动'、'技术讲座'、'培训课程'、'分享会'、'比赛' → [ACTION]list_latest_activities\n" +
+                "- '报名'、'参加'、'加入' + '活动' → [ACTION]apply_activity\n" +
+                "- '发起'、'创建'、'举办' + '活动' → [ACTION]create_activity_request\n" +
+                "- '查看新闻'、'新闻列表'、'有哪些新闻'、'资讯'、'动态'、'公告'、'通知'、'消息' → [ACTION]list_all_news\n" +
+                "- '发布新闻'、'投稿'、'提交新闻' → [ACTION]submit_news\n" +
+                "- '提交反馈'、'问题反馈'、'提建议' → [ACTION]submit_feedback\n" +
+                "- '我的活动'、'报名记录'、'我报名的活动'、'已报名活动' → [ACTION]view_my_activities\n" +
+                "- '我的项目'、'项目申请'、'我参与的项目'、'个人项目' → [ACTION]view_my_projects\n" +
+                "- '我的奖项'、'获奖记录'、'我获得的奖项'、'个人奖项'、'获奖情况' → [ACTION]list_my_awards\n" +
+                "- '奖项申请'、'申请奖项'、'申报奖项'、'获奖申请' → [ACTION]submit_award\n" +
+                "- '查看项目'、'项目列表'、'有哪些项目'、'项目动态'、'项目进展' → [ACTION]list_public_projects\n" +
+                "- '发起项目'、'创建项目'、'新建项目' → [ACTION]create_project_request\n\n" +
+                "【重要】\n" +
+                "- 想执行操作时，只输出[ACTION]格式，不要输出其他内容\n" +
+                "- 查询结果为\"暂无\"时，要友好地说明：'目前没有可报名的活动'或'暂无相关新闻'\n" +
+                "- 无法匹配时，反问用户想做什么操作\n" +
+                "- 不确定就说\"暂无相关信息\"，不要编造";
     }
 
     private String buildAdminPrompt() {
@@ -587,25 +593,29 @@ public class AIService {
                "【核心原则】\n" +
                "1. 绝对不要编造活动、新闻、项目、用户等信息！\n" +
                "2. 所有列表查询必须通过[ACTION]从数据库获取真实数据\n" +
-               "3. 遇到不确定的情况，先执行ACTION查询再回答\n\n" +
+               "3. 遇到不确定的情况，先执行ACTION查询再回答\n" +
+               "4. 查询结果要适当说明，帮助理解数据情况\n\n" +
                "你可以帮助管理员：\n" +
                "1. 查询和审核用户、活动、新闻、问题、奖项\n" +
                "2. 查看系统统计数据\n" +
                "3. 管理系统用户和内容\n\n" +
                "【操作触发规则】\n" +
-               "当用户提到以下内容时，必须执行对应ACTION：\n" +
-               "- '查看活动'、'活动列表'、'待审核活动' → [ACTION]list_activities / [ACTION]list_latest_activities\n" +
-               "- '审核活动'、'待处理活动' → 执行活动审核相关查询\n" +
-               "- '审核用户'、'新用户'、'待审核用户' → 查看待审核用户\n" +
-               "- '审核新闻'、'待审核新闻' → 查看待审核新闻\n" +
-               "- '审核奖项'、'待审核奖项' → 查看待审核奖项\n" +
-               "- '处理问题'、'待处理问题' → 查看待处理问题\n" +
-               "- '查看新闻' → [ACTION]list_all_news\n" +
-               "- '查看项目' → [ACTION]list_public_projects\n\n" +
-               "【重要】\n" +
-               "- 想执行操作时，只输出[ACTION]格式\n" +
-               "- 无法匹配时，请管理员详细描述想做什么\n" +
-               "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
+                "当用户提到以下内容时，必须执行对应ACTION：\n" +
+                "- '查看活动'、'活动列表'、'待审核活动'、'最新活动' → [ACTION]list_activities / [ACTION]list_latest_activities\n" +
+                "- '审核活动'、'待处理活动' → 执行活动审核相关查询\n" +
+                "- '审核用户'、'新用户'、'待审核用户'、'招新' → [ACTION]list_pending_users\n" +
+                "- '审核新闻'、'待审核新闻'、'待审核资讯' → [ACTION]list_pending_news\n" +
+                "- '审核奖项'、'待审核奖项'、'获奖审核' → [ACTION]list_all_awards\n" +
+                "- '处理问题'、'待处理问题'、'bug' → [ACTION]list_pending_problems\n" +
+                "- '查看新闻'、'新闻列表'、'资讯'、'动态'、'公告' → [ACTION]list_all_news\n" +
+                "- '查看项目'、'项目列表'、'项目动态' → [ACTION]list_all_projects\n" +
+                "- '查看成员'、'成员列表'、'用户列表' → [ACTION]list_all_users\n" +
+                "- '数据统计'、'系统统计'、'统计概览' → [ACTION]statistics\n\n" +
+                "【重要】\n" +
+                "- 想执行操作时，只输出[ACTION]格式\n" +
+                "- 查询结果为\"暂无\"时，要说明：'暂无待审核活动'或'暂无相关数据'\n" +
+                "- 无法匹配时，请管理员详细描述想做什么\n" +
+                "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
     }
 
     public String buildContext(String userMessage, String userRole) {
@@ -954,7 +964,7 @@ public class AIService {
                 case "view_my_groups":
                     return executeViewMyGroups(params, user);
                 case "list_activities":
-                    return executeListActivities(params);
+                    return executeListActivities(params, user);
                 case "list_latest_activities":
                     return executeListLatestActivities(params);
                 case "apply_activity":
@@ -988,7 +998,7 @@ public class AIService {
             case "recent_news":
                 return executeRecentNews(params);
             case "list_activities":
-                return executeListActivities(params);
+                return executeListActivities(params, null);
             case "list_latest_activities":
                 return executeListLatestActivities(params);
         }
@@ -998,18 +1008,25 @@ public class AIService {
         return result;
     }
 
-    private Map<String, Object> executeListActivities(Map<String, String> params) {
+    private Map<String, Object> executeListActivities(Map<String, String> params, User user) {
         Map<String, Object> result = new HashMap<>();
         List<Activity> activities = activityDAO.findInRegistrationPeriod();
         
+        System.out.println("[AIService] executeListActivities - found " + activities.size() + " activities");
+        for (Activity a : activities) {
+            System.out.println("  Activity: id=" + a.getId() + ", title=" + a.getTitle() + ", startTime=" + a.getActivityStartTime());
+        }
+        
         if (activities.isEmpty()) {
-            result.put("success", false);
+            result.put("success", true);
+            result.put("type", "table");
             result.put("message", "当前没有可报名的活动");
+            result.put("columns", new String[]{"ID", "活动名称", "时间", "地点"});
+            result.put("data", new ArrayList<>());
             return result;
         }
         
         result.put("success", true);
-        result.put("message", "以下是当前可报名的活动，请告诉我活动ID，我为您一键报名：");
         result.put("type", "table");
         result.put("columns", new String[]{"ID", "活动名称", "时间", "地点"});
         
@@ -1024,6 +1041,12 @@ public class AIService {
             data.add(row);
         }
         result.put("data", data);
+        
+        if (user == null) {
+            result.put("message", "登陆后可进行报名");
+        } else {
+            result.put("message", "以上是当前可报名的活动，请告诉我活动ID，我为您一键报名：");
+        }
         return result;
     }
 
@@ -1032,13 +1055,16 @@ public class AIService {
         List<Activity> activities = activityDAO.findAll();
         
         if (activities.isEmpty()) {
-            result.put("success", false);
+            result.put("success", true);
+            result.put("type", "table");
             result.put("message", "当前没有任何活动");
+            result.put("columns", new String[]{"ID", "活动名称", "类型", "时间", "状态"});
+            result.put("data", new ArrayList<>());
             return result;
         }
         
         result.put("success", true);
-        result.put("message", "以下是最新活动列表：");
+        result.put("message", "以上是最新活动列表：");
         result.put("type", "table");
         result.put("columns", new String[]{"ID", "活动名称", "类型", "时间", "状态"});
         
@@ -1050,7 +1076,7 @@ public class AIService {
             Map<String, Object> row = new HashMap<>();
             row.put("ID", a.getId());
             row.put("活动名称", a.getTitle());
-            row.put("类型", a.getActivityType() != null ? a.getActivityType() : "-");
+            row.put("类型", getActivityTypeText(a.getActivityType()));
             row.put("时间", a.getActivityStartTime() != null ? sdf.format(a.getActivityStartTime()) : "-");
             row.put("状态", getActivityStatusText(a.getStatus()));
             data.add(row);
@@ -1145,6 +1171,21 @@ public class AIService {
             case "completed": return "已结束";
             case "canceled": return "已取消";
             default: return status;
+        }
+    }
+    
+    private String getActivityTypeText(String type) {
+        if (type == null) return "-";
+        switch (type) {
+            case "LECTURE": return "讲座";
+            case "TRAINING": return "培训";
+            case "COMPETITION": return "比赛";
+            case "SEMINAR": return "讨论会";
+            case "WORKSHOP": return "工作坊";
+            case "PROJECT_INTRO": return "项目介绍";
+            case "TEAM_BUILDING": return "团建";
+            case "OTHER": return "其他";
+            default: return type;
         }
     }
 
@@ -1717,11 +1758,34 @@ public class AIService {
             }
         }
         List<News> newsList = newsDAO.findAll();
+        
+        Map<String, String> typeNames = new HashMap<>();
+        typeNames.put("activity", "活动新闻");
+        typeNames.put("notice", "通知公告");
+        typeNames.put("tech", "技术分享");
+        typeNames.put("award", "获奖荣誉");
+        typeNames.put("recruit", "招新招聘");
+        typeNames.put("other", "其他");
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        List<Map<String, Object>> convertedList = new ArrayList<>();
+        int count = Math.min(newsList.size(), limit);
+        for (int i = 0; i < count; i++) {
+            News n = newsList.get(i);
+            Map<String, Object> newsMap = new HashMap<>();
+            newsMap.put("编号", n.getId());
+            newsMap.put("标题", n.getTitle());
+            String type = n.getType() != null ? n.getType() : "other";
+            newsMap.put("类型", typeNames.getOrDefault(type, "其他"));
+            newsMap.put("发布时间", n.getCreatedAt() != null ? sdf.format(n.getCreatedAt()) : "");
+            convertedList.add(newsMap);
+        }
+        
         result.put("success", true);
         result.put("type", "table");
-        result.put("data", newsList.subList(0, Math.min(newsList.size(), limit)));
+        result.put("data", convertedList);
         result.put("columns", new String[]{"编号", "标题", "类型", "发布时间"});
-        result.put("message", "最近 " + Math.min(newsList.size(), limit) + " 条新闻");
+        result.put("message", "最近 " + count + " 条新闻");
         return result;
     }
 
@@ -1881,7 +1945,7 @@ public class AIService {
                 
                 // 返回表格格式的活动列表
                 result.put("success", true);
-                result.put("message", "以下是当前可报名的活动，请告诉我活动ID进行报名：");
+                result.put("message", "以上是当前可报名的活动，请告诉我活动ID进行报名：");
                 result.put("type", "table");
                 result.put("columns", new String[]{"ID", "活动名称", "类型", "时间", "地点"});
                 
@@ -2207,6 +2271,11 @@ public class AIService {
         Map<String, String> params = new HashMap<>();
         if (actionString == null || actionString.isEmpty()) {
             return params;
+        }
+
+        try {
+            actionString = java.net.URLDecoder.decode(actionString, "UTF-8");
+        } catch (Exception e) {
         }
 
         String[] parts = actionString.split("\\|");
