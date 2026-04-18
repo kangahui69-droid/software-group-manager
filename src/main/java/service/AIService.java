@@ -21,6 +21,7 @@ import model.AIKnowledgeBase;
 import model.AIFaqStatistics;
 import model.Activity;
 import model.ActivityGroup;
+import model.GroupMember;
 import model.Award;
 import model.News;
 import model.Project;
@@ -35,8 +36,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class AIService {
@@ -121,23 +124,21 @@ public class AIService {
 
     private String checkAndHandleDetailQuery(String userMessage, String userRole, User user) {
         String msg = userMessage.toLowerCase();
-        
-        boolean isAdmin = ROLE_ADMIN.equals(userRole);
-        boolean isGuestOrMember = ROLE_GUEST.equals(userRole) || ROLE_MEMBER.equals(userRole);
-        
-        // 注意：活动查询已移至ACTION系统，不要在这里直接查询
-        if (isAdmin || isGuestOrMember) {
-            if (msg.contains("项目")) {
-                return queryProjectList(userMessage);
-            }
-            
-            if (msg.contains("新闻") || msg.contains("资讯") || msg.contains("动态") || msg.contains("成就")) {
-                return queryNewsList(userMessage);
+
+        if (msg.contains("介绍") || msg.contains("加入") || msg.contains("怎么加入") || msg.contains("如何加入")) {
+            if (msg.contains("小组") || msg.contains("软件") || msg.contains("团队")) {
+                return executeGetOrganizationInfo(new HashMap<>()).get("message").toString();
             }
         }
-        
+
+        if (msg.contains("组织") || msg.contains("机构") || msg.contains("我们是谁")) {
+            return executeGetOrganizationInfo(new HashMap<>()).get("message").toString();
+        }
+
+        boolean isAdmin = ROLE_ADMIN.equals(userRole);
+
         if (isAdmin) {
-            if ((msg.contains("活动") && (msg.contains("详情") || msg.contains("具体") || msg.contains("内容"))) || 
+            if ((msg.contains("活动") && (msg.contains("详情") || msg.contains("具体") || msg.contains("内容"))) ||
                 (msg.matches(".*活动\\s*\\d+.*")) ||
                 (msg.contains("activity_id"))) {
                 Integer activityId = extractId(userMessage, "活动");
@@ -145,7 +146,7 @@ public class AIService {
                     return queryActivityDetail(activityId);
                 }
             }
-            
+
             if ((msg.contains("新闻") && (msg.contains("详情") || msg.contains("具体") || msg.contains("内容"))) ||
                 (msg.matches(".*新闻\\s*\\d+.*")) ||
                 (msg.contains("news_id"))) {
@@ -154,7 +155,7 @@ public class AIService {
                     return queryNewsDetail(newsId);
                 }
             }
-            
+
             if ((msg.contains("用户") && (msg.contains("详情") || msg.contains("具体") || msg.contains("信息"))) ||
                 (msg.matches(".*用户\\s*\\d+.*")) ||
                 (msg.contains("user_id")) ||
@@ -165,7 +166,7 @@ public class AIService {
                 }
             }
         }
-        
+
         return null;
     }
 
@@ -538,7 +539,7 @@ public class AIService {
     }
 
     private String buildGuestPrompt() {
-        return "你是黄山学院软件小组的智能助手。\n\n" +
+        return "你是黄山学院软件小组的智能助手，直接用中文回答用户问题。\n\n" +
                "用户身份：访客（未登录）\n\n" +
                "【核心原则】\n" +
                "1. 绝对不要编造活动、新闻、项目等信息！\n" +
@@ -546,21 +547,30 @@ public class AIService {
                "3. 遇到不确定的情况，先执行ACTION查询再回答\n" +
                "4. 查询结果要适当说明，帮助用户理解\n\n" +
                "你可以帮助用户：\n" +
-               "1. 查询活动信息：技术讲座、培训课程、编程比赛、组内分享会等\n" +
-               "2. 查询项目动态：正在进行的技术项目、项目进展和成果\n" +
+               "1. 介绍软件小组和回答如何加入的问题（无需查询数据库，直接回答）\n" +
+               "2. 查询活动信息：技术讲座、培训课程、编程比赛、组内分享会等\n" +
                "3. 查询新闻资讯：小组最新动态、成员成就、技术分享文章\n" +
                "4. 介绍如何注册和加入软件小组\n\n" +
+               "【关于软件小组的介绍 - 直接回答，无需查询】\n" +
+               "黄山学院软件小组是一个由计算机相关专业学生组成的学术组织，致力于软件开发学习与实践。\n" +
+               "小组提供以下服务：\n" +
+               "1. 学习资源分享\n" +
+               "2. 项目实战锻炼\n" +
+               "3. 技术交流活动\n" +
+               "4. 竞赛指导培训\n" +
+               "5. 就业经验分享\n\n" +
+               "【加入方式】\n" +
+               "访问网站注册账号，管理员审核通过后即可成为正式成员。\n\n" +
                "【操作触发规则】\n" +
-                "当用户询问以下内容时，必须先执行ACTION查询：\n" +
-                "- 活动相关：'查看活动'、'有哪些活动'、'活动列表'、'最近活动'、'技术讲座'、'培训'、'分享会' → [ACTION]list_activities\n" +
-                "- 新闻相关：'查看新闻'、'新闻列表'、'资讯'、'动态'、'公告'、'通知'、'消息' → [ACTION]list_all_news\n" +
-                "- 项目相关：'查看项目'、'项目列表'、'有哪些项目'、'项目动态' → [ACTION]list_public_projects\n" +
-                "- 成员相关：'查看成员'、'成员列表'、'用户列表' → [ACTION]list_all_users\n\n" +
-                "【重要】\n" +
-                "- 想执行操作时，只输出[ACTION]格式\n" +
-                "- 查询结果为\"暂无\"时，要友好地说明：'目前没有可报名的活动'或'暂无相关新闻'\n" +
-                "- 无法匹配时，请用户详细描述问题\n" +
-                "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
+               "当用户询问以下内容时，必须先执行ACTION查询：\n" +
+               "- 活动相关：'查看活动'、'有哪些活动'、'活动列表'、'最近活动'、'技术讲座'、'培训'、'分享会' → [ACTION]list_activities\n" +
+               "- 新闻相关：'查看新闻'、'新闻列表'、'资讯'、'动态'、'公告'、'通知'、'消息' → [ACTION]list_all_news\n" +
+               "- 项目相关：'查看项目'、'项目列表'、'有哪些项目'、'项目动态' → [ACTION]list_public_projects\n\n" +
+               "【重要】\n" +
+               "- 想执行操作时，只输出[ACTION]格式\n" +
+               "- 查询结果为\"暂无\"时，要友好地说明：'目前没有可报名的活动'或'暂无相关新闻'\n" +
+               "- 无法匹配时，请用户详细描述问题\n" +
+               "- 绝对不要编造信息，不确定时说\"暂无相关信息\"";
     }
 
     private String buildMemberPrompt() {
@@ -968,6 +978,16 @@ public class AIService {
                     return executeViewMyProjects(params, user);
                 case "view_my_groups":
                     return executeViewMyGroups(params, user);
+                case "list_my_groups":
+                    return executeListMyGroups(params, user);
+                case "view_group_detail":
+                    return executeViewGroupDetail(params, user);
+                case "join_group":
+                    return executeJoinGroup(params, user);
+                case "leave_group":
+                    return executeLeaveGroup(params, user);
+                case "list_group_members":
+                    return executeListGroupMembers(params, user);
                 case "list_activities":
                     return executeListActivities(params, user);
                 case "list_latest_activities":
@@ -2196,11 +2216,196 @@ public class AIService {
 
     private Map<String, Object> executeViewMyGroups(Map<String, String> params, User user) {
         Map<String, Object> result = new HashMap<>();
+        List<ActivityGroup> memberGroups = groupDAO.findByUserId(user.getId());
+        List<ActivityGroup> ownedGroups = groupDAO.findByOwnerId(user.getId());
+
+        Set<Integer> addedIds = new HashSet<>();
+        List<Map<String, Object>> groupList = new ArrayList<>();
+
+        for (ActivityGroup g : ownedGroups) {
+            if (!addedIds.contains(g.getId())) {
+                Map<String, Object> item = buildGroupInfo(g, true);
+                groupList.add(item);
+                addedIds.add(g.getId());
+            }
+        }
+        for (ActivityGroup g : memberGroups) {
+            if (!addedIds.contains(g.getId())) {
+                Map<String, Object> item = buildGroupInfo(g, false);
+                groupList.add(item);
+                addedIds.add(g.getId());
+            }
+        }
+
         result.put("success", true);
-        result.put("type", "redirect");
-        result.put("message", "正在跳转到我的群聊页面...");
-        result.put("redirectUrl", "/group?action=myGroups");
+        result.put("type", "group_list");
+        result.put("data", groupList);
+        result.put("message", "您共有 " + groupList.size() + " 个群聊");
         return result;
+    }
+
+    private Map<String, Object> executeListMyGroups(Map<String, String> params, User user) {
+        return executeViewMyGroups(params, user);
+    }
+
+    private Map<String, Object> executeViewGroupDetail(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        String groupIdStr = params.get("group_id");
+
+        if (groupIdStr == null || groupIdStr.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请提供群聊ID (group_id)");
+            return result;
+        }
+
+        try {
+            int groupId = Integer.parseInt(groupIdStr);
+            ActivityGroup group = groupDAO.findById(groupId);
+
+            if (group == null) {
+                result.put("success", false);
+                result.put("message", "未找到该群聊");
+                return result;
+            }
+
+            boolean isOwner = groupMemberDAO.isOwner(groupId, user.getId());
+            boolean isMember = userGroupDAO.exists(user.getId(), groupId);
+
+            if (!isMember && !isOwner) {
+                result.put("success", false);
+                result.put("message", "您不是该群聊的成员");
+                return result;
+            }
+
+            List<GroupMember> members = groupMemberDAO.findByGroupId(groupId);
+
+            result.put("success", true);
+            result.put("type", "group_detail");
+            result.put("data", buildGroupInfo(group, isOwner));
+            result.put("members", members);
+            result.put("memberCount", members.size());
+            result.put("message", "群聊详情获取成功");
+        } catch (NumberFormatException e) {
+            result.put("success", false);
+            result.put("message", "无效的群聊ID");
+        }
+        return result;
+    }
+
+    private Map<String, Object> executeJoinGroup(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        String groupIdStr = params.get("group_id");
+
+        if (groupIdStr == null || groupIdStr.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请提供群聊ID (group_id)");
+            return result;
+        }
+
+        try {
+            int groupId = Integer.parseInt(groupIdStr);
+            ActivityGroup group = groupDAO.findById(groupId);
+
+            if (group == null) {
+                result.put("success", false);
+                result.put("message", "未找到该群聊");
+                return result;
+            }
+
+            if (userGroupDAO.exists(user.getId(), groupId)) {
+                result.put("success", false);
+                result.put("message", "您已在该群聊中");
+                return result;
+            }
+
+            boolean success = userGroupDAO.insertUserToGroup(user.getId(), groupId);
+            result.put("success", success);
+            result.put("message", success ? "加入群聊成功" : "加入失败");
+        } catch (NumberFormatException e) {
+            result.put("success", false);
+            result.put("message", "无效的群聊ID");
+        }
+        return result;
+    }
+
+    private Map<String, Object> executeLeaveGroup(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        String groupIdStr = params.get("group_id");
+
+        if (groupIdStr == null || groupIdStr.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请提供群聊ID (group_id)");
+            return result;
+        }
+
+        try {
+            int groupId = Integer.parseInt(groupIdStr);
+            ActivityGroup group = groupDAO.findById(groupId);
+
+            if (group == null) {
+                result.put("success", false);
+                result.put("message", "未找到该群聊");
+                return result;
+            }
+
+            if (groupMemberDAO.isOwner(groupId, user.getId())) {
+                result.put("success", false);
+                result.put("message", "群主无法退出群聊，请先转让群主权限");
+                return result;
+            }
+
+            boolean success = userGroupDAO.delete(user.getId(), groupId);
+            result.put("success", success);
+            result.put("message", success ? "已退出群聊" : "退出失败");
+        } catch (NumberFormatException e) {
+            result.put("success", false);
+            result.put("message", "无效的群聊ID");
+        }
+        return result;
+    }
+
+    private Map<String, Object> executeListGroupMembers(Map<String, String> params, User user) {
+        Map<String, Object> result = new HashMap<>();
+        String groupIdStr = params.get("group_id");
+
+        if (groupIdStr == null || groupIdStr.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请提供群聊ID (group_id)");
+            return result;
+        }
+
+        try {
+            int groupId = Integer.parseInt(groupIdStr);
+
+            if (!userGroupDAO.exists(user.getId(), groupId)) {
+                result.put("success", false);
+                result.put("message", "您不是该群聊的成员");
+                return result;
+            }
+
+            List<GroupMember> members = groupMemberDAO.findByGroupId(groupId);
+
+            result.put("success", true);
+            result.put("type", "member_list");
+            result.put("data", members);
+            result.put("message", "该群聊共有 " + members.size() + " 名成员");
+        } catch (NumberFormatException e) {
+            result.put("success", false);
+            result.put("message", "无效的群聊ID");
+        }
+        return result;
+    }
+
+    private Map<String, Object> buildGroupInfo(ActivityGroup group, boolean isOwner) {
+        Map<String, Object> info = new HashMap<>();
+        info.put("id", group.getId());
+        info.put("name", group.getGroupName());
+        info.put("activityName", group.getActivityName());
+        info.put("ownerName", group.getOwnerName());
+        info.put("memberCount", groupMemberDAO.countByGroupId(group.getId()));
+        info.put("isOwner", isOwner);
+        info.put("createdAt", group.getCreatedAt());
+        return info;
     }
 
     private Map<String, Object> executeSubmitAward(Map<String, String> params, User user) {

@@ -15,6 +15,7 @@ public class GroupMember {
     private String username;
     private String name;
     private String avatarFileId;
+    private Date lastReadAt;
 
     public static final String ROLE_OWNER = "OWNER";
     public static final String ROLE_MEMBER = "MEMBER";
@@ -91,7 +92,15 @@ public class GroupMember {
     public void setAvatarFileId(String avatarFileId) {
         this.avatarFileId = avatarFileId;
     }
-    
+
+    public Date getLastReadAt() {
+        return lastReadAt;
+    }
+
+    public void setLastReadAt(Date lastReadAt) {
+        this.lastReadAt = lastReadAt;
+    }
+
     public boolean isOwner() {
         return ROLE_OWNER.equals(role);
     }
