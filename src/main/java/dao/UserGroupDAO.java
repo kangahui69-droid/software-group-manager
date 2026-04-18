@@ -92,7 +92,8 @@ public class UserGroupDAO {
 
     public List<UserGroup> findByUserId(Integer userId) {
         String sql = "SELECT ug.*, ag.group_name, a.name as activity_name, ag.group_owner_id, " +
-                     "(SELECT COUNT(*) FROM group_member WHERE group_id = ag.id) as member_count " +
+                     "(SELECT COUNT(*) FROM group_member WHERE group_id = ag.id) as member_count, " +
+                     "(SELECT COUNT(*) FROM group_message gm WHERE gm.group_id = ag.id AND gm.sent_at > IFNULL((SELECT last_read_at FROM group_member WHERE group_id = ag.id AND user_id = ?), '1970-01-01')) as unread_count " +
                      "FROM user_group ug " +
                      "INNER JOIN activity_group ag ON ug.group_id = ag.id " +
                      "LEFT JOIN activity a ON ag.activity_id = a.id " +
@@ -106,6 +107,7 @@ public class UserGroupDAO {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, userId);
+            pstmt.setInt(2, userId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 userGroups.add(mapResultSetToUserGroup(rs));
@@ -128,6 +130,7 @@ public class UserGroupDAO {
         userGroup.setActivityName(rs.getString("activity_name"));
         userGroup.setMemberCount(rs.getInt("member_count"));
         userGroup.setOwnerId(rs.getInt("group_owner_id"));
+        userGroup.setUnreadCount(rs.getInt("unread_count"));
         return userGroup;
     }
 

@@ -106,41 +106,28 @@ public class GroupAdminServlet extends HttpServlet {
 
     private void listMyGroups(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         User currentUser = (User) req.getSession().getAttribute("user");
-        
-        java.util.List<model.UserGroup> userGroups = new java.util.ArrayList<>();
-        
+
+        List<model.UserGroup> userGroups = userGroupDAO.findByUserId(currentUser.getId());
+
         List<ActivityGroup> ownedGroups = groupDAO.findByOwnerId(currentUser.getId());
-        for (ActivityGroup group : ownedGroups) {
-            model.UserGroup ug = new model.UserGroup();
-            ug.setGroupId(group.getId());
-            ug.setGroupName(group.getGroupName());
-            ug.setOwnerId(currentUser.getId());
-            ug.setMemberCount(memberDAO.countByGroupId(group.getId()));
-            userGroups.add(ug);
+        java.util.Set<Integer> existingGroupIds = new java.util.HashSet<>();
+        for (model.UserGroup ug : userGroups) {
+            existingGroupIds.add(ug.getGroupId());
         }
-        
-        List<GroupMember> memberGroups = memberDAO.findByUserId(currentUser.getId());
-        for (GroupMember gm : memberGroups) {
-            ActivityGroup group = groupDAO.findById(gm.getGroupId());
-            if (group != null) {
-                boolean alreadyAdded = false;
-                for (model.UserGroup ug : userGroups) {
-                    if (ug.getGroupId().equals(group.getId())) {
-                        alreadyAdded = true;
-                        break;
-                    }
-                }
-                if (!alreadyAdded) {
-                    model.UserGroup ug = new model.UserGroup();
-                    ug.setGroupId(group.getId());
-                    ug.setGroupName(group.getGroupName());
-                    ug.setOwnerId(group.getGroupOwnerId());
-                    ug.setMemberCount(memberDAO.countByGroupId(group.getId()));
-                    userGroups.add(ug);
-                }
+
+        for (ActivityGroup group : ownedGroups) {
+            if (!existingGroupIds.contains(group.getId())) {
+                model.UserGroup ug = new model.UserGroup();
+                ug.setGroupId(group.getId());
+                ug.setGroupName(group.getGroupName());
+                ug.setOwnerId(currentUser.getId());
+                ug.setMemberCount(memberDAO.countByGroupId(group.getId()));
+                int unreadCount = memberDAO.getUnreadCount(group.getId(), currentUser.getId());
+                ug.setUnreadCount(unreadCount);
+                userGroups.add(ug);
             }
         }
-        
+
         req.setAttribute("userGroups", userGroups);
         req.getRequestDispatcher("/jsp/group/my-groups.jsp").forward(req, resp);
     }

@@ -885,6 +885,12 @@
                 'view_my_activities': '正在获取我的活动...',
                 'view_my_projects': '正在获取我的项目...',
                 'get_organization_info': '正在获取小组介绍...',
+                'view_my_groups': '正在获取我的群聊...',
+                'list_my_groups': '正在获取我的群聊...',
+                'view_group_detail': '正在获取群聊详情...',
+                'join_group': '正在加入群聊...',
+                'leave_group': '正在退出群聊...',
+                'list_group_members': '正在获取群成员...',
                 'pending_feature': '正在处理...'
             };
             var loadingText = actionLabels[convertedAction.split('|')[0]] || '正在处理...';

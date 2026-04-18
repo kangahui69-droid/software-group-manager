@@ -75,8 +75,9 @@ CREATE TABLE IF NOT EXISTS group_member (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 为已存在的group_member表添加缺失的字段（兼容旧版本）
-ALTER TABLE group_member ADD COLUMN muted TINYINT(1) DEFAULT 0 COMMENT '是否被禁言';
+ALTER TABLE group_member ADD COLUMN muted TINYINT(1) DEFAULT 0 COMMENT '是否被禁言 0-否 1-是';
 ALTER TABLE group_member ADD COLUMN muted_until DATETIME DEFAULT NULL COMMENT '禁言截止时间';
+ALTER TABLE group_member ADD COLUMN last_read_at DATETIME DEFAULT NULL COMMENT '最后阅读时间';
 
 -- ============================================
 -- 第五部分：创建群消息表（如果不存在）

@@ -153,6 +153,8 @@ public class GroupServlet extends HttpServlet {
             return;
         }
 
+        memberDAO.updateLastReadAt(groupId, currentUser.getId());
+
         List<GroupMember> members = memberDAO.findByGroupId(groupId);
         List<GroupMessage> messages = messageDAO.findRecentByGroupId(groupId, 50);
         boolean isOwner = memberDAO.isOwner(groupId, currentUser.getId());

@@ -224,10 +224,6 @@ public class ActivityGroupDAO {
         return false;
     }
 
-    /**
-     * 解除所有已过期的禁言（根据muted_until时间）
-     * @return 解除禁言的群聊数量
-     */
     public int unmuteExpiredGroups() {
         String sql = "UPDATE activity_group SET is_muted = 0, muted_until = NULL, mute_reason = NULL, updated_at = NOW() " +
                      "WHERE is_muted = 1 AND muted_until IS NOT NULL AND muted_until < NOW()";
@@ -256,12 +252,12 @@ public class ActivityGroupDAO {
         group.setOwnerName(rs.getString("owner_name"));
         group.setActivityName(rs.getString("activity_name"));
         group.setMemberCount(rs.getInt("member_count"));
-        
+
         int isMuted = rs.getInt("is_muted");
         group.setIsMuted(isMuted);
         group.setMutedUntil(rs.getTimestamp("muted_until"));
         group.setMuteReason(rs.getString("mute_reason"));
-        
+
         return group;
     }
 

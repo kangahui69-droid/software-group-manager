@@ -119,7 +119,7 @@ public class ActivityGroup {
     public void setMuteReason(String muteReason) {
         this.muteReason = muteReason;
     }
-    
+
     public boolean isMuted() {
         if (isMuted != null && isMuted == 1) {
             if (mutedUntil == null) {

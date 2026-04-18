@@ -141,7 +141,12 @@
                                                 <i class="bi bi-people"></i>
                                             </div>
                                             <div class="d-inline-block">
-                                                <h4 class="mb-1" style="font-family: var(--font-display); font-weight: 600; color: var(--text-dark);">${ug.groupName}</h4>
+                                                <h4 class="mb-1" style="font-family: var(--font-display); font-weight: 600; color: var(--text-dark);">
+                                                    ${ug.groupName}
+                                                    <c:if test="${ug.unreadCount > 0}">
+                                                        <span class="badge bg-danger ms-2">${ug.unreadCount} 未读</span>
+                                                    </c:if>
+                                                </h4>
                                                 <c:if test="${not empty ug.activityName}">
                                                     <small style="color: var(--text-muted);">${ug.activityName}</small>
                                                 </c:if>
