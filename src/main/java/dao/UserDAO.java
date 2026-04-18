@@ -498,4 +498,27 @@ public class UserDAO {
             e.printStackTrace();
         }
     }
+
+    /**
+     * 统计用户总数
+     */
+    public int count() {
+        String sql = "SELECT COUNT(*) FROM user WHERE status = 1";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
 }

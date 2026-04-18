@@ -493,4 +493,27 @@ public class ActivityDAO {
             e.printStackTrace();
         }
     }
+
+    /**
+     * 统计待审核的活动数量
+     */
+    public int countPendingReview() {
+        String sql = "SELECT COUNT(*) FROM activity WHERE status = 'pending' AND deleted = 0";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
 }

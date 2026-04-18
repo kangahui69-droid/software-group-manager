@@ -40,13 +40,20 @@
                 
                 /* 导航菜单项样式 */
                 .navbar-nav .nav-item {
-                    margin-right: 0.25rem;
+                    margin-right: 0.5rem;
                 }
                 .navbar-nav .nav-link {
-                    padding: 0.5rem 1rem;
+                    padding: 0.75rem 1.25rem;
                     border-radius: 0.5rem;
                     transition: all 0.3s ease;
                     border-bottom: none !important;
+                    font-size: 1rem;
+                }
+                .navbar-nav .nav-link-icon {
+                    font-size: 1.25rem;
+                }
+                .navbar-nav .nav-title {
+                    font-weight: 500;
                 }
                 .navbar-nav .nav-item::after {
                     display: none !important;
@@ -208,6 +215,9 @@
                 <c:if test="${sessionScope.user.role == 'ADMIN'}">
                     <jsp:include page="admin_sidebar.jsp" />
                 </c:if>
+                <c:if test="${sessionScope.user.role != 'ADMIN'}">
+                    <jsp:include page="member_sidebar.jsp" />
+                </c:if>
                 <!-- Sidebar or Top Navbar -->
                 <header class="navbar navbar-expand-md navbar-light d-print-none" style="margin-bottom: 0 !important; border-bottom: none !important;">
                     <div class="container-xl">
@@ -218,6 +228,12 @@
                         <c:if test="${sessionScope.user.role == 'ADMIN'}">
                             <a href="#" class="btn btn-link d-none d-md-inline-block me-3" data-bs-toggle="offcanvas"
                                 data-bs-target="#adminSidebar">
+                                <i class="bi bi-list fs-2 text-dark"></i>
+                            </a>
+                        </c:if>
+                        <c:if test="${sessionScope.user.role != 'ADMIN'}">
+                            <a href="#" class="btn btn-link d-none d-md-inline-block me-3" data-bs-toggle="offcanvas"
+                                data-bs-target="#memberSidebar">
                                 <i class="bi bi-list fs-2 text-dark"></i>
                             </a>
                         </c:if>
@@ -300,27 +316,23 @@
                                                     <span class="nav-link-title">AI助手</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item ${param.active == 'notice' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/news?type=notice">
+                                            <li class="nav-item dropdown ${param.active == 'notice' || param.active == 'award' || param.active == 'activity' ? 'active' : ''}">
+                                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-megaphone"></i></span>
-                                                    <span class="nav-link-title">通知公告</span>
+                                                            class="bi bi-newspaper"></i></span>
+                                                    <span class="nav-link-title">新闻公告</span>
                                                 </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'award' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/news?type=award">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-trophy"></i></span>
-                                                    <span class="nav-link-title">获奖新闻</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'activity' ? 'active' : ''}">
-                                                <a class="nav-link"
-                                                    href="${pageContext.request.contextPath}/news?type=activity">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-calendar-event"></i></span>
-                                                    <span class="nav-link-title">活动新闻</span>
-                                                </a>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item ${param.active == 'notice' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=notice">
+                                                        <i class="bi bi-megaphone me-1"></i>通知公告
+                                                    </a>
+                                                    <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=award">
+                                                        <i class="bi bi-trophy me-1"></i>获奖新闻
+                                                    </a>
+                                                    <a class="dropdown-item ${param.active == 'activity' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=activity">
+                                                        <i class="bi bi-calendar-event me-1"></i>活动新闻
+                                                    </a>
+                                                </div>
                                             </li>
                                             <li class="nav-item ${param.active == 'recruit' ? 'active' : ''}">
                                                 <a class="nav-link"
@@ -347,61 +359,47 @@
                                                     <span class="nav-link-title">AI助手</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item ${param.active == 'notice' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/news?type=notice">
+                                            <li class="nav-item dropdown ${param.active == 'notice' || param.active == 'award' || param.active == 'activity' ? 'active' : ''}">
+                                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-megaphone"></i></span>
+                                                            class="bi bi-newspaper"></i></span>
                                                     <span class="nav-link-title">通知公告</span>
                                                 </a>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item ${param.active == 'notice' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=notice">
+                                                        <i class="bi bi-megaphone me-1"></i>通知公告
+                                                    </a>
+                                                    <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=award">
+                                                        <i class="bi bi-trophy me-1"></i>获奖新闻
+                                                    </a>
+                                                    <a class="dropdown-item ${param.active == 'activity' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=activity">
+                                                        <i class="bi bi-calendar-event me-1"></i>活动新闻
+                                                    </a>
+                                                </div>
                                             </li>
-                                            <li class="nav-item ${param.active == 'award' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/news?type=award">
+                                            <li class="nav-item dropdown ${param.active == 'myActivities' || param.active == 'myProjects' ? 'active' : ''}">
+                                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-trophy"></i></span>
-                                                    <span class="nav-link-title">获奖新闻</span>
+                                                            class="bi bi-file-earmark-plus"></i></span>
+                                                    <span class="nav-link-title">申请中心</span>
                                                 </a>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item ${param.active == 'myActivities' ? 'active' : ''}" href="${pageContext.request.contextPath}/activity?action=myCreatedActivities">
+                                                        <i class="bi bi-calendar-plus me-1"></i>活动申请
+                                                    </a>
+                                                    <a class="dropdown-item ${param.active == 'myProjects' ? 'active' : ''}" href="${pageContext.request.contextPath}/project?action=list">
+                                                        <i class="bi bi-kanban me-1"></i>项目申请
+                                                    </a>
+                                                    <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/award?action=list">
+                                                        <i class="bi bi-trophy me-1"></i>奖项申请
+                                                    </a>
+                                                </div>
                                             </li>
-                                            <li class="nav-item ${param.active == 'activity' ? 'active' : ''}">
-                                                <a class="nav-link"
-                                                    href="${pageContext.request.contextPath}/news?type=activity">
+                                            <li class="nav-item ${param.active == 'member' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/member/index.jsp">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-calendar-event"></i></span>
-                                                    <span class="nav-link-title">活动新闻</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'study' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/study">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-book"></i></span>
-                                                    <span class="nav-link-title">学习中心</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'problem' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/member/problem">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-exclamation-triangle"></i></span>
-                                                    <span class="nav-link-title">问题反馈</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'myActivities' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/activity?action=myCreatedActivities">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-calendar-plus"></i></span>
-                                                    <span class="nav-link-title">活动申请</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'myProjects' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/project?action=list">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-kanban"></i></span>
-                                                    <span class="nav-link-title">项目申请</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'group' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/group/my-groups">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-chat-dots"></i></span>
-                                                    <span class="nav-link-title">我的群聊</span>
+                                                            class="bi bi-person-circle"></i></span>
+                                                    <span class="nav-link-title">个人中心</span>
                                                 </a>
                                             </li>
                                         </c:when>
@@ -421,81 +419,32 @@
                                                     </a>
                                                 </div>
                                             </li>
-                                            <li class="nav-item ${param.active == 'news' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/news?action=manage">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-newspaper"></i></span>
-                                                    <span class="nav-link-title">新闻</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'activity' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/activity?action=manage">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-calendar-check"></i></span>
-                                                    <span class="nav-link-title">活动</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'project' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/project/list">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-kanban"></i></span>
-                                                    <span class="nav-link-title">项目</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'award' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/award/list">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-trophy"></i></span>
-                                                    <span class="nav-link-title">奖项</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'user' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/admin/member/list">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-people"></i></span>
-                                                    <span class="nav-link-title">用户</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'recruit' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/admin/recruit/manage">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-person-plus-fill"></i></span>
-                                                    <span class="nav-link-title">报名</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'log' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/admin/log/list">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-journal-text"></i></span>
-                                                    <span class="nav-link-title">日志</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'attendance' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/attendance/manage">
-                                                    <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-book"></i></span>
-                                                    <span class="nav-link-title">学习管理</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item ${param.active == 'problem' ? 'active' : ''}">
-                                                <a class="nav-link" href="${pageContext.request.contextPath}/admin/problem">
+                                            <li class="nav-item ${param.active == 'admin_center' ? 'active' : ''}">
+                                                <a class="nav-link" href="${pageContext.request.contextPath}/admin/index.jsp">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-gear"></i></span>
-                                                    <span class="nav-link-title">问题管理</span>
+                                                    <span class="nav-link-title">管理中心</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item dropdown ${param.active == 'groupAdmin' ? 'active' : ''}">
+                                            <li class="nav-item dropdown ${param.active == 'profile' ? 'active' : ''}">
                                                 <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
-                                                            class="bi bi-chat-dots-fill"></i></span>
-                                                    <span class="nav-link-title">群聊</span>
+                                                            class="bi bi-person-circle"></i></span>
+                                                    <span class="nav-link-title">个人中心</span>
                                                 </a>
                                                 <div class="dropdown-menu">
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/group/admin?action=myGroups">
-                                                        <i class="bi bi-people me-1"></i>我的群聊
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/profile.jsp">
+                                                        <i class="bi bi-person me-1"></i>个人信息
                                                     </a>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/group/admin?action=list">
-                                                        <i class="bi bi-shield me-1"></i>群聊管理
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/password-change.jsp">
+                                                        <i class="bi bi-lock me-1"></i>修改密码
+                                                    </a>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/index.jsp">
+                                                        <i class="bi bi-display me-1"></i>返回前台
+                                                    </a>
+                                                    <div class="dropdown-divider"></div>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/logout">
+                                                        <i class="bi bi-box-arrow-right me-1"></i>退出登录
                                                     </a>
                                                 </div>
                                             </li>

@@ -326,11 +326,33 @@ textarea.form-control-custom {
     color: var(--text-muted);
     font-style: normal;
 }
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-standard);
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
 </style>
 
 <div class="page-body">
     <div class="container-xl">
         <div class="edit-hero">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <a href="${pageContext.request.contextPath}/member/profile.jsp" class="back-btn">
+                    <i class="bi bi-arrow-left"></i>返回
+                </a>
+            </div>
             <h1 class="edit-hero-title">
                 <i class="bi bi-pencil-square me-2"></i>编辑资料
             </h1>

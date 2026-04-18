@@ -266,7 +266,7 @@
                     <h3>我的功能</h3>
                 </div>
                 <div class="row row-cards">
-                    <div class="col-sm-6 col-md-6">
+                    <div class="col-sm-6 col-lg-4">
                         <a href="${pageContext.request.contextPath}/project?action=list" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
@@ -275,13 +275,13 @@
                                     </div>
                                     <div class="ms-3">
                                         <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的项目</div>
-                                        <div class="text-muted" style="font-size: 13px;">查看 & 管理申请</div>
+                                        <div class="text-muted" style="font-size: 13px;">查看 & 管理</div>
                                     </div>
                                 </div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-sm-6 col-md-6">
+                    <div class="col-sm-6 col-lg-4">
                         <a href="${pageContext.request.contextPath}/activity?action=myActivities" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
@@ -290,13 +290,13 @@
                                     </div>
                                     <div class="ms-3">
                                         <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的活动</div>
-                                        <div class="text-muted" style="font-size: 13px;">查看报名活动</div>
+                                        <div class="text-muted" style="font-size: 13px;">查看报名</div>
                                     </div>
                                 </div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-sm-6 col-md-6">
+                    <div class="col-sm-6 col-lg-4">
                         <a href="${pageContext.request.contextPath}/award?action=list" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
@@ -305,13 +305,13 @@
                                     </div>
                                     <div class="ms-3">
                                         <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的奖项</div>
-                                        <div class="text-muted" style="font-size: 13px;">荣誉证书管理</div>
+                                        <div class="text-muted" style="font-size: 13px;">荣誉管理</div>
                                     </div>
                                 </div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-sm-6 col-md-6">
+                    <div class="col-sm-6 col-lg-4">
                         <a href="${pageContext.request.contextPath}/study" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
@@ -320,14 +320,44 @@
                                     </div>
                                     <div class="ms-3">
                                         <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">学习中心</div>
-                                        <div class="text-muted" style="font-size: 13px;">在线学习资源</div>
+                                        <div class="text-muted" style="font-size: 13px;">在线学习</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <a href="${pageContext.request.contextPath}/member/problem" class="card card-sm d-block text-decoration-none">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap" style="background: rgba(168, 85, 247, 0.1);">
+                                        <i class="bi bi-exclamation-triangle text-purple"></i>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">问题反馈</div>
+                                        <div class="text-muted" style="font-size: 13px;">提交 & 查看</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <a href="${pageContext.request.contextPath}/group/my-groups" class="card card-sm d-block text-decoration-none">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-wrap" style="background: rgba(20, 184, 166, 0.1);">
+                                        <i class="bi bi-chat-dots text-teal"></i>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="font-weight-medium" style="font-weight: 600; color: var(--text-dark);">我的群聊</div>
+                                        <div class="text-muted" style="font-size: 13px;">加入的群聊</div>
                                     </div>
                                 </div>
                             </div>
                         </a>
                     </div>
                 </div>
-                
+
                 <div class="section-header mt-4">
                     <i class="bi bi-lightning-charge"></i>
                     <h3>快捷操作</h3>
