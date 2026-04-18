@@ -33,6 +33,7 @@
     int pendingAwards = 0;
     int pendingActivities = 0;
     int pendingRecruits = 0;
+    int pendingProblems = 0;
     int totalPending = 0;
     
     try {
@@ -44,13 +45,15 @@
     try {
         pendingRecruits = recruitDAO.countPending();
     } catch (Exception e) {}
+    try {
+        pendingProblems = problemDAO.countPending();
+    } catch (Exception e) {}
     totalPending = pendingAwards + pendingActivities + pendingRecruits + pendingProblems;
     
     int newsCount = 0;
     int projectCount = 0;
     int userCount = 0;
     int logCount = 0;
-    int pendingProblems = 0;
     int totalGroups = 0;
     
     try { newsCount = newsDAO.count(); } catch (Exception e) {}
