@@ -96,6 +96,23 @@
         color: white;
     }
 
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: var(--radius-standard);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+
     .table-design {
         width: 100%;
         border-collapse: collapse;
@@ -210,6 +227,11 @@
 <div class="page-body">
     <div class="container-xl">
         <div class="member-hero">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <a href="${pageContext.request.contextPath}/member/index.jsp" class="back-btn">
+                    <i class="bi bi-arrow-left"></i>返回
+                </a>
+            </div>
             <h1 class="member-hero-title">
                 <i class="bi bi-kanban me-2"></i>我的项目
             </h1>

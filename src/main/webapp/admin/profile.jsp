@@ -21,9 +21,34 @@
     <jsp:param name="title" value="管理员个人中心" />
 </jsp:include>
 
+<style>
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+}
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+</style>
+
 <div class="page-body">
     <div class="container-xl">
         <div class="admin-hero">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <a href="${pageContext.request.contextPath}/admin/index.jsp" class="back-btn">
+                    <i class="bi bi-arrow-left"></i>返回
+                </a>
+            </div>
             <h1 class="admin-hero-title">
                 <i class="bi bi-person-circle me-2"></i>个人信息
             </h1>
