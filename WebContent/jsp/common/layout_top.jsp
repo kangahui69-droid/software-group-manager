@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>${param.title} - 软件小组管理系统</title>
+    <link rel="icon" href="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" type="image/jpeg">
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler-vendors.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -31,13 +32,8 @@
         .brand-icon {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
             border-radius: var(--radius-standard);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.25rem;
+            object-fit: cover;
         }
 
         .nav-menu-item {
@@ -353,9 +349,7 @@
 
                 <h1 class="navbar-brand navbar-brand-autodark d-none-xs me-4">
                     <a href="${pageContext.request.contextPath}/index.jsp" class="navbar-brand-design">
-                        <span class="brand-icon">
-                            <i class="bi bi-cpu"></i>
-                        </span>
+                        <img src="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" alt="Logo" class="brand-icon">
                         <span class="logo-text">软件小组</span>
                     </a>
                 </h1>

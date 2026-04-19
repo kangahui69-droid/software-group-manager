@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>问题反馈 - 软件小组管理系统</title>
+    <link rel="icon" href="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" type="image/jpeg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -59,11 +60,8 @@
         .brand-header .brand-icon {
             width: 64px;
             height: 64px;
-            background: rgba(255, 255, 255, 0.2);
             border-radius: var(--radius-standard);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            object-fit: cover;
             margin: 0 auto 16px;
         }
         .brand-header h1 {
@@ -159,9 +157,7 @@
         <div class="container container-tight py-4">
             <div class="brand-card">
                 <div class="brand-header">
-                    <div class="brand-icon">
-                        <i class="bi bi-cpu text-white h3 mb-0"></i>
-                    </div>
+                    <img src="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" alt="Logo" class="brand-icon">
                     <h1>软件小组</h1>
                 </div>
                 <div class="brand-body">
