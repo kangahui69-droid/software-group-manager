@@ -361,7 +361,7 @@
                                                 <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                                     <span class="nav-link-icon d-md-none d-lg-inline-block"><i
                                                             class="bi bi-newspaper"></i></span>
-                                                    <span class="nav-link-title">通知公告</span>
+                                                    <span class="nav-link-title">新闻公告</span>
                                                 </a>
                                                 <div class="dropdown-menu">
                                                     <a class="dropdown-item ${param.active == 'notice' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=notice">
