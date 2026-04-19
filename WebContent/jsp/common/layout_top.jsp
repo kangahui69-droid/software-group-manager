@@ -433,23 +433,22 @@
                                             <span>AI助手</span>
                                         </a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-menu-item ${param.active == 'notice' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=notice">
-                                            <i class="bi bi-megaphone"></i>
-                                            <span>通知公告</span>
+                                    <li class="nav-item dropdown">
+                                        <a class="nav-menu-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                            <i class="bi bi-newspaper"></i>
+                                            <span>新闻公告</span>
                                         </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-menu-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=award">
-                                            <i class="bi bi-trophy"></i>
-                                            <span>获奖新闻</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-menu-item ${param.active == 'activity' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=activity">
-                                            <i class="bi bi-calendar-event"></i>
-                                            <span>活动新闻</span>
-                                        </a>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item ${param.active == 'notice' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=notice">
+                                                <i class="bi bi-megaphone me-1"></i>通知公告
+                                            </a>
+                                            <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=award">
+                                                <i class="bi bi-trophy me-1"></i>获奖新闻
+                                            </a>
+                                            <a class="dropdown-item ${param.active == 'activity' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=activity">
+                                                <i class="bi bi-calendar-event me-1"></i>活动新闻
+                                            </a>
+                                        </div>
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-menu-item ${param.active == 'recruit' ? 'active' : ''}" href="${pageContext.request.contextPath}/recruit/apply.jsp">
@@ -471,23 +470,22 @@
                                             <span>AI助手</span>
                                         </a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-menu-item ${param.active == 'notice' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=notice">
-                                            <i class="bi bi-megaphone"></i>
-                                            <span>通知公告</span>
+                                    <li class="nav-item dropdown">
+                                        <a class="nav-menu-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                            <i class="bi bi-newspaper"></i>
+                                            <span>新闻公告</span>
                                         </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-menu-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=award">
-                                            <i class="bi bi-trophy"></i>
-                                            <span>获奖新闻</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-menu-item ${param.active == 'activity' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=activity">
-                                            <i class="bi bi-calendar-event"></i>
-                                            <span>活动新闻</span>
-                                        </a>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item ${param.active == 'notice' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=notice">
+                                                <i class="bi bi-megaphone me-1"></i>通知公告
+                                            </a>
+                                            <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=award">
+                                                <i class="bi bi-trophy me-1"></i>获奖新闻
+                                            </a>
+                                            <a class="dropdown-item ${param.active == 'activity' ? 'active' : ''}" href="${pageContext.request.contextPath}/news?type=activity">
+                                                <i class="bi bi-calendar-event me-1"></i>活动新闻
+                                            </a>
+                                        </div>
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-menu-item ${param.active == 'study' ? 'active' : ''}" href="${pageContext.request.contextPath}/study">
