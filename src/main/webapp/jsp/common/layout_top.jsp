@@ -8,6 +8,7 @@
             <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
             <meta http-equiv="X-UA-Compatible" content="ie=edge" />
             <title>${param.title} - 软件小组管理系统</title>
+            <link rel="icon" href="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" type="image/jpeg">
             <!-- Tabler Core CSS -->
             <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" rel="stylesheet" />
             <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler-vendors.min.css"
@@ -239,7 +240,7 @@
                         </c:if>
                         <h1 class="navbar-brand navbar-brand-autodark d-none-xs me-md-3">
                             <a href="${pageContext.request.contextPath}/index.jsp">
-                                <i class="bi bi-cpu text-primary me-2"></i>软件小组
+                                <img src="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" alt="Logo" class="avatar avatar-sm me-2">软件小组
                             </a>
                         </h1>
                         <div class="navbar-nav flex-row order-md-last">
