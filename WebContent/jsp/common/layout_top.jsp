@@ -53,7 +53,6 @@
         .nav-menu-item:hover {
             background: rgba(59, 130, 246, 0.1);
             color: var(--brand-blue);
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
         }
 
         .nav-menu-item.active {

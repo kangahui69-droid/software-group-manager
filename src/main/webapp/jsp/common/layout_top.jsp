@@ -60,13 +60,10 @@
                     display: none !important;
                 }
                 .navbar-nav .nav-link:hover {
-                    box-shadow: 0 4px 16px rgba(32, 107, 196, 0.4);
                 }
                 .navbar-nav .nav-link:active {
-                    box-shadow: 0 4px 16px rgba(32, 107, 196, 0.4);
                 }
                 .navbar-nav .nav-item.active .nav-link {
-                    box-shadow: 0 4px 16px rgba(32, 107, 196, 0.4);
                 }
                 
                 /* 空状态图标动画效果 */
