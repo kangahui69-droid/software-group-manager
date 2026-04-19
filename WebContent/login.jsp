@@ -75,17 +75,9 @@
         .brand-icon {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            object-fit: cover;
             box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
-        }
-
-        .brand-icon i {
-            font-size: 24px;
-            color: white;
         }
 
         .brand-name {
@@ -544,9 +536,7 @@
             <div class="login-form-wrapper">
                 <div class="login-header">
                     <div class="brand-logo">
-                        <div class="brand-icon">
-                            <i class="bi bi-cpu"></i>
-                        </div>
+                        <img src="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" alt="Logo" class="brand-icon">
                         <span class="brand-name">软件小组</span>
                     </div>
                 </div>
