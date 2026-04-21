@@ -965,46 +965,67 @@ public class AIService {
         try {
             switch (actionType) {
                 case "create_activity":
+                    recordQuestionStatistics("创建活动");
                     return executeCreateActivity(params, user);
                 case "submit_news":
+                    recordQuestionStatistics("提交新闻");
                     return executeSubmitNews(params, user);
                 case "submit_feedback":
+                    recordQuestionStatistics("提交反馈");
                     return executeSubmitFeedback(params, user);
                 case "signup_activity":
+                    recordQuestionStatistics("报名活动");
                     return executeSignupActivity(params, user);
                 case "view_my_activities":
+                    recordQuestionStatistics("查看我的活动");
                     return executeViewMyActivities(params, user);
                 case "view_my_projects":
+                    recordQuestionStatistics("查看我的项目");
                     return executeViewMyProjects(params, user);
                 case "view_my_groups":
+                    recordQuestionStatistics("查看我的群组");
                     return executeViewMyGroups(params, user);
                 case "list_my_groups":
+                    recordQuestionStatistics("列出我的群组");
                     return executeListMyGroups(params, user);
                 case "view_group_detail":
+                    recordQuestionStatistics("查看群组详情");
                     return executeViewGroupDetail(params, user);
                 case "join_group":
+                    recordQuestionStatistics("加入群组");
                     return executeJoinGroup(params, user);
                 case "leave_group":
+                    recordQuestionStatistics("退出群组");
                     return executeLeaveGroup(params, user);
                 case "list_group_members":
+                    recordQuestionStatistics("列出群组成员");
                     return executeListGroupMembers(params, user);
                 case "list_activities":
+                    recordQuestionStatistics("查看活动");
                     return executeListActivities(params, user);
                 case "list_latest_activities":
+                    recordQuestionStatistics("最新活动");
                     return executeListLatestActivities(params);
                 case "apply_activity":
+                    recordQuestionStatistics("申请活动");
                     return executeSignupActivity(params, user);
                 case "create_activity_request":
+                    recordQuestionStatistics("创建活动请求");
                     return executeCreateActivityRequest(params, user);
                 case "list_all_projects":
+                    recordQuestionStatistics("列出所有项目");
                     return executeListAllProjects(params, user);
                 case "list_public_projects":
+                    recordQuestionStatistics("列出公开项目");
                     return executeListPublicProjects(params, user);
                 case "create_project_request":
+                    recordQuestionStatistics("创建项目请求");
                     return executeCreateProjectRequest(params, user);
                 case "submit_award":
+                    recordQuestionStatistics("提交奖项");
                     return executeSubmitAward(params, user);
                 case "list_my_awards":
+                    recordQuestionStatistics("查看我的奖项");
                     return executeListMyAwards(params, user);
                 default:
                     result.put("message", "未知操作类型: " + actionType);
@@ -1017,6 +1038,29 @@ public class AIService {
     }
 
     private Map<String, Object> executePublicQuery(String actionType, Map<String, String> params) {
+        String questionForStats = null;
+        switch (actionType) {
+            case "list_all_news":
+                questionForStats = "查看新闻";
+                break;
+            case "recent_news":
+                questionForStats = "最新新闻";
+                break;
+            case "list_activities":
+                questionForStats = "查看活动";
+                break;
+            case "list_latest_activities":
+                questionForStats = "最新活动";
+                break;
+            case "get_organization_info":
+                questionForStats = "小组介绍";
+                break;
+        }
+        
+        if (questionForStats != null) {
+            recordQuestionStatistics(questionForStats);
+        }
+        
         switch (actionType) {
             case "list_all_news":
                 return executeListAllNews(params);
@@ -1231,58 +1275,85 @@ public class AIService {
         try {
             switch (actionType) {
                 case "list_pending_users":
+                    recordQuestionStatistics("待审核用户");
                     return executeListPendingUsers();
                 case "list_all_users":
+                    recordQuestionStatistics("所有用户");
                     return executeListAllUsers(params);
                 case "approve_user":
+                    recordQuestionStatistics("审核通过用户");
                     return executeApproveUser(params);
                 case "reject_user":
+                    recordQuestionStatistics("拒绝用户");
                     return executeRejectUser(params);
                 case "list_pending_activities":
+                    recordQuestionStatistics("待审核活动");
                     return executeListPendingActivities();
                 case "list_all_activities":
+                    recordQuestionStatistics("所有活动");
                     return executeListAllActivities(params);
                 case "approve_activity":
+                    recordQuestionStatistics("通过活动");
                     return executeApproveActivity(params);
                 case "reject_activity":
+                    recordQuestionStatistics("拒绝活动");
                     return executeRejectActivity(params);
                 case "view_participants":
+                    recordQuestionStatistics("查看参与者");
                     return executeViewParticipants(params);
                 case "list_pending_news":
+                    recordQuestionStatistics("待审核新闻");
                     return executeListPendingNews();
                 case "list_all_news":
+                    recordQuestionStatistics("所有新闻");
                     return executeListAllNews(params);
                 case "approve_news":
+                    recordQuestionStatistics("通过新闻");
                     return executeApproveNews(params);
                 case "reject_news":
+                    recordQuestionStatistics("拒绝新闻");
                     return executeRejectNews(params);
                 case "submit_news":
+                    recordQuestionStatistics("提交新闻");
                     return executeSubmitNews(params, user);
                 case "create_activity":
+                    recordQuestionStatistics("创建活动");
                     return executeCreateActivity(params, user);
                 case "list_all_awards":
+                    recordQuestionStatistics("所有奖项");
                     return executeListAllAwards(params);
                 case "list_pending_problems":
+                    recordQuestionStatistics("待处理问题");
                     return executeListPendingProblems();
                 case "list_all_problems":
+                    recordQuestionStatistics("所有问题");
                     return executeListAllProblems(params);
                 case "classify_problem":
+                    recordQuestionStatistics("分类问题");
                     return executeClassifyProblem(params);
                 case "resolve_problem":
+                    recordQuestionStatistics("解决问题");
                     return executeResolveProblem(params);
                 case "fix_problem":
+                    recordQuestionStatistics("修复问题");
                     return executeFixProblem(params);
                 case "statistics":
+                    recordQuestionStatistics("统计数据");
                     return executeStatistics();
                 case "recent_activities":
+                    recordQuestionStatistics("近期活动");
                     return executeRecentActivities(params);
                 case "recent_news":
+                    recordQuestionStatistics("近期新闻");
                     return executeRecentNews(params);
                 case "view_activity_detail":
+                    recordQuestionStatistics("查看活动详情");
                     return executeViewActivityDetail(params);
                 case "view_news_detail":
+                    recordQuestionStatistics("查看新闻详情");
                     return executeViewNewsDetail(params);
                 case "view_user_detail":
+                    recordQuestionStatistics("查看用户详情");
                     return executeViewUserDetail(params);
                 default:
                     result.put("message", "未知操作类型: " + actionType);
