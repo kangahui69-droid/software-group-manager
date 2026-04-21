@@ -7,6 +7,11 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- 创建数据库
+DROP DATABASE IF EXISTS `software_group`;
+CREATE DATABASE `software_group` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `software_group`;
+
 -- ============================================
 -- 用户与权限相关表 (4张)
 -- ============================================
@@ -23,12 +28,13 @@ CREATE TABLE `user` (
   `status` INT DEFAULT '1',
   `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `must_change_password` TINYINT(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `user` VALUES (1,'admin','RerBXm1xrJqSBMIE9v69ZQ==','管理员','admin@hsu.edu.cn','13800138032','ADMIN',1,'2025-12-21 14:17:28','2026-02-18 01:43:20');
+INSERT INTO `user` VALUES (1,'admin','RerBXm1xrJqSBMIE9v69ZQ==','管理员','admin@hsu.edu.cn','13800138032','ADMIN',1,'2025-12-21 14:17:28','2026-02-18 01:43:20',0);
 
 DROP TABLE IF EXISTS `admin_profile`;
 CREATE TABLE `admin_profile` (
@@ -105,6 +111,7 @@ CREATE TABLE `activity` (
   `max_participants` INT DEFAULT NULL,
   `status` ENUM('upcoming','ongoing','completed','canceled') DEFAULT 'upcoming',
   `approval_status` ENUM('pending','approved','rejected') DEFAULT 'approved',
+  `creator_id` INT DEFAULT NULL,
   `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` TINYINT DEFAULT '0',
@@ -153,6 +160,7 @@ CREATE TABLE `activity_group` (
   `mute_reason` VARCHAR(255) DEFAULT NULL,
   `muted_until` DATETIME DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_owner_id` (`group_owner_id`),
   KEY `idx_activity_id` (`activity_id`)
@@ -163,10 +171,9 @@ CREATE TABLE `group_member` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `group_id` INT NOT NULL,
   `user_id` INT NOT NULL,
-  `role` VARCHAR(20) DEFAULT 'MEMBER',
+  `role` ENUM('OWNER','MEMBER') DEFAULT 'MEMBER',
   `joined_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `muted` TINYINT DEFAULT 0,
-  `muted_until` DATETIME DEFAULT NULL,
+  `last_read_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_group_user` (`group_id`,`user_id`),
   KEY `idx_user_id` (`user_id`)
@@ -325,9 +332,8 @@ DROP TABLE IF EXISTS `attendance_config`;
 CREATE TABLE `attendance_config` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `config_key` VARCHAR(50) NOT NULL,
-  `config_value` TEXT,
-  `description` VARCHAR(200) DEFAULT NULL,
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `config_value` VARCHAR(200) DEFAULT NULL,
+  `description` VARCHAR(500) DEFAULT NULL,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_config_key` (`config_key`)
@@ -337,32 +343,33 @@ DROP TABLE IF EXISTS `attendance_makeup`;
 CREATE TABLE `attendance_makeup` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `user_id` INT NOT NULL,
-  `date` DATE NOT NULL,
-  `type` VARCHAR(20) NOT NULL,
-  `reason` VARCHAR(500) NOT NULL,
-  `status` VARCHAR(20) DEFAULT 'pending',
-  `approved_by` INT DEFAULT NULL,
-  `approved_at` DATETIME DEFAULT NULL,
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `attendance_date` DATE NOT NULL,
+  `make_up_type` VARCHAR(20) DEFAULT NULL,
+  `apply_reason` VARCHAR(500) DEFAULT NULL,
+  `apply_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `status` VARCHAR(20) DEFAULT 'PENDING',
+  `approve_by` INT DEFAULT NULL,
+  `approve_time` DATETIME DEFAULT NULL,
+  `approve_remark` VARCHAR(500) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_user_id` (`user_id`)
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `study_session`;
 CREATE TABLE `study_session` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `user_id` INT NOT NULL,
-  `session_name` VARCHAR(100) NOT NULL,
-  `subject` VARCHAR(50) DEFAULT NULL,
-  `start_time` DATETIME NOT NULL,
-  `end_time` DATETIME DEFAULT NULL,
+  `session_date` DATE NOT NULL,
+  `check_in_time` DATETIME NOT NULL,
+  `check_out_time` DATETIME DEFAULT NULL,
   `duration` INT DEFAULT NULL,
-  `content` TEXT,
-  `notes` TEXT,
-  `status` VARCHAR(20) DEFAULT 'ongoing',
+  `status` VARCHAR(20) DEFAULT 'ACTIVE',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_session_date` (`session_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
@@ -373,27 +380,26 @@ DROP TABLE IF EXISTS `award`;
 CREATE TABLE `award` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(100) NOT NULL,
-  `competition` VARCHAR(200) DEFAULT NULL,
-  `year` INT DEFAULT NULL,
+  `competition` VARCHAR(100) NOT NULL,
+  `year` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `competition_time` DATE DEFAULT NULL,
   `competition_location` VARCHAR(200) DEFAULT NULL,
-  `competition_session` VARCHAR(50) DEFAULT NULL,
+  `competition_session` VARCHAR(100) DEFAULT NULL,
   `award_type` INT DEFAULT NULL,
   `award_category` INT DEFAULT NULL,
-  `award_level` INT DEFAULT NULL,
-  `competition_level` INT DEFAULT NULL,
   `team_name` VARCHAR(100) DEFAULT NULL,
-  `award_status` VARCHAR(20) DEFAULT 'PENDING',
-  `user_id` INT DEFAULT NULL,
+  `award_status` VARCHAR(50) DEFAULT 'PENDING',
   `created_by` INT DEFAULT NULL,
   `approved_by` INT DEFAULT NULL,
   `approved_at` DATETIME DEFAULT NULL,
-  `description` TEXT,
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `award_level` INT DEFAULT NULL,
+  `competition_level` INT DEFAULT NULL,
+  `deleted` TINYINT DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_status` (`award_status`)
+  KEY `idx_created_by` (`created_by`),
+  KEY `idx_award_status` (`award_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `award_image`;
@@ -426,19 +432,22 @@ CREATE TABLE `project` (
   `name` VARCHAR(100) NOT NULL,
   `description` TEXT,
   `category` VARCHAR(50) DEFAULT NULL,
-  `year` INT DEFAULT NULL,
-  `status` VARCHAR(20) DEFAULT 'pending',
-  `leader_id` INT DEFAULT NULL,
-  `admin_id` INT DEFAULT NULL,
+  `year` INT NOT NULL,
   `expected_start_date` DATE DEFAULT NULL,
   `expected_end_date` DATE DEFAULT NULL,
   `actual_start_date` DATE DEFAULT NULL,
   `actual_end_date` DATE DEFAULT NULL,
+  `status` ENUM('pending','approved','in_progress','completed','canceled','rejected') DEFAULT 'pending',
+  `approved_by` INT DEFAULT NULL,
+  `approved_at` DATETIME DEFAULT NULL,
+  `admin_id` INT DEFAULT NULL,
+  `leader_id` INT NOT NULL,
+  `budget` DECIMAL(10,2) DEFAULT NULL,
   `repo_url` VARCHAR(500) DEFAULT NULL,
   `doc_url` VARCHAR(500) DEFAULT NULL,
-  `budget` DECIMAL(10,2) DEFAULT NULL,
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` TINYINT DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `idx_leader_id` (`leader_id`),
   KEY `idx_status` (`status`)
@@ -590,7 +599,7 @@ CREATE TABLE `file_storage` (
   `original_name` VARCHAR(255) NOT NULL,
   `stored_name` VARCHAR(255) NOT NULL,
   `file_path` VARCHAR(500) NOT NULL,
-  `file_type` VARCHAR(50) DEFAULT NULL,
+  `file_type` VARCHAR(200) DEFAULT NULL,
   `file_size` BIGINT DEFAULT NULL,
   `category` VARCHAR(50) DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -608,13 +617,14 @@ DROP TABLE IF EXISTS `news`;
 CREATE TABLE `news` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(200) NOT NULL,
-  `type` ENUM('award','activity','notice','tech','recruit') NOT NULL DEFAULT 'notice',
+  `type` ENUM('award','activity','notice') NOT NULL,
   `content_path` VARCHAR(255) NOT NULL,
   `summary` VARCHAR(500) DEFAULT NULL,
   `author_id` INT DEFAULT NULL,
-  `status` TINYINT DEFAULT 1,
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `activity_id` INT DEFAULT NULL,
+  `status` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `author_id` (`author_id`),
   KEY `idx_type` (`type`)
@@ -657,30 +667,26 @@ CREATE TABLE `problem_report` (
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
   KEY `idx_category` (`category`),
-  KEY `idx_status` (`status`),
-  KEY `idx_user_id` (`user_id`)
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `problem_management`;
 CREATE TABLE `problem_management` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `title` VARCHAR(200) NOT NULL,
-  `content` TEXT NOT NULL,
-  `reporter_name` VARCHAR(100) DEFAULT NULL,
-  `reporter_contact` VARCHAR(100) DEFAULT NULL,
-  `reporter_type` ENUM('GUEST','MEMBER','ADMIN') NOT NULL DEFAULT 'GUEST',
-  `user_id` INT DEFAULT NULL,
-  `category` ENUM('VERIFIED','UNVERIFIED','INVALID') NOT NULL DEFAULT 'UNVERIFIED',
-  `status` ENUM('PENDING','SOLVING','SOLVED','UNSOLVED') DEFAULT 'PENDING',
+  `report_id` INT NOT NULL,
+  `category` ENUM('VERIFIED','INVALID','UNVERIFIED') NOT NULL DEFAULT 'UNVERIFIED',
+  `status` ENUM('PENDING','SOLVING','SOLVED') NOT NULL DEFAULT 'PENDING',
   `admin_comment` TEXT DEFAULT NULL,
   `handled_by` INT DEFAULT NULL,
   `handled_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_user_id` (`user_id`)
+  KEY `idx_report_id` (`report_id`),
+  KEY `idx_category` (`category`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
