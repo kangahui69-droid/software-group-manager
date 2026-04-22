@@ -49,12 +49,21 @@
                     transition: all 0.3s ease;
                     border-bottom: none !important;
                     font-size: 1rem;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    vertical-align: middle;
+                    line-height: 1;
                 }
                 .navbar-nav .nav-link-icon {
                     font-size: 1.25rem;
+                    display: inline-flex;
+                    align-items: center;
+                    line-height: 1;
                 }
                 .navbar-nav .nav-title {
                     font-weight: 500;
+                    line-height: 1;
                 }
                 .navbar-nav .nav-item::after {
                     display: none !important;
