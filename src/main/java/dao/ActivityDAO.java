@@ -186,7 +186,7 @@ public class ActivityDAO {
         PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, activity.getTitle());
             pstmt.setString(2, activity.getDescription());
             pstmt.setString(3, activity.getActivityType());
@@ -201,7 +201,15 @@ public class ActivityDAO {
             pstmt.setString(12, activity.getStatus() != null ? activity.getStatus() : "upcoming");
             pstmt.setString(13, activity.getApprovalStatus() != null ? activity.getApprovalStatus() : "pending");
             pstmt.setObject(14, activity.getCreatorId());
-            return pstmt.executeUpdate() > 0;
+            boolean success = pstmt.executeUpdate() > 0;
+            if (success) {
+                java.sql.ResultSet rs = pstmt.getGeneratedKeys();
+                if (rs.next()) {
+                    activity.setId(rs.getInt(1));
+                }
+                rs.close();
+            }
+            return success;
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -216,7 +224,7 @@ public class ActivityDAO {
     public boolean update(Activity activity) {
         String sql = "UPDATE activity SET name=?, description=?, activity_type=?, activity_start_time=?, " +
                     "activity_end_time=?, location=?, organizers=?, contact_info=?, registration_start_time=?, " +
-                    "registration_end_time=?, max_participants=?, status=? WHERE id=?";
+                    "registration_end_time=?, max_participants=?, status=?, approval_status=? WHERE id=?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -234,7 +242,8 @@ public class ActivityDAO {
             pstmt.setTimestamp(10, activity.getRegistrationEndTime() != null ? new Timestamp(activity.getRegistrationEndTime().getTime()) : null);
             pstmt.setInt(11, activity.getMaxParticipants() != null ? activity.getMaxParticipants() : 0);
             pstmt.setString(12, activity.getStatus());
-            pstmt.setInt(13, activity.getId());
+            pstmt.setString(13, activity.getApprovalStatus() != null ? activity.getApprovalStatus() : "approved");
+            pstmt.setInt(14, activity.getId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -248,7 +257,7 @@ public class ActivityDAO {
      * 删除活动（软删除，同时将状态改为已取消）
      */
     public boolean delete(Integer id) {
-        String sql = "UPDATE activity SET deleted = 1, status = 'CANCELED' WHERE id=?";
+        String sql = "UPDATE activity SET deleted = 1, status = 'canceled' WHERE id=?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -271,7 +280,7 @@ public class ActivityDAO {
      * @return 是否删除成功
      */
     public boolean delete(Integer id, Connection conn) {
-        String sql = "UPDATE activity SET deleted = 1, status = 'CANCELED' WHERE id=?";
+        String sql = "UPDATE activity SET deleted = 1, status = 'canceled' WHERE id=?";
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);
@@ -302,7 +311,9 @@ public class ActivityDAO {
     private Activity mapResultSetToActivity(ResultSet rs) throws SQLException {
         Activity activity = new Activity();
         activity.setId(rs.getInt("id"));
-        activity.setTitle(rs.getString("name"));
+        String name = rs.getString("name");
+        System.out.println("[ActivityDAO] mapResultSetToActivity - id=" + activity.getId() + ", name from DB=" + name);
+        activity.setTitle(name);
         activity.setDescription(rs.getString("description"));
         activity.setActivityType(rs.getString("activity_type"));
         
@@ -481,5 +492,28 @@ public class ActivityDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 统计待审核的活动数量
+     */
+    public int countPendingReview() {
+        String sql = "SELECT COUNT(*) FROM activity WHERE status = 'pending' AND deleted = 0";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
     }
 }

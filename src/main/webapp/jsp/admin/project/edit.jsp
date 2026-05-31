@@ -3,34 +3,31 @@
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="编辑项目" />
 </jsp:include>
-
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">
-                    编辑项目信息
-                </h2>
-            </div>
-            <div class="col-auto ms-auto">
-                <a href="${pageContext.request.contextPath}/project?action=list" class="btn btn-outline-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="12" x2="11" y2="18"></line><line x1="5" y1="12" x2="11" y2="6"></line></svg>
-                    返回列表
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
 
 <div class="page-body">
     <div class="container-xl">
+        <div class="admin-hero">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="admin-hero-title">
+                        <i class="bi bi-pencil-square me-2"></i>编辑项目信息
+                    </h1>
+                    <p class="admin-hero-subtitle">修改项目详细信息</p>
+                </div>
+                <a href="${pageContext.request.contextPath}/project?action=manage" class="btn btn-outline-brand" style="color: white; border-color: white;">
+                    <i class="bi bi-arrow-left me-1"></i>返回
+                </a>
+            </div>
+        </div>
+
         <div class="row row-cards">
             <div class="col-12">
-                <form action="${pageContext.request.contextPath}/project" method="POST" class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">项目基本信息</h3>
+                <form action="${pageContext.request.contextPath}/project" method="POST" class="card-design">
+                    <div class="card-header-design">
+                        <h3 class="card-title-design">项目基本信息</h3>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body-design">
                         <c:if test="${not empty error}">
                             <div class="alert alert-danger">
                                 ${error}
@@ -40,20 +37,20 @@
                         <input type="hidden" name="id" value="${project.id}">
                         
                         <div class="mb-3">
-                            <label class="form-label required">项目标题</label>
-                            <input type="text" class="form-control" name="title" value="${project.title}" placeholder="请输入项目标题" required>
+                            <label class="form-label-design required">项目标题</label>
+                            <input type="text" class="input-design" name="title" value="${project.title}" placeholder="请输入项目标题" required>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">项目描述</label>
-                            <textarea class="form-control" name="description" rows="4" placeholder="请输入项目描述">${project.description}</textarea>
+                            <label class="form-label-design">项目描述</label>
+                            <textarea class="input-design" name="description" rows="4" placeholder="请输入项目描述">${project.description}</textarea>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label required">负责人</label>
-                                    <select class="form-select" name="leaderId" required>
+                                    <label class="form-label-design required">负责人</label>
+                                    <select class="input-design" name="leaderId" required>
                                         <c:forEach var="user" items="${allUsers}">
                                             <option value="${user.id}" ${project.leaderId == user.id ? 'selected' : ''}>${user.username}</option>
                                         </c:forEach>
@@ -63,8 +60,8 @@
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label required">年份</label>
-                                    <input type="number" class="form-control" name="year" value="${project.year}" placeholder="请输入项目年份" required>
+                                    <label class="form-label-design required">年份</label>
+                                    <input type="number" class="input-design" name="year" value="${project.year}" placeholder="请输入项目年份" required>
                                 </div>
                             </div>
                         </div>
@@ -72,14 +69,14 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">期望开始时间</label>
-                                    <input type="date" class="form-control" name="expectedStartDate" value="${project.expectedStartDate}">
+                                    <label class="form-label-design">期望开始时间</label>
+                                    <input type="date" class="input-design" name="expectedStartDate" value="${project.expectedStartDate}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">期望结束时间</label>
-                                    <input type="date" class="form-control" name="expectedEndDate" value="${project.expectedEndDate}">
+                                    <label class="form-label-design">期望结束时间</label>
+                                    <input type="date" class="input-design" name="expectedEndDate" value="${project.expectedEndDate}">
                                 </div>
                             </div>
                         </div>
@@ -87,31 +84,31 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">实际开始时间</label>
-                                    <input type="date" class="form-control" name="actualStartDate" value="${project.actualStartDate}">
+                                    <label class="form-label-design">实际开始时间</label>
+                                    <input type="date" class="input-design" name="actualStartDate" value="${project.actualStartDate}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">实际结束时间</label>
-                                    <input type="date" class="form-control" name="actualEndDate" value="${project.actualEndDate}">
+                                    <label class="form-label-design">实际结束时间</label>
+                                    <input type="date" class="input-design" name="actualEndDate" value="${project.actualEndDate}">
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label required">项目状态</label>
-                            <select class="form-select" name="status" required>
+                            <label class="form-label-design required">项目状态</label>
+                            <select class="input-design" name="status" required>
                                 <option value="PENDING" ${project.status == 'PENDING' ? 'selected' : ''}>待审批</option>
                                 <option value="APPROVED" ${project.status == 'APPROVED' ? 'selected' : ''}>已批准</option>
                                 <option value="REJECTED" ${project.status == 'REJECTED' ? 'selected' : ''}>已拒绝</option>
                             </select>
                         </div>
                     </div>
-                    <div class="card-footer text-end">
+                    <div class="card-footer-design text-end">
                         <div class="d-flex">
-                            <a href="${pageContext.request.contextPath}/project?action=list" class="btn btn-link">取消</a>
-                            <button type="submit" class="btn btn-primary ms-auto">保存更改</button>
+                            <a href="${pageContext.request.contextPath}/project?action=list" class="btn-outline-brand">取消</a>
+                            <button type="submit" class="btn-brand ms-auto">保存更改</button>
                         </div>
                     </div>
                 </form>

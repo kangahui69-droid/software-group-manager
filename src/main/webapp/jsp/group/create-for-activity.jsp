@@ -12,6 +12,11 @@
                     为活动创建群聊
                 </h2>
             </div>
+            <div class="col-auto">
+                <a href="${pageContext.request.contextPath}/activity?action=myCreatedActivities" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>返回
+                </a>
+            </div>
         </div>
     </div>
 </div>

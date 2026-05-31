@@ -31,6 +31,9 @@ public class AuthFilter implements Filter {
 
         // ===== 公开路径白名单：不需要登录即可访问 =====
         // 允许访问的公开路径
+        String queryString = httpRequest.getQueryString();
+        String fullRequestUri = requestURI + (queryString != null ? "?" + queryString : "");
+        
         boolean isPublicPath =
                 // AI助手（公开，游客可访问但权限受限）
                 requestURI.contains("/ai") ||
@@ -51,7 +54,7 @@ public class AuthFilter implements Filter {
                 requestURI.endsWith(contextPath + "/news") ||
                 requestURI.endsWith(contextPath + "/news/") ||
                 // 新闻详情查看（公开，URL格式：/news?action=detail&id=xxx）
-                requestURI.contains("/news?action=detail") ||
+                fullRequestUri.contains("/news?action=detail") ||
                 // 主页（公开）
                 requestURI.endsWith(contextPath + "/index.jsp") ||
                 requestURI.endsWith(contextPath + "/") ||
@@ -86,12 +89,6 @@ public class AuthFilter implements Filter {
         if (requestURI.contains("/member/") && !"MEMBER".equalsIgnoreCase(userRole)
                 && !"ADMIN".equalsIgnoreCase(userRole)) {
             httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "权限不足");
-            return;
-        }
-
-        // 限制管理员访问群聊功能（管理员暂不添加群聊功能）
-        if (requestURI.contains("/group/") && "ADMIN".equalsIgnoreCase(userRole)) {
-            httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "管理员暂不使用群聊功能");
             return;
         }
 

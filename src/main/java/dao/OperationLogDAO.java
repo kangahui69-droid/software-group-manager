@@ -206,5 +206,28 @@ public class OperationLogDAO {
             e.printStackTrace();
         }
     }
+
+    /**
+     * 统计日志总数
+     */
+    public int count() {
+        String sql = "SELECT COUNT(*) FROM operation_log";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
 }
 

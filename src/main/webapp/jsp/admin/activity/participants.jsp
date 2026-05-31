@@ -4,142 +4,329 @@
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="报名管理" />
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
+<style>
+    .admin-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
 
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">
-                    报名管理 - ${activity.title}
-                </h2>
-                <p class="text-muted">
-                    <fmt:formatDate value="${activity.activityStartTime}" pattern="yyyy-MM-dd HH:mm" /> | 
-                    地点: ${activity.location} |
-                    <c:choose>
-                        <c:when test="${activity.status == 'completed' || activity.status == 'canceled' || activity.status == 'ongoing'}">
-                            <span class="text-danger">报名已结束</span>
-                        </c:when>
-                        <c:when test="${activity.registrationEnded}">
-                            <span class="text-danger">报名已截止</span>
-                        </c:when>
-                        <c:otherwise>
-                            <span class="text-success">报名进行中</span>
-                        </c:otherwise>
-                    </c:choose>
-                </p>
-            </div>
-            <div class="col-auto">
-                <a href="${pageContext.request.contextPath}/activity?action=manage" class="btn btn-outline-secondary">
-                    返回活动管理
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+    .admin-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .admin-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body-design {
+        padding: 0;
+    }
+
+    .card-header-design {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .card-title-design {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-sm-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-sm-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+    }
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .btn-success-design {
+        background-color: #10b981;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-success-design:hover {
+        background-color: #059669;
+        color: white;
+    }
+
+    .btn-danger-design {
+        background-color: #ef4444;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-danger-design:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+
+    .table-design {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-design th {
+        font-family: var(--font-ui);
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-bottom: 2px solid var(--border-gray);
+        padding: 14px 20px;
+        text-align: left;
+        font-size: 0.81rem;
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .table-design td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+    }
+
+    .table-design tbody tr:hover {
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .badge-design {
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+    }
+
+    .input-design {
+        border-radius: var(--radius-standard);
+        border: 1px solid var(--border-gray);
+        padding: 10px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .input-design:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+        outline: none;
+    }
+
+    .form-label-design {
+        font-family: var(--font-ui);
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.875rem;
+    }
+</style>
 
 <div class="page-body">
     <div class="container-xl">
-        <!-- 提示消息 -->
+        <div class="admin-hero">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="admin-hero-title">
+                        <i class="bi bi-people me-2"></i>报名管理 - ${activity.title}
+                    </h1>
+                    <p class="admin-hero-subtitle">
+                        <fmt:formatDate value="${activity.activityStartTime}" pattern="yyyy-MM-dd HH:mm" /> | 
+                        地点: ${activity.location} |
+                        <c:choose>
+                            <c:when test="${activity.status == 'completed' || activity.status == 'canceled' || activity.status == 'ongoing'}">
+                                <span style="color: #ef4444;">报名已结束</span>
+                            </c:when>
+                            <c:when test="${activity.registrationEnded}">
+                                <span style="color: #ef4444;">报名已截止</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: #10b981;">报名进行中</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </p>
+                </div>
+                <a href="${pageContext.request.contextPath}/activity?action=manage" class="btn btn-outline-brand" style="color: white; border-color: white;">
+                    <i class="bi bi-arrow-left me-1"></i>返回
+                </a>
+            </div>
+        </div>
+
         <c:if test="${not empty param.success}">
-            <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="alert alert-success" role="alert" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-standard); color: #059669; padding: 12px 16px; margin-bottom: 16px;">
                 ${param.success}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </c:if>
         <c:if test="${not empty param.error}">
-            <div class="alert alert-danger alert-dismissible" role="alert">
+            <div class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius-standard); color: #dc2626; padding: 12px 16px; margin-bottom: 16px;">
                 ${param.error}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </c:if>
 
-        <!-- 统计信息 -->
-        <div class="row row-cols-1 row-cols-md-4 g-3 mb-3">
+        <div class="row row-cols-1 row-cols-md-4 g-3 mb-4">
             <div class="col">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="subtile">总报名人数</div>
-                                <div class="h1 m-0">${registrations.size()}</div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--brand-blue), #3b82f6); color: white;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="subtile" style="font-size: 0.875rem; opacity: 0.9;">总报名人数</div>
+                            <div class="h1 m-0" style="font-size: 2rem; font-weight: 600;">${registrations.size()}</div>
+                        </div>
+                        <div style="width: 52px; height: 52px; border-radius: var(--radius-standard); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; background: rgba(255,255,255,0.2); color: white;">
+                            <i class="bi bi-people"></i>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="card bg-warning">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="subtile">待审核</div>
-                                <div class="h1 m-0">
-                                    <c:set var="pendingCount" value="0" />
-                                    <c:forEach var="r" items="${registrations}">
-                                        <c:if test="${r.status == 'pending'}"><c:set var="pendingCount" value="${pendingCount + 1}" /></c:if>
-                                    </c:forEach>
-                                    ${pendingCount}
-                                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="subtile" style="font-size: 0.875rem; opacity: 0.9;">待审核</div>
+                            <div class="h1 m-0" style="font-size: 2rem; font-weight: 600;">
+                                <c:set var="pendingCount" value="0" />
+                                <c:forEach var="r" items="${registrations}">
+                                    <c:if test="${r.status == 'pending'}"><c:set var="pendingCount" value="${pendingCount + 1}" /></c:if>
+                                </c:forEach>
+                                ${pendingCount}
                             </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
+                        </div>
+                        <div style="width: 52px; height: 52px; border-radius: var(--radius-standard); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; background: rgba(255,255,255,0.2); color: white;">
+                            <i class="bi bi-clock"></i>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="subtile">已确认</div>
-                                <div class="h1 m-0">
-                                    <c:set var="confirmedCount" value="0" />
-                                    <c:forEach var="r" items="${registrations}">
-                                        <c:if test="${r.status == 'confirmed'}"><c:set var="confirmedCount" value="${confirmedCount + 1}" /></c:if>
-                                    </c:forEach>
-                                    ${confirmedCount}
-                                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #34d399); color: white;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="subtile" style="font-size: 0.875rem; opacity: 0.9;">已确认</div>
+                            <div class="h1 m-0" style="font-size: 2rem; font-weight: 600;">
+                                <c:set var="confirmedCount" value="0" />
+                                <c:forEach var="r" items="${registrations}">
+                                    <c:if test="${r.status == 'confirmed'}"><c:set var="confirmedCount" value="${confirmedCount + 1}" /></c:if>
+                                </c:forEach>
+                                ${confirmedCount}
                             </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                            </svg>
+                        </div>
+                        <div style="width: 52px; height: 52px; border-radius: var(--radius-standard); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; background: rgba(255,255,255,0.2); color: white;">
+                            <i class="bi bi-check-circle"></i>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="card bg-danger text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="subtile">已驳回</div>
-                                <div class="h1 m-0">
-                                    <c:set var="rejectedCount" value="0" />
-                                    <c:forEach var="r" items="${registrations}">
-                                        <c:if test="${r.status == 'rejected'}"><c:set var="rejectedCount" value="${rejectedCount + 1}" /></c:if>
-                                    </c:forEach>
-                                    ${rejectedCount}
-                                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ef4444, #f87171); color: white;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="subtile" style="font-size: 0.875rem; opacity: 0.9;">已驳回</div>
+                            <div class="h1 m-0" style="font-size: 2rem; font-weight: 600;">
+                                <c:set var="rejectedCount" value="0" />
+                                <c:forEach var="r" items="${registrations}">
+                                    <c:if test="${r.status == 'rejected'}"><c:set var="rejectedCount" value="${rejectedCount + 1}" /></c:if>
+                                </c:forEach>
+                                ${rejectedCount}
                             </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="15" y1="9" x2="9" y2="15"></line>
-                                <line x1="9" y1="9" x2="15" y2="15"></line>
-                            </svg>
+                        </div>
+                        <div style="width: 52px; height: 52px; border-radius: var(--radius-standard); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; background: rgba(255,255,255,0.2); color: white;">
+                            <i class="bi bi-x-circle"></i>
                         </div>
                     </div>
                 </div>
@@ -147,14 +334,13 @@
         </div>
 
         <c:if test="${empty registrations}">
-            <div class="alert alert-info">
+            <div class="alert alert-info" role="alert" style="background: var(--primary-light); border: 1px solid rgba(20, 86, 240, 0.2); border-radius: var(--radius-standard); color: var(--brand-blue); padding: 12px 16px;">
                 暂无报名人员
             </div>
         </c:if>
         
-        <!-- 已过期提示 -->
         <c:if test="${activity.registrationClosed}">
-            <div class="alert alert-warning">
+            <div class="alert alert-warning" role="alert" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-standard); color: #92400e; padding: 12px 16px; margin-bottom: 16px;">
                 <strong>注意：</strong>此活动的报名已结束，仅可查看报名记录，无法进行审核操作。
             </div>
         </c:if>
@@ -162,10 +348,10 @@
         <form id="participantForm" method="POST" action="${pageContext.request.contextPath}/activity">
             <input type="hidden" name="activityId" value="${activity.id}">
             
-            <div class="card">
-                <div class="card-header">
+            <div class="card-design">
+                <div class="card-header-design">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h3 class="card-title">报名人员列表</h3>
+                        <h3 class="card-title-design">报名人员列表</h3>
                         <c:if test="${not activity.registrationClosed}">
                             <div>
                                 <label class="form-check">
@@ -177,19 +363,19 @@
                     </div>
                 </div>
                 <c:if test="${not activity.registrationClosed}">
-                    <div class="card-body">
+                    <div class="card-body-design">
                         <div class="mb-3">
-                            <button type="submit" name="action" value="batchApprove" class="btn btn-success" onclick="return confirm('确定要批量通过选中的报名吗？')">
+                            <button type="submit" name="action" value="batchApprove" class="btn btn-success-design" onclick="return confirm('确定要批量通过选中的报名吗？')">
                                 批量通过
                             </button>
-                            <button type="submit" name="action" value="batchReject" class="btn btn-danger" onclick="return confirm('确定要批量拒绝选中的报名吗？')">
+                            <button type="submit" name="action" value="batchReject" class="btn btn-danger-design" onclick="return confirm('确定要批量拒绝选中的报名吗？')">
                                 批量拒绝
                             </button>
                         </div>
                     </div>
                 </c:if>
                 <div class="table-responsive">
-                    <table class="table table-vcenter card-table table-striped">
+                    <table class="table-design">
                         <thead>
                             <tr>
                                 <th class="w-1"></th>
@@ -218,19 +404,19 @@
                                     <td>
                                         <c:choose>
                                             <c:when test="${r.displayStatus == 'confirmed'}">
-                                                <span class="badge bg-success">已确认</span>
+                                                <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">已确认</span>
                                             </c:when>
                                             <c:when test="${r.displayStatus == 'pending'}">
-                                                <span class="badge bg-warning text-dark">待审核</span>
+                                                <span class="badge-design" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">待审核</span>
                                             </c:when>
                                             <c:when test="${r.displayStatus == 'rejected'}">
-                                                <span class="badge bg-danger">已驳回</span>
+                                                <span class="badge-design" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">已驳回</span>
                                                 <c:if test="${not empty r.notes}">
                                                     <br><small class="text-muted">原因: ${r.notes}</small>
                                                 </c:if>
                                             </c:when>
                                             <c:when test="${r.displayStatus == 'expired'}">
-                                                <span class="badge bg-secondary text-white">已过期</span>
+                                                <span class="badge-design" style="background: rgba(100, 116, 139, 0.1); color: #64748b;">已过期</span>
                                             </c:when>
                                         </c:choose>
                                     </td>
@@ -238,13 +424,13 @@
                                         <div class="btn-list flex-nowrap">
                                             <c:if test="${not activity.registrationClosed}">
                                                 <c:if test="${r.status == 'pending'}">
-                                                    <a href="${pageContext.request.contextPath}/activity?action=approve&activityId=${activity.id}&userId=${r.userId}" class="btn btn-success btn-sm">通过</a>
+                                                    <a href="${pageContext.request.contextPath}/activity?action=approve&activityId=${activity.id}&userId=${r.userId}" class="btn btn-sm btn-success-design">通过</a>
                                                 </c:if>
                                                 <c:if test="${r.status == 'pending'}">
-                                                    <a href="${pageContext.request.contextPath}/activity?action=reject&activityId=${activity.id}&userId=${r.userId}" class="btn btn-danger btn-sm">拒绝</a>
+                                                    <a href="${pageContext.request.contextPath}/activity?action=reject&activityId=${activity.id}&userId=${r.userId}" class="btn btn-sm btn-danger-design">拒绝</a>
                                                 </c:if>
                                                 <c:if test="${r.status == 'rejected'}">
-                                                    <a href="${pageContext.request.contextPath}/activity?action=deleteRegistration&activityId=${activity.id}&userId=${r.userId}" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除该报名记录吗？用户可以重新报名。')">删除</a>
+                                                    <a href="${pageContext.request.contextPath}/activity?action=deleteRegistration&activityId=${activity.id}&userId=${r.userId}" class="btn btn-sm btn-outline-danger-design" onclick="return confirm('确定要删除该报名记录吗？用户可以重新报名。')">删除</a>
                                                 </c:if>
                                             </c:if>
                                         </div>

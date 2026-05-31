@@ -16,6 +16,10 @@ public class ActivityGroup {
     private String activityName;
     private String ownerName;
     private Integer memberCount;
+    
+    private Integer isMuted;
+    private Date mutedUntil;
+    private String muteReason;
 
     public ActivityGroup() {
     }
@@ -90,5 +94,39 @@ public class ActivityGroup {
 
     public void setMemberCount(Integer memberCount) {
         this.memberCount = memberCount;
+    }
+
+    public Integer getIsMuted() {
+        return isMuted;
+    }
+
+    public void setIsMuted(Integer isMuted) {
+        this.isMuted = isMuted;
+    }
+
+    public Date getMutedUntil() {
+        return mutedUntil;
+    }
+
+    public void setMutedUntil(Date mutedUntil) {
+        this.mutedUntil = mutedUntil;
+    }
+
+    public String getMuteReason() {
+        return muteReason;
+    }
+
+    public void setMuteReason(String muteReason) {
+        this.muteReason = muteReason;
+    }
+
+    public boolean isMuted() {
+        if (isMuted != null && isMuted == 1) {
+            if (mutedUntil == null) {
+                return true;
+            }
+            return mutedUntil.after(new Date());
+        }
+        return false;
     }
 }

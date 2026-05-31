@@ -12,29 +12,235 @@
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="用户管理" />
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
 
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">
-                    用户管理
-                </h2>
-            </div>
-            <div class="col-auto ms-auto d-print-none">
-                <div class="btn-list">
-                    <a href="${pageContext.request.contextPath}/admin/member/?action=add" class="btn btn-primary d-none d-sm-inline-block">
-                        <i class="bi bi-plus-lg me-2"></i>添加成员
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+    .admin-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
+
+    .admin-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .admin-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body-design {
+        padding: 0;
+    }
+
+    .card-header-design {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .card-title-design {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-sm-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-sm-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+    }
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .btn-success-design {
+        background-color: #10b981;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-success-design:hover {
+        background-color: #059669;
+        color: white;
+    }
+
+    .btn-danger-design {
+        background-color: #ef4444;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-danger-design:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+
+    .table-design {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-design th {
+        font-family: var(--font-ui);
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-bottom: 2px solid var(--border-gray);
+        padding: 14px 20px;
+        text-align: left;
+        font-size: 0.81rem;
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .table-design td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+    }
+
+    .table-design tbody tr:hover {
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .badge-design {
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+    }
+
+    .input-design {
+        border-radius: var(--radius-standard);
+        border: 1px solid var(--border-gray);
+        padding: 10px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .input-design:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+        outline: none;
+    }
+
+    .form-label-design {
+        font-family: var(--font-ui);
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.875rem;
+    }
+</style>
 
 <div class="page-body">
     <div class="container-xl">
-        <!-- 成功信息显示 -->
+        <div class="admin-hero">
+            <h1 class="admin-hero-title">
+                <i class="bi bi-people me-2"></i>用户管理
+            </h1>
+            <p class="admin-hero-subtitle">管理系统用户</p>
+        </div>
+
+        <div class="d-flex justify-content-end mb-4">
+            <a href="${pageContext.request.contextPath}/admin/member/?action=add" class="btn-brand">
+                <i class="bi bi-plus-lg"></i>添加用户
+            </a>
+        </div>
+
         <c:if test="${not empty success}">
             <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
                 ${success}
@@ -42,7 +248,6 @@
             </div>
         </c:if>
         
-        <!-- 错误信息显示 -->
         <c:if test="${not empty error}">
             <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
                 ${error}
@@ -50,40 +255,42 @@
             </div>
         </c:if>
          
-        <div class="card mb-3">
-            <div class="card-body">
-                <form method="get" action="${pageContext.request.contextPath}/admin/member/" class="row g-3">
+        <div class="card-design mb-3">
+            <div class="card-body-design">
+                <form method="get" action="${pageContext.request.contextPath}/admin/member/" class="row g-2 p-3">
                     <input type="hidden" name="action" value="list">
                     <div class="col-md-4">
-                        <label class="form-label">关键词</label>
-                        <input type="text" class="form-control" name="keyword" value="${keyword}" placeholder="搜索用户名/姓名/邮箱/手机">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">关键词</label>
+                        <input type="text" class="input-design" name="keyword" value="${keyword}" placeholder="搜索标题/摘要/内容">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">角色</label>
-                        <select class="form-select" name="role">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">类型</label>
+                        <select class="input-design" name="role">
                             <option value="">全部</option>
                             <option value="ADMIN" ${role == 'ADMIN' ? 'selected' : ''}>管理员</option>
                             <option value="MEMBER" ${role == 'MEMBER' ? 'selected' : ''}>成员</option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">状态</label>
-                        <select class="form-select" name="status">
+                        <label class="form-label-design" style="font-size: 13px; font-weight: 500; color: #64748b;">状态</label>
+                        <select class="input-design" name="status">
                             <option value="">全部</option>
                             <option value="1" ${status == '1' ? 'selected' : ''}>启用</option>
                             <option value="0" ${status == '0' ? 'selected' : ''}>禁用</option>
                         </select>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">搜索</button>
+                        <button type="submit" class="btn-brand w-100">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
         
-        <div class="card">
+        <div class="card-design">
             <div class="table-responsive">
-                <table class="table table-vcenter card-table table-striped">
+                <table class="table-design">
                     <thead>
                         <tr>
                             <th>用户名</th>
@@ -103,38 +310,38 @@
                                 <td>${user.email}</td>
                                 <td>${user.phone}</td>
                                 <td>
-                                    <span class="badge bg-${user.role == 'ADMIN' ? 'danger' : 'info'}">
+                                    <span class="badge-design" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">
                                         ${user.role}
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-${user.status == 1 ? 'success' : 'danger'}">
+                                    <span class="badge-design" style="background: ${user.status == 1 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${user.status == 1 ? '#059669' : '#dc2626'};">
                                         ${user.status == 1 ? '启用' : '禁用'}
                                     </span>
                                 </td>
-                                <td>
-                                    <div class="btn-list flex-nowrap">
+                                <td style="white-space: nowrap;">
+                                    <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
                                         <a href="${pageContext.request.contextPath}/admin/member/?action=view&id=${user.id}" 
-                                           class="btn btn-white btn-sm">查看</a>
+                                           class="btn-sm-brand">查看</a>
                                         <c:if test="${user.id != currentUserId}">
                                             <form action="${pageContext.request.contextPath}/admin/member/" method="POST" 
-                                                  onsubmit="return confirm('确定要删除吗？')">
+                                                  onsubmit="return confirm('确定要删除吗？')" style="display: inline-block; margin: 0;">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="${user.id}">
-                                                <button type="submit" class="btn btn-outline-danger btn-sm">删除</button>
+                                                <button type="submit" class="btn-danger-design btn-sm">删除</button>
                                             </form>
-                                            <form action="${pageContext.request.contextPath}/admin/member/" method="POST" class="ms-1">
+                                            <form action="${pageContext.request.contextPath}/admin/member/" method="POST" style="display: inline-block; margin: 0;">
                                                 <input type="hidden" name="action" value="${user.status == 1 ? 'disable' : 'enable'}">
                                                 <input type="hidden" name="id" value="${user.id}">
-                                                <button type="submit" class="btn btn-${user.status == 1 ? 'outline-warning' : 'outline-success'} btn-sm">
+                                                <button type="submit" class="${user.status == 1 ? 'btn-outline-brand' : 'btn-success-design'} btn-sm">
                                                     ${user.status == 1 ? '禁用' : '启用'}
                                                 </button>
                                             </form>
                                         </c:if>
-                                        <form action="${pageContext.request.contextPath}/admin/member/" method="POST" class="ms-1">
+                                        <form action="${pageContext.request.contextPath}/admin/member/" method="POST" style="display: inline-block; margin: 0;">
                                             <input type="hidden" name="action" value="resetPassword">
                                             <input type="hidden" name="id" value="${user.id}">
-                                            <button type="submit" class="btn btn-outline-info btn-sm" onclick="return confirm('确定要重置密码为123456吗？')">
+                                            <button type="submit" class="btn-outline-brand btn-sm" onclick="return confirm('确定要重置密码为123456吗？')">
                                                 重置密码
                                             </button>
                                         </form>

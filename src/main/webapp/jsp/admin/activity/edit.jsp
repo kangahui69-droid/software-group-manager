@@ -4,36 +4,240 @@
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="${empty activity ? '添加活动' : '编辑活动'}" />
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
+<style>
+    .admin-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
 
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">
-                    ${empty activity ? '添加活动' : '编辑活动'}
-                </h2>
-            </div>
-            <div class="col-auto ms-auto">
-                <a href="${pageContext.request.contextPath}/activity?action=list" class="btn btn-outline-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="12" x2="11" y2="18"></line><line x1="5" y1="12" x2="11" y2="6"></line></svg>
-                    返回列表
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+    .admin-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .admin-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body-design {
+        padding: 0;
+    }
+
+    .card-header-design {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .card-title-design {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-sm-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-sm-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+    }
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .btn-success-design {
+        background-color: #10b981;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-success-design:hover {
+        background-color: #059669;
+        color: white;
+    }
+
+    .btn-danger-design {
+        background-color: #ef4444;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-danger-design:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+
+    .table-design {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-design th {
+        font-family: var(--font-ui);
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-bottom: 2px solid var(--border-gray);
+        padding: 14px 20px;
+        text-align: left;
+        font-size: 0.81rem;
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .table-design td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+    }
+
+    .table-design tbody tr:hover {
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .badge-design {
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+    }
+
+    .input-design {
+        border-radius: var(--radius-standard);
+        border: 1px solid var(--border-gray);
+        padding: 10px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .input-design:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+        outline: none;
+    }
+
+    .form-label-design {
+        font-family: var(--font-ui);
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.875rem;
+    }
+</style>
 
 <div class="page-body">
     <div class="container-xl">
+        <div class="admin-hero">
+            <h1 class="admin-hero-title">
+                <i class="bi bi-calendar-plus me-2"></i>${empty activity ? '添加活动' : '编辑活动'}
+            </h1>
+            <p class="admin-hero-subtitle">${empty activity ? '创建新的活动' : '修改活动信息'}</p>
+        </div>
+
         <div class="row row-cards">
             <div class="col-12">
-                <form action="${pageContext.request.contextPath}/activity" method="POST" class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">活动信息</h3>
+                <form action="${pageContext.request.contextPath}/activity" method="POST" class="card-design">
+                    <div class="card-header-design">
+                        <h3 class="card-title-design">活动信息</h3>
+                        <a href="${returnUrl != null ? returnUrl : pageContext.request.contextPath.concat('/activity?action=manage')}" class="btn btn-outline-brand">
+                            <i class="bi bi-arrow-left me-1"></i>返回列表
+                        </a>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body-design">
                         <c:if test="${not empty error}">
-                            <div class="alert alert-danger">
+                            <div class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius-standard); color: #dc2626; padding: 12px 16px;">
                                 ${error}
                             </div>
                         </c:if>
@@ -44,22 +248,22 @@
                         </c:if>
                         
                         <div class="mb-3">
-                            <label class="form-label required">活动标题</label>
-                            <input type="text" class="form-control" name="title" 
+                            <label class="form-label-design required">活动标题</label>
+                            <input type="text" class="input-design" name="title" 
                                    value="${activity.title}" placeholder="请输入活动标题" required>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">活动描述</label>
-                            <textarea class="form-control" name="description" rows="4" 
+                            <label class="form-label-design">活动描述</label>
+                            <textarea class="input-design" name="description" rows="4" 
                                       placeholder="请输入活动描述">${activity.description}</textarea>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">活动分类</label>
-                            <select class="form-select" name="activityType">
+                            <label class="form-label-design">活动分类</label>
+                            <select class="input-design" name="activityType">
                                 <option value="">请选择活动分类</option>
                                 <c:forEach var="type" items="${activityTypes}">
                                     <option value="${type.code}" ${activity.activityType eq type.code ? 'selected' : ''}>${type.name}</option>
@@ -70,8 +274,8 @@
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">最大参与人数</label>
-                                    <input type="number" class="form-control" name="maxParticipants" 
+                                    <label class="form-label-design">最大参与人数</label>
+                                    <input type="number" class="input-design" name="maxParticipants" 
                                            value="${activity.maxParticipants > 0 ? activity.maxParticipants : ''}" placeholder="不限制请留空" min="0">
                                 </div>
                             </div>
@@ -80,8 +284,8 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">活动地点</label>
-                                    <input type="text" class="form-control" name="location" 
+                                    <label class="form-label-design">活动地点</label>
+                                    <input type="text" class="input-design" name="location" 
                                            value="${activity.location}" placeholder="请输入活动地点">
                                 </div>
                             </div>
@@ -90,17 +294,17 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">开始时间</label>
-                                    <input type="datetime-local" class="form-control" name="activityStartTime" 
-                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                    <label class="form-label-design">开始时间</label>
+                                    <input type="datetime-local" class="input-design" name="activityStartTime" 
+                                           value="<fmt:formatDate value='${activity.activityStartTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">结束时间</label>
-                                    <input type="datetime-local" class="form-control" name="activityEndTime" 
-                                           value="<fmt:formatDate value='${activity.activityEndTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                    <label class="form-label-design">结束时间</label>
+                                    <input type="datetime-local" class="input-design" name="activityEndTime" 
+                                           value="<fmt:formatDate value='${activity.activityEndTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                         </div>
@@ -108,17 +312,17 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">报名开始时间</label>
-                                    <input type="datetime-local" class="form-control" name="registrationStartTime" 
-                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                    <label class="form-label-design">报名开始时间</label>
+                                    <input type="datetime-local" class="input-design" name="registrationStartTime" 
+                                           value="<fmt:formatDate value='${activity.registrationStartTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">报名截止时间</label>
-                                    <input type="datetime-local" class="form-control" name="registrationEndTime" 
-                                           value="<fmt:formatDate value='${activity.registrationEndTime}' pattern='yyyy-MM-dd HH:mm' />">
+                                    <label class="form-label-design">报名截止时间</label>
+                                    <input type="datetime-local" class="input-design" name="registrationEndTime" 
+                                           value="<fmt:formatDate value='${activity.registrationEndTime}' pattern='yyyy-MM-dd\'T\'HH:mm' />">
                                 </div>
                             </div>
                         </div>
@@ -126,35 +330,45 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">组织人</label>
-                                    <input type="text" class="form-control" name="organizers" 
+                                    <label class="form-label-design">组织人</label>
+                                    <input type="text" class="input-design" name="organizers" 
                                            value="${activity.organizers}" placeholder="多个组织人用逗号分隔">
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">联系方式</label>
-                                    <input type="text" class="form-control" name="contactInfo" 
+                                    <label class="form-label-design">联系方式</label>
+                                    <input type="text" class="input-design" name="contactInfo" 
                                            value="${activity.contactInfo}" placeholder="邮箱或电话">
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label required">活动状态</label>
-                            <select class="form-select" name="status" required>
+                            <label class="form-label-design required">活动状态</label>
+                            <select class="input-design" name="status" required>
                                 <option value="upcoming" ${empty activity or activity.status eq 'upcoming' ? 'selected' : ''}>即将开始</option>
                                 <option value="ongoing" ${activity.status eq 'ongoing' ? 'selected' : ''}>进行中</option>
                                 <option value="completed" ${activity.status eq 'completed' ? 'selected' : ''}>已结束</option>
                                 <option value="canceled" ${activity.status eq 'canceled' ? 'selected' : ''}>已取消</option>
                             </select>
                         </div>
+                        
+                        <c:if test="${empty activity}">
+                        <div class="mb-3">
+                            <label class="form-label-design">
+                                <input type="checkbox" name="createGroupChat" value="true" checked>
+                                同时创建活动群聊
+                            </label>
+                            <div class="text-muted small">创建后可在"我的群聊"中管理群聊并添加成员</div>
+                        </div>
+                        </c:if>
                     </div>
-                    <div class="card-footer text-end">
+                    <div class="card-footer-design text-end">
                         <div class="d-flex">
-                            <a href="${pageContext.request.contextPath}/activity/list" class="btn btn-link">取消</a>
-                            <button type="submit" class="btn btn-primary ms-auto">
+                            <a href="${returnUrl != null ? returnUrl : pageContext.request.contextPath.concat('/activity?action=manage')}" class="btn btn-outline-brand">取消</a>
+                            <button type="submit" class="btn btn-brand ms-auto">
                                 ${empty activity ? '添加活动' : '保存更改'}
                             </button>
                         </div>
@@ -169,9 +383,7 @@
 
 <script>
 (function() {
-    // 仅在新建活动时设置默认值（activity为空）
     if (!${not empty activity}) {
-        // 计算下一个周六
         var now = new Date();
         var dayOfWeek = now.getDay();
         var daysToSaturday = 6 - dayOfWeek;

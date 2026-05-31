@@ -2,80 +2,91 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
-<jsp:include page="/jsp/common/layout_top.jsp">
-    <jsp:param name="title" value="学习记录"/>
-    <jsp:param name="active" value="study"/>
-</jsp:include>
+<style>
+    .page-title { font-family: var(--font-display); font-size: 1.94rem; font-weight: 600; color: var(--text-dark); }
+    .card-design { background: var(--bg-white); border-radius: var(--radius-generous); box-shadow: var(--shadow-brand-purple); border: none; transition: all 0.3s ease; }
+    .card-design:hover { transform: translateY(-4px); box-shadow: var(--shadow-brand-offset); }
+    .data-card { background: var(--bg-white); border-radius: var(--radius-generous); box-shadow: var(--shadow-brand-purple); padding: 24px; text-align: center; transition: all 0.3s ease; }
+    .data-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-brand-offset); }
+    .stat-value { font-family: var(--font-display); font-size: 2.5rem; font-weight: 600; }
+    .stat-value-blue { color: var(--brand-blue); }
+    .stat-value-green { color: #10b981; }
+    .stat-value-purple { color: #8b5cf6; }
+    .stat-value-orange { color: #f59e0b; }
+    .stat-label { font-family: var(--font-ui); font-size: 0.88rem; color: var(--text-secondary); margin-top: 4px; }
+    .btn-outline-brand { background: transparent; color: var(--brand-blue); border: 2px solid var(--brand-blue); border-radius: var(--radius-standard); padding: 9px 18px; font-weight: 600; transition: all 0.3s ease; text-decoration: none; }
+    .btn-outline-brand:hover { background: var(--brand-blue); color: white; }
+    .table-design th { font-family: var(--font-ui); font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border-gray); padding: 12px 16px; }
+    .table-design td { padding: 16px; vertical-align: middle; }
+    .table-design tbody tr:hover { background: rgba(20, 86, 240, 0.03); }
+    .badge-design { font-family: var(--font-ui); font-size: 0.75rem; font-weight: 500; padding: 4px 12px; border-radius: var(--radius-pill); display: inline-block; }
+    .badge-orange { background: #fed7aa; color: #9a3412; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+</style>
 
 <div class="page-wrapper">
     <div class="page-body">
         <div class="container-xl">
-            <div class="page-header d-print-none">
+            <div class="page-header d-print-none mb-4">
                 <div class="row g-2 align-items-center">
                     <div class="col">
-                        <h2 class="page-title">
-                            <i class="bi bi-list-ul me-2"></i>学习记录
+                        <h2 class="page-title mb-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                            学习记录
                         </h2>
                     </div>
                     <div class="col-auto">
-                        <a href="${ctx}/study" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i>返回学习中心
+                        <a href="${ctx}/study" class="btn btn-outline-brand">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="12" x2="11" y2="18"></line><line x1="5" y1="12" x2="11" y2="6"></line></svg>
+                            返回学习中心
                         </a>
                     </div>
                 </div>
             </div>
 
             <c:if test="${not empty error}">
-                <div class="alert alert-danger">${error}</div>
+                <div class="alert alert-danger mb-4" role="alert" style="border-radius: var(--radius-standard); background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 16px;">
+                    ${error}
+                </div>
             </c:if>
 
-            <!-- 统计卡片 -->
-            <div class="row row-cards mb-3">
+            <div class="row row-cards mb-4" style="gap: 20px;">
                 <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <div class="h1 text-blue mb-1">${statistics.totalSessions}</div>
-                            <div class="text-muted">总学习次数</div>
-                        </div>
+                    <div class="data-card">
+                        <div class="stat-value stat-value-blue">${statistics.totalSessions}</div>
+                        <div class="stat-label">总学习次数</div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <div class="h1 text-green mb-1">${statistics.completedSessions}</div>
-                            <div class="text-muted">已完成</div>
-                        </div>
+                    <div class="data-card">
+                        <div class="stat-value stat-value-green">${statistics.completedSessions}</div>
+                        <div class="stat-label">已完成</div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <div class="h1 text-purple mb-1">${statistics.totalDuration}</div>
-                            <div class="text-muted">总时长(分钟)</div>
-                        </div>
+                    <div class="data-card">
+                        <div class="stat-value stat-value-purple">${statistics.totalDuration}</div>
+                        <div class="stat-label">总时长(分钟)</div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <div class="h1 text-orange mb-1">
-                                <c:choose>
-                                    <c:when test="${not empty statistics.avgDuration}">
-                                        <fmt:formatNumber value="${statistics.avgDuration}" pattern="#0"/>
-                                    </c:when>
-                                    <c:otherwise>0</c:otherwise>
-                                </c:choose>
-                            </div>
-                            <div class="text-muted">平均时长(分钟)</div>
+                    <div class="data-card">
+                        <div class="stat-value stat-value-orange">
+                            <c:choose>
+                                <c:when test="${not empty statistics.avgDuration}">
+                                    <fmt:formatNumber value="${statistics.avgDuration}" pattern="#0"/>
+                                </c:when>
+                                <c:otherwise>0</c:otherwise>
+                            </c:choose>
                         </div>
+                        <div class="stat-label">平均时长(分钟)</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 学习记录列表 -->
-            <div class="card">
+            <div class="card-design">
                 <div class="table-responsive">
-                    <table class="table table-vcenter card-table table-striped">
+                    <table class="table table-design table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
                         <thead>
                             <tr>
                                 <th>日期</th>
@@ -89,7 +100,7 @@
                             <c:choose>
                                 <c:when test="${empty sessionList}">
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">
+                                        <td colspan="5" class="text-center text-muted py-5">
                                             暂无学习记录
                                         </td>
                                     </tr>
@@ -103,19 +114,19 @@
                                                 <c:if test="${not empty sess.checkOutTime}">
                                                     <fmt:formatDate value="${sess.checkOutTime}" pattern="HH:mm:ss"/>
                                                 </c:if>
-                                                <c:if test="${empty sess.checkOutTime}">--</c:if>
+                                                <c:if test="${empty sess.checkOutTime}"><span class="text-muted">--</span></c:if>
                                             </td>
                                             <td>
                                                 <c:if test="${not empty sess.duration}">${sess.duration} 分钟</c:if>
-                                                <c:if test="${empty sess.duration}"><span class="text-warning">进行中</span></c:if>
+                                                <c:if test="${empty sess.duration}"><span class="badge-design badge-orange">进行中</span></c:if>
                                             </td>
                                             <td>
                                                 <c:choose>
                                                     <c:when test="${sess.status == 'ACTIVE'}">
-                                                        <span class="badge bg-orange">进行中</span>
+                                                        <span class="badge-design badge-orange">进行中</span>
                                                     </c:when>
                                                     <c:when test="${sess.status == 'COMPLETED'}">
-                                                        <span class="badge bg-green">已完成</span>
+                                                        <span class="badge-design badge-green">已完成</span>
                                                     </c:when>
                                                 </c:choose>
                                             </td>
@@ -130,5 +141,3 @@
         </div>
     </div>
 </div>
-
-<jsp:include page="/jsp/common/layout_bottom.jsp"/>

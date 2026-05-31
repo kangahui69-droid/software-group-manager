@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%
     if (session.getAttribute("user") == null) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
@@ -10,79 +9,193 @@
 <jsp:include page="../common/layout_top.jsp">
     <jsp:param name="title" value="我的群聊" />
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
 
 <style>
-.group-card {
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-.group-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.group-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #206bc4, #329BEF);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-}
-</style>
+    .member-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
 
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">我的群聊</h2>
-                <div class="text-muted">您加入的所有群聊</div>
-            </div>
-        </div>
-    </div>
-</div>
+    .member-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .member-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .card-design:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-brand-offset);
+    }
+
+    .card-body-design {
+        padding: 24px;
+    }
+
+    .group-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-comfortable);
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-danger-design {
+        background-color: #ef4444;
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 16px;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .btn-danger-design:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: var(--radius-standard);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+</style>
 
 <div class="page-body">
     <div class="container-xl">
+        <div class="member-hero">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <a href="${pageContext.request.contextPath}/member/index.jsp" class="back-btn">
+                    <i class="bi bi-arrow-left"></i>返回
+                </a>
+            </div>
+            <h1 class="member-hero-title">
+                <i class="bi bi-chat-dots me-2"></i>我的群聊
+            </h1>
+            <p class="member-hero-subtitle">您加入的所有群聊</p>
+        </div>
+
         <c:choose>
             <c:when test="${empty userGroups}">
-                <div class="card">
-                    <div class="card-body text-center py-5">
-                        <div class="empty-img mb-3">
-                            <i class="bi bi-chat-dots text-muted" style="font-size: 64px;"></i>
+                <div class="card-design">
+                    <div class="card-body-design" style="text-align: center; padding: 48px;">
+                        <div style="font-size: 64px; color: var(--text-muted); margin-bottom: 16px;">
+                            <i class="bi bi-chat-dots"></i>
                         </div>
-                        <h3 class="mb-2">暂无群聊</h3>
-                        <p class="text-muted mb-4">您还没有加入任何群聊。请先发起活动，活动通过审核后可创建群聊。</p>
+                        <h3 style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; color: var(--text-dark); margin-bottom: 8px;">暂无群聊</h3>
+                        <p style="color: var(--text-muted); font-size: 0.94rem;">您还没有加入任何群聊。请先发起活动，活动通过审核后可创建群聊。</p>
                     </div>
                 </div>
             </c:when>
             <c:otherwise>
-                <div class="row row-cards">
+                <div class="row g-4">
                     <c:forEach var="ug" items="${userGroups}">
                         <div class="col-md-6 col-lg-4">
-                            <a href="${pageContext.request.contextPath}/group/chat/${ug.groupId}" class="card card-link group-card">
-                                <div class="card-body">
+                            <div class="card-design">
+                                <div class="card-body-design">
                                     <div class="d-flex align-items-center mb-3">
-                                        <div class="group-icon me-3">
-                                            <i class="bi bi-people"></i>
-                                        </div>
-                                        <div class="flex-fill">
-                                            <h4 class="mb-1">${ug.groupName}</h4>
-                                            <c:if test="${not empty ug.activityName}">
-                                                <small class="text-muted">${ug.activityName}</small>
-                                            </c:if>
-                                        </div>
+                                        <a href="${pageContext.request.contextPath}/group/chat/${ug.groupId}" class="text-decoration-none flex-fill">
+                                            <div class="group-icon me-3 d-inline-flex">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div class="d-inline-block">
+                                                <h4 class="mb-1" style="font-family: var(--font-display); font-weight: 600; color: var(--text-dark);">
+                                                    ${ug.groupName}
+                                                    <c:if test="${ug.unreadCount > 0}">
+                                                        <span class="badge bg-danger ms-2">${ug.unreadCount} 未读</span>
+                                                    </c:if>
+                                                </h4>
+                                                <c:if test="${not empty ug.activityName}">
+                                                    <small style="color: var(--text-muted);">${ug.activityName}</small>
+                                                </c:if>
+                                            </div>
+                                        </a>
                                     </div>
-                                    <div class="d-flex justify-content-between text-muted">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);">
                                         <span><i class="bi bi-people me-1"></i> ${ug.memberCount} 人</span>
                                         <span><i class="bi bi-clock me-1"></i> 
-                                            <fmt:formatDate value="${ug.joinedAt}" pattern="MM-dd HH:mm" />
+                                            <c:choose>
+                                                <c:when test="${not empty ug.joinedAt}">${ug.joinedAt}</c:when>
+                                                <c:otherwise>--</c:otherwise>
+                                            </c:choose>
                                         </span>
                                     </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <a href="${pageContext.request.contextPath}/group/chat/${ug.groupId}" class="btn-brand" style="flex: 1;">
+                                            <i class="bi bi-chat-left-text"></i>进入群聊
+                                        </a>
+                                        <c:if test="${sessionScope.user.id == ug.ownerId}">
+                                            <button type="button" class="btn-danger-design" onclick="confirmDisband(${ug.groupId}, '${ug.groupName}')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </c:if>
+                                    </div>
                                 </div>
-                            </a>
+                            </div>
                         </div>
                     </c:forEach>
                 </div>
@@ -90,5 +203,13 @@
         </c:choose>
     </div>
 </div>
+
+<script>
+function confirmDisband(groupId, groupName) {
+    if (confirm('确定要解散群聊"' + groupName + '"吗？此操作不可恢复！')) {
+        window.location.href = '${pageContext.request.contextPath}/group?action=deleteGroup&groupId=' + groupId;
+    }
+}
+</script>
 
 <jsp:include page="../common/layout_bottom.jsp" />

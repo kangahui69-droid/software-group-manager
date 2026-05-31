@@ -5,10 +5,34 @@
     <jsp:param name="title" value="我的活动" />
 </jsp:include>
 
+<style>
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: rgba(20, 86, 240, 0.1);
+    color: var(--brand-blue);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+.back-btn:hover {
+    background: rgba(20, 86, 240, 0.2);
+    color: var(--brand-blue);
+}
+</style>
+
 <div class="page-header d-print-none">
     <div class="container-xl">
         <div class="row g-2 align-items-center">
             <div class="col">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <a href="${pageContext.request.contextPath}/member/index.jsp" class="back-btn">
+                        <i class="bi bi-arrow-left"></i>返回
+                    </a>
+                </div>
                 <h2 class="page-title">
                     我的活动
                 </h2>

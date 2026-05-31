@@ -83,7 +83,7 @@ public class RegistrationDAO {
      * 检查用户是否已报名某活动
      */
     public boolean isRegistered(Integer activityId, Integer userId) {
-        String sql = "SELECT COUNT(*) FROM activity_participant WHERE activity_id = ? AND user_id = ?";
+        String sql = "SELECT COUNT(*) FROM activity_participant WHERE activity_id = ? AND user_id = ? AND deleted = 0";
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -614,10 +614,10 @@ public class RegistrationDAO {
     }
     
     /**
-     * 删除活动的所有报名记录
+     * 删除活动的所有报名记录（软删除）
      */
     public int deleteByActivityId(Integer activityId) {
-        String sql = "DELETE FROM activity_participant WHERE activity_id = ?";
+        String sql = "UPDATE activity_participant SET deleted = 1 WHERE activity_id = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -632,15 +632,15 @@ public class RegistrationDAO {
             closeResources(conn, pstmt, null);
         }
     }
-
+    
     /**
-     * 删除活动的所有报名记录（使用外部传入的连接，支持事务）
+     * 删除活动的所有报名记录（软删除，使用外部传入的连接，支持事务）
      * @param activityId 活动ID
      * @param conn 数据库连接
      * @return 删除的记录数
      */
     public int deleteByActivityId(Integer activityId, Connection conn) {
-        String sql = "DELETE FROM activity_participant WHERE activity_id = ?";
+        String sql = "UPDATE activity_participant SET deleted = 1 WHERE activity_id = ?";
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);

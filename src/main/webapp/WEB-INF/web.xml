@@ -321,6 +321,16 @@
         <url-pattern>/admin/problem/*</url-pattern>
     </servlet-mapping>
 
+    <!-- 群聊管理Servlet -->
+    <servlet>
+        <servlet-name>GroupAdminServlet</servlet-name>
+        <servlet-class>servlet.GroupAdminServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>GroupAdminServlet</servlet-name>
+        <url-pattern>/group/admin</url-pattern>
+    </servlet-mapping>
+
     <!-- 默认首页 -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
@@ -330,5 +340,15 @@
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
+
+    <!-- 学习会话定时任务监听器 -->
+    <listener>
+        <listener-class>listener.StudySessionListener</listener-class>
+    </listener>
+
+    <!-- 群聊禁言定时任务监听器 -->
+    <listener>
+        <listener-class>listener.GroupMuteListener</listener-class>
+    </listener>
 
 </web-app>
