@@ -2,33 +2,45 @@ package servlet;
 
 import dao.ActivityDAO;
 import dao.ActivityGroupDAO;
+import dao.FileStorageDAO;
 import dao.GroupMemberDAO;
 import dao.GroupMessageDAO;
 import dao.RegistrationDAO;
 import dao.UserGroupDAO;
 import model.Activity;
 import model.ActivityGroup;
+import model.FileStorage;
 import model.GroupMember;
 import model.GroupMessage;
 import model.Registration;
 import model.User;
 import model.UserGroup;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.util.List;
+import javax.servlet.http.Part;
 
 /**
  * 群聊Servlet
  */
 @WebServlet("/group/*")
+@MultipartConfig(maxFileSize = 1024 * 1024 * 100, maxRequestSize = 1024 * 1024 * 100)
 public class GroupServlet extends HttpServlet {
 
     private ActivityGroupDAO groupDAO = new ActivityGroupDAO();
@@ -37,6 +49,8 @@ public class GroupServlet extends HttpServlet {
     private UserGroupDAO userGroupDAO = new UserGroupDAO();
     private ActivityDAO activityDAO = new ActivityDAO();
     private RegistrationDAO registrationDAO = new RegistrationDAO();
+    private FileStorageDAO fileStorageDAO = new FileStorageDAO();
+    private final String UPLOAD_BASE_DIR = "localstorage/group_files";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -53,7 +67,9 @@ public class GroupServlet extends HttpServlet {
         User currentUser = (User) session.getAttribute("user");
 
         if (pathInfo == null || pathInfo.equals("/")) {
-            if ("createForActivity".equals(action)) {
+            if ("deleteGroup".equals(action)) {
+                deleteGroup(request, response, currentUser);
+            } else if ("createForActivity".equals(action)) {
                 showCreateForActivityForm(request, response, currentUser);
             } else if ("myGroups".equals(action)) {
                 listMyGroups(request, response, currentUser);
@@ -72,6 +88,10 @@ public class GroupServlet extends HttpServlet {
             showCreateForActivityForm(request, response, currentUser);
         } else if (pathInfo.equals("/add-members") || "addMembers".equals(action)) {
             showAddMembersForm(request, response, currentUser);
+        } else if (pathInfo.equals("/downloadFile")) {
+            downloadFile(request, response, currentUser);
+        } else if ("deleteGroup".equals(action)) {
+            deleteGroup(request, response, currentUser);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -95,6 +115,8 @@ public class GroupServlet extends HttpServlet {
             createGroup(request, response, currentUser);
         } else if (pathInfo.equals("/send")) {
             sendMessage(request, response, currentUser);
+        } else if (pathInfo.equals("/sendFile")) {
+            sendFileMessage(request, response, currentUser);
         } else if (pathInfo.equals("/delete")) {
             deleteGroup(request, response, currentUser);
         } else if (pathInfo.equals("/addMultiple")) {
@@ -130,6 +152,8 @@ public class GroupServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "您不是群成员");
             return;
         }
+
+        memberDAO.updateLastReadAt(groupId, currentUser.getId());
 
         List<GroupMember> members = memberDAO.findByGroupId(groupId);
         List<GroupMessage> messages = messageDAO.findRecentByGroupId(groupId, 50);
@@ -300,26 +324,36 @@ public class GroupServlet extends HttpServlet {
         group.setActivityId(activityId);
 
         if (groupDAO.insert(group)) {
-            ActivityGroup createdGroup = groupDAO.findByActivityId(activityId);
-            if (createdGroup == null) {
-                List<ActivityGroup> groups = groupDAO.findByOwnerId(currentUser.getId());
-                if (!groups.isEmpty()) {
-                    createdGroup = groups.get(0);
+            ActivityGroup createdGroup = null;
+            Integer newGroupId = null;
+            
+            if (activityId != null) {
+                createdGroup = groupDAO.findByActivityId(activityId);
+                if (createdGroup != null) {
+                    newGroupId = createdGroup.getId();
                 }
             }
             
-            if (createdGroup != null) {
-                memberDAO.insertOwner(createdGroup.getId(), currentUser.getId());
-                userGroupDAO.insertUserToGroup(currentUser.getId(), createdGroup.getId());
+            if (newGroupId == null) {
+                List<ActivityGroup> groups = groupDAO.findByOwnerId(currentUser.getId());
+                if (!groups.isEmpty()) {
+                    createdGroup = groups.get(0);
+                    newGroupId = createdGroup.getId();
+                }
+            }
+            
+            if (newGroupId != null) {
+                memberDAO.insertOwner(newGroupId, currentUser.getId());
+                userGroupDAO.insertUserToGroup(currentUser.getId(), newGroupId);
 
                 if (selectedUserIds != null && selectedUserIds.length > 0) {
                     for (String userIdStr : selectedUserIds) {
                         try {
                             int userId = Integer.parseInt(userIdStr);
-                            if (userId != currentUser.getId() && !memberDAO.isMember(createdGroup.getId(), userId)) {
-                                GroupMember member = new GroupMember(createdGroup.getId(), userId, GroupMember.ROLE_MEMBER);
+                            if (userId != currentUser.getId() && !memberDAO.isMember(newGroupId, userId)) {
+                                GroupMember member = new GroupMember(newGroupId, userId, GroupMember.ROLE_MEMBER);
                                 memberDAO.insert(member);
-                                userGroupDAO.insertUserToGroup(userId, createdGroup.getId());
+                                userGroupDAO.insertUserToGroup(userId, newGroupId);
                             }
                         } catch (NumberFormatException e) {
                             // 忽略无效的用户ID
@@ -352,10 +386,134 @@ public class GroupServlet extends HttpServlet {
             return;
         }
 
+        ActivityGroup group = groupDAO.findById(groupId);
+        if (group != null && group.isMuted()) {
+            response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId + "?error=" + URLEncoder.encode("当前群聊已被禁言", "UTF-8"));
+            return;
+        }
+
         GroupMessage message = new GroupMessage(groupId, currentUser.getId(), content.trim());
         int messageId = messageDAO.insert(message);
 
         response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId);
+    }
+
+    private void sendFileMessage(HttpServletRequest request, HttpServletResponse response, User currentUser)
+            throws ServletException, IOException {
+        String groupIdStr = request.getParameter("groupId");
+
+        if (groupIdStr == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        int groupId = Integer.parseInt(groupIdStr);
+
+        if (!memberDAO.isMember(groupId, currentUser.getId())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        ActivityGroup group = groupDAO.findById(groupId);
+        if (group != null && group.isMuted()) {
+            response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId + "?error=" + URLEncoder.encode("当前群聊已被禁言", "UTF-8"));
+            return;
+        }
+
+        Part filePart = request.getPart("file");
+        if (filePart == null || filePart.getSize() == 0) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "没有选择文件");
+            return;
+        }
+
+        String fileName = extractFileName(filePart);
+        if (fileName == null || fileName.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "无效的文件名");
+            return;
+        }
+
+        System.out.println("[群聊文件上传] 文件名: " + fileName + ", 大小: " + filePart.getSize() + ", 类型: " + filePart.getContentType());
+
+        String uploadPath = getServletContext().getRealPath("/" + UPLOAD_BASE_DIR);
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        String uniqueFileName = System.currentTimeMillis() + "_" + fileName;
+        String filePath = uploadPath + File.separator + uniqueFileName;
+
+        System.out.println("[群聊文件上传] 上传路径: " + filePath);
+
+        try (InputStream input = filePart.getInputStream()) {
+            Files.copy(input, new File(filePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("[群聊文件上传] 文件保存成功");
+        } catch (Exception e) {
+            System.out.println("[群聊文件上传] 文件保存失败: " + e.getMessage());
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "文件上传失败");
+            return;
+        }
+
+        FileStorage fileStorage = new FileStorage();
+        fileStorage.setCreateBy(currentUser.getId());
+        fileStorage.setOriginalName(fileName);
+        fileStorage.setStoredName(uniqueFileName);
+        fileStorage.setFilePath("/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
+        fileStorage.setFileType(filePart.getContentType() != null ? filePart.getContentType() : "application/octet-stream");
+        fileStorage.setFileSize(filePart.getSize());
+        fileStorage.setCategory("group_file");
+
+        Integer fileId = fileStorageDAO.insert(fileStorage);
+        System.out.println("[群聊文件上传] 文件记录ID: " + fileId);
+
+        if (fileId == null) {
+            System.out.println("[群聊文件上传] 文件记录插入失败");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "文件记录保存失败");
+            return;
+        }
+
+        GroupMessage message = new GroupMessage();
+        message.setGroupId(groupId);
+        message.setSenderId(currentUser.getId());
+        message.setContent("[文件] " + fileName);
+        message.setMessageType(GroupMessage.MESSAGE_TYPE_FILE);
+        message.setFileId(fileId);
+        message.setFileName(fileName);
+        message.setFileSize(filePart.getSize());
+        message.setFileType(filePart.getContentType() != null ? filePart.getContentType() : "application/octet-stream");
+        message.setFilePath("/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
+
+        messageDAO.insert(message);
+
+        response.sendRedirect(request.getContextPath() + "/group/chat/" + groupId);
+    }
+
+    private String extractFileName(Part part) {
+        String contentDisp = part.getHeader("content-disposition");
+        if (contentDisp == null) {
+            return null;
+        }
+        String[] items = contentDisp.split("; ");
+        for (String s : items) {
+            if (s.startsWith("filename=")) {
+                try {
+                    String fileName = s.substring(s.indexOf("=") + 2, s.length() - 1);
+                    if (fileName.isEmpty()) {
+                        return null;
+                    }
+                    int lastSlash = Math.max(fileName.lastIndexOf('/'), fileName.lastIndexOf('\\'));
+                    if (lastSlash > 0) {
+                        fileName = fileName.substring(lastSlash + 1);
+                    }
+                    return URLDecoder.decode(fileName, "UTF-8");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        }
+        return null;
     }
 
     private void deleteGroup(HttpServletRequest request, HttpServletResponse response, User currentUser)
@@ -380,8 +538,77 @@ public class GroupServlet extends HttpServlet {
         }
 
         messageDAO.deleteByGroupId(groupId);
+        memberDAO.deleteByGroupId(groupId);
+        userGroupDAO.deleteByGroupId(groupId);
         groupDAO.delete(groupId);
 
         response.sendRedirect(request.getContextPath() + "/group/my-groups");
+    }
+
+    private void downloadFile(HttpServletRequest request, HttpServletResponse response, User currentUser)
+            throws ServletException, IOException {
+        String fileIdStr = request.getParameter("fileId");
+        String fileName = request.getParameter("fileName");
+
+        if (fileIdStr == null) {
+            fileIdStr = request.getParameter("id");
+        }
+
+        if (fileIdStr == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "文件ID不能为空");
+            return;
+        }
+
+        Integer fileId = Integer.parseInt(fileIdStr);
+        FileStorage fileStorage = fileStorageDAO.findById(fileId);
+
+        if (fileStorage == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "文件不存在");
+            return;
+        }
+
+        System.out.println("[群聊文件下载] fileId: " + fileId + ", 文件名: " + fileStorage.getOriginalName());
+        System.out.println("[群聊文件下载] storedName: " + fileStorage.getStoredName());
+        System.out.println("[群聊文件下载] filePath: " + fileStorage.getFilePath());
+
+        String filePath = getServletContext().getRealPath(fileStorage.getFilePath());
+        File file = new File(filePath);
+
+        System.out.println("[群聊文件下载] 实际路径: " + filePath);
+        System.out.println("[群聊文件下载] 文件存在: " + file.exists());
+
+        if (!file.exists()) {
+            String altPath = getServletContext().getRealPath("/localstorage/group_files/" + fileStorage.getStoredName());
+            File altFile = new File(altPath);
+            System.out.println("[群聊文件下载] 尝试备用路径: " + altPath + ", 存在: " + altFile.exists());
+            if (altFile.exists()) {
+                file = altFile;
+                filePath = altPath;
+            }
+        }
+
+        if (!file.exists()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "文件不存在");
+            return;
+        }
+
+        response.setContentType("application/octet-stream");
+        response.setContentLengthLong(fileStorage.getFileSize());
+
+        String downloadFileName = fileStorage.getOriginalName();
+        if (fileName != null && !fileName.isEmpty()) {
+            downloadFileName = fileName;
+        }
+
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + java.net.URLEncoder.encode(downloadFileName, "UTF-8") + "\"");
+
+        try (InputStream input = new FileInputStream(file);
+             OutputStream output = response.getOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+        }
     }
 }

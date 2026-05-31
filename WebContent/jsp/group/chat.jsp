@@ -167,7 +167,15 @@
                         <c:forEach var="msg" items="${messages}">
                             <div class="message ${msg.senderId == sessionScope.user.id ? 'mine' : ''}">
                                 <div class="message-avatar">
-                                    ${not empty msg.senderName ? msg.senderName.charAt(0) : 'U'}
+                                    <c:choose>
+                                        <c:when test="${not empty msg.senderAvatarFileId}">
+                                            <img src="${pageContext.request.contextPath}/file?action=view&id=${msg.senderAvatarFileId}" 
+                                                 alt="${msg.senderName}" class="avatar rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                        </c:when>
+                                        <c:otherwise>
+                                            ${not empty msg.senderName ? msg.senderName.charAt(0) : 'U'}
+                                        </c:otherwise>
+                                    </c:choose>
                                 </div>
                                 <div class="message-content">
                                     <div class="message-sender">${msg.senderName}</div>
@@ -240,7 +248,15 @@
                     <c:forEach var="member" items="${members}">
                         <div class="member-item">
                             <div class="avatar">
-                                ${not empty member.name ? member.name.charAt(0) : (not empty member.username ? member.username.charAt(0) : 'U')}
+                                <c:choose>
+                                    <c:when test="${not empty member.avatarFileId}">
+                                        <img src="${pageContext.request.contextPath}/file?action=view&id=${member.avatarFileId}" 
+                                             alt="${member.name}" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;">
+                                    </c:when>
+                                    <c:otherwise>
+                                        ${not empty member.name ? member.name.charAt(0) : (not empty member.username ? member.username.charAt(0) : 'U')}
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
                             <div class="name">
                                 ${not empty member.name ? member.name : member.username}

@@ -6,7 +6,6 @@
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Date" %>
 <%
-    // 检查用户是否已登录
     if (session.getAttribute("user") == null) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
@@ -22,7 +21,6 @@
             }
         }
     }
-    // Format birthday for display
     String birthdayValue = "";
     Object birthdayObj = session.getAttribute("memberProfile");
     if (birthdayObj != null) {
@@ -41,278 +39,506 @@
     <jsp:param name="title" value="编辑资料" />
 </jsp:include>
 
-<!-- Quill.js 富文本编辑器 -->
 <link href="https://cdn.staticfile.org/quill/1.3.6/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.staticfile.org/quill/1.3.6/quill.min.js"></script>
 
-<div class="container-xl">
-    <div class="row">
-        <div class="col-12">
-            <div class="page-header">
-                <h1 class="page-title">编辑资料</h1>
-                <div class="page-subtitle">管理您的个人信息</div>
-            </div>
+<style>
+    .member-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
+
+    .member-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .member-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-header-design {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .card-title-design {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-body-design {
+        padding: 24px;
+    }
+
+    .form-label-design {
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .input-group-design {
+        display: flex;
+        align-items: center;
+        background: var(--bg-white);
+        border: 1px solid var(--border-gray);
+        border-radius: var(--radius-standard);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .input-group-design:focus-within {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+    }
+
+    .input-group-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(20, 86, 240, 0.05);
+        color: var(--brand-blue);
+        flex-shrink: 0;
+    }
+
+    .input-group-design input,
+    .input-group-design select,
+    .input-group-design textarea {
+        flex: 1;
+        border: none;
+        padding: 12px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        outline: none;
+        background: transparent;
+    }
+
+    .input-group-design input:focus,
+    .input-group-design select:focus,
+    .input-group-design textarea:focus {
+        outline: none;
+    }
+
+    .avatar-upload-area {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 20px;
+        background: rgba(20, 86, 240, 0.03);
+        border-radius: var(--radius-comfortable);
+        margin-bottom: 24px;
+    }
+
+    .avatar-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: var(--radius-comfortable);
+        object-fit: cover;
+        border: 4px solid var(--bg-white);
+        box-shadow: var(--shadow-card-elevated);
+    }
+
+    .avatar-fallback {
+        width: 100px;
+        height: 100px;
+        border-radius: var(--radius-comfortable);
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 600;
+    }
+
+    .avatar-upload-btn {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .avatar-upload-btn:hover {
+        background-color: var(--primary-600);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 12px 24px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-outline-brand {
+        background: transparent;
+        color: var(--brand-blue);
+        border: 1px solid var(--brand-blue);
+        border-radius: var(--radius-standard);
+        padding: 12px 24px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-outline-brand:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .tip-card {
+        background: rgba(20, 86, 240, 0.03);
+        border-radius: var(--radius-comfortable);
+        padding: 20px;
+        border: 1px solid rgba(20, 86, 240, 0.1);
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .tip-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .tip-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--brand-blue);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .tip-text {
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    #editor-container {
+        border-radius: var(--radius-standard);
+        border: 1px solid var(--border-gray);
+        background: white;
+        min-height: 200px;
+    }
+
+    #editor-container:focus-within {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(20, 86, 240, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .member-hero {
+            padding: 24px;
+        }
+
+        .member-hero-title {
+            font-size: 1.5rem;
+        }
+
+        .avatar-upload-area {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="member-hero">
+            <h1 class="member-hero-title">
+                <i class="bi bi-pencil-square me-2"></i>编辑资料
+            </h1>
+            <p class="member-hero-subtitle">管理您的个人信息</p>
         </div>
-    </div>
-    <!-- 错误提示 -->
-    <c:if test="${not empty error}">
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-danger alert-dismissible" role="alert">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="icon alert-icon" width="24"
-                        height="24" viewBox="0 0 24 24" stroke-width="2"
-                        stroke="currentColor" fill="none" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                        <circle cx="12" cy="12" r="9"></circle>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        <line x1="11" y1="12" x2="12" y2="12"></line>
-                        <line x1="11" y1="16" x2="12" y2="16"></line>
-                    </svg>
-                    <div>
-                        <h4 class="alert-title">操作失败</h4>
-                        <div class="text-secondary">${error}</div>
+
+        <c:if test="${not empty error}">
+            <div class="alert alert-danger alert-dismissible mb-4" style="border-radius: var(--radius-standard);" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>${error}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+
+        <c:if test="${not empty success}">
+            <div class="alert alert-success alert-dismissible mb-4" style="border-radius: var(--radius-standard);" role="alert">
+                <i class="bi bi-check-circle me-2"></i>${success}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card-design">
+                    <div class="card-header-design">
+                        <h3 class="card-title-design">
+                            <i class="bi bi-person-vcard text-brand"></i>编辑个人信息
+                        </h3>
                     </div>
-                    <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
-                </div>
-            </div>
-        </div>
-    </c:if>
-    <!-- 成功提示 -->
-    <c:if test="${not empty success}">
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-success alert-dismissible" role="alert">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="icon alert-icon" width="24" height="24"
-                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                        fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                        <path d="M5 12l5 5l10 -10"></path>
-                    </svg>
-                    <div>
-                        <h4 class="alert-title">操作成功</h4>
-                        <div class="text-secondary">${success}</div>
-                    </div>
-                    <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
-                </div>
-            </div>
-        </div>
-    </c:if>
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-body">
-                    <form id="profileForm" method="post"
-                        action="${pageContext.request.contextPath}/member/profile/update"
-                        enctype="multipart/form-data">
-                        <%-- CSRF Token --%>
-                        <!-- 头像上传区域 -->
-                        <div class="mb-4">
-                            <h3 class="mb-3">头像设置</h3>
-                            <div class="d-flex align-items-center">
-                                <div class="me-4">
-                                    <c:choose>
-                                        <%-- 情况1：有头像文件 --%>
-                                        <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
-                                            <img id="avatarPreview"
-                                                 src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}"
-                                                 alt="用户头像"
-                                                 class="rounded-circle"
-                                                 width="120"
-                                                 height="120">
-                                        </c:when>
-                                        <%-- 情况2：无头像，显示姓名首字 --%>
-                                        <c:otherwise>
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
-                                                 style="width: 120px; height: 120px; font-size: 48px; font-weight: bold;">
-                                                ${not empty user.name ? user.name.charAt(0) : '用'}
-                                            </div>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </div>
+                    <div class="card-body-design">
+                        <form id="profileForm" method="post" action="${pageContext.request.contextPath}/member/profile/update" enctype="multipart/form-data">
+                            <div class="avatar-upload-area">
+                                <c:choose>
+                                    <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
+                                        <img id="avatarPreview" src="${pageContext.request.contextPath}/file?action=view&id=${memberProfile.avatarFileId}" alt="用户头像" class="avatar-preview">
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div class="avatar-fallback">
+                                            ${not empty user.name ? user.name.charAt(0) : '用'}
+                                        </div>
+                                    </c:otherwise>
+                                </c:choose>
                                 <div>
-                                    <label for="avatarUpload"
-                                        class="btn btn-primary">上传新头像</label>
-                                    <input type="file" id="avatarUpload" name="avatar"
-                                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                                        style="display: none;">
-                                    <p class="text-muted mt-2">支持JPG、PNG、GIF格式，大小不超过500KB
-                                    </p>
+                                    <label class="avatar-upload-btn">
+                                        <i class="bi bi-upload"></i>上传新头像
+                                        <input type="file" id="avatarUpload" name="avatar" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="display: none;">
+                                    </label>
+                                    <p class="text-muted mt-2" style="font-size: 0.81rem;">支持JPG、PNG、GIF格式，大小不超过500KB</p>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 基本信息 -->
-                        <div class="mb-4">
-                            <h3 class="mb-3">基本信息</h3>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">用户名</label>
-                                    <input type="text" class="form-control" name="username"
-                                        value="${user.username}" readonly>
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label-design">用户名</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <input type="text" value="${user.username}" readonly>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">角色</label>
-                                    <input type="text" class="form-control"
-                                        value="${user.role}" readonly>
+                                <div class="col-md-6">
+                                    <label class="form-label-design">角色</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-shield"></i>
+                                        </div>
+                                        <input type="text" value="${user.role}" readonly>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">姓名</label>
-                                    <input type="text" class="form-control" name="name"
-                                        value="${user.name}" placeholder="请输入姓名">
+                                <div class="col-md-6">
+                                    <label class="form-label-design">姓名</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-person-badge"></i>
+                                        </div>
+                                        <input type="text" name="name" value="${user.name}" placeholder="请输入姓名">
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">电话</label>
-                                    <input type="text" class="form-control" name="phone"
-                                        value="${user.phone}" placeholder="请输入电话">
+                                <div class="col-md-6">
+                                    <label class="form-label-design">电话</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-telephone"></i>
+                                        </div>
+                                        <input type="text" name="phone" value="${user.phone}" placeholder="请输入电话">
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">邮箱</label>
-                                    <input type="email" class="form-control" name="email"
-                                        value="${user.email}" placeholder="请输入邮箱">
+                                <div class="col-md-6">
+                                    <label class="form-label-design">邮箱</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-envelope"></i>
+                                        </div>
+                                        <input type="email" name="email" value="${user.email}" placeholder="请输入邮箱">
+                                    </div>
                                 </div>
                                 <c:if test="${sessionScope.user.role == 'ADMIN'}">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">用户类型</label>
-                                        <select class="form-select" name="userType">
-                                            <option value="TEACHER" ${user.userType eq 'TEACHER'
-                                                ? 'selected' : '' }>教师</option>
-                                            <option value="STUDENT" ${user.userType eq 'STUDENT'
-                                                ? 'selected' : '' }>学生</option>
-                                        </select>
+                                    <div class="col-md-6">
+                                        <label class="form-label-design">用户类型</label>
+                                        <div class="input-group-design">
+                                            <div class="input-group-icon">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <select name="userType">
+                                                <option value="TEACHER" ${user.userType eq 'TEACHER' ? 'selected' : ''}>教师</option>
+                                                <option value="STUDENT" ${user.userType eq 'STUDENT' ? 'selected' : ''}>学生</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </c:if>
-                            </div>
-                        </div>
-
-                        <!-- 详细资料 -->
-                        <div class="mb-4">
-                            <h3 class="mb-3">详细资料</h3>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">生日</label>
-                                    <input type="date" class="form-control" name="birthday"
-                                        value="${birthdayValue}" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
+                                <div class="col-md-6">
+                                    <label class="form-label-design">生日</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-calendar"></i>
+                                        </div>
+                                        <input type="date" name="birthday" value="${birthdayValue}" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">姓名</label>
-                                    <input type="text" class="form-control" value="${user.name}" readonly>
+                                <div class="col-md-6">
+                                    <label class="form-label-design">学号</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-123"></i>
+                                        </div>
+                                        <input type="text" name="studentId" value="${memberProfile.studentId}" placeholder="请输入学号">
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">学号</label>
-                                    <input type="text" class="form-control" name="studentId"
-                                        value="${memberProfile.studentId}"
-                                        placeholder="请输入学号">
+                                <div class="col-md-6">
+                                    <label class="form-label-design">专业</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-book"></i>
+                                        </div>
+                                        <input type="text" name="major" value="${memberProfile.major}" placeholder="请输入专业">
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">专业</label>
-                                    <input type="text" class="form-control" name="major"
-                                        value="${memberProfile.major}" placeholder="请输入专业">
+                                <div class="col-md-6">
+                                    <label class="form-label-design">入学年份</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-calendar-event"></i>
+                                        </div>
+                                        <select name="grade">
+                                            <option value="2026" ${memberProfile.grade eq '2026' or empty memberProfile.grade ? 'selected' : ''}>2026</option>
+                                            <option value="2025" ${memberProfile.grade eq '2025' ? 'selected' : ''}>2025</option>
+                                            <option value="2024" ${memberProfile.grade eq '2024' ? 'selected' : ''}>2024</option>
+                                            <option value="2023" ${memberProfile.grade eq '2023' ? 'selected' : ''}>2023</option>
+                                            <option value="2022" ${memberProfile.grade eq '2022' ? 'selected' : ''}>2022</option>
+                                            <option value="2021" ${memberProfile.grade eq '2021' ? 'selected' : ''}>2021</option>
+                                            <option value="2020" ${memberProfile.grade eq '2020' ? 'selected' : ''}>2020</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">入学年份</label>
-                                    <select class="form-select" name="grade">
-                                        <option value="2026" ${memberProfile.grade eq '2026' or empty memberProfile.grade ? 'selected' : ''}>2026</option>
-                                        <option value="2025" ${memberProfile.grade eq '2025' ? 'selected' : ''}>2025</option>
-                                        <option value="2024" ${memberProfile.grade eq '2024' ? 'selected' : ''}>2024</option>
-                                        <option value="2023" ${memberProfile.grade eq '2023' ? 'selected' : ''}>2023</option>
-                                        <option value="2022" ${memberProfile.grade eq '2022' ? 'selected' : ''}>2022</option>
-                                        <option value="2021" ${memberProfile.grade eq '2021' ? 'selected' : ''}>2021</option>
-                                        <option value="2020" ${memberProfile.grade eq '2020' ? 'selected' : ''}>2020</option>
-                                    </select>
+                                <div class="col-md-6">
+                                    <label class="form-label-design">GitHub</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-github"></i>
+                                        </div>
+                                        <input type="text" name="github" value="${memberProfile.github}" placeholder="请输入GitHub用户名">
+                                    </div>
                                 </div>
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">个人简介</label>
-                                    <!-- 富文本编辑器容器 -->
+                                <div class="col-md-6">
+                                    <label class="form-label-design">博客</label>
+                                    <div class="input-group-design">
+                                        <div class="input-group-icon">
+                                            <i class="bi bi-rss"></i>
+                                        </div>
+                                        <input type="text" name="blog" value="${memberProfile.blog}" placeholder="请输入博客地址">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label-design">个人简介</label>
                                     <div id="editor-container" style="height: 200px; background: white;"></div>
-                                    <!-- 隐藏域用于表单提交 -->
                                     <input type="hidden" name="bio" id="bio-hidden" value="${memberProfile.introduction}">
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">GitHub</label>
-                                    <input type="text" class="form-control" name="github"
-                                        value="${memberProfile.github}" placeholder="请输入GitHub用户名">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">博客</label>
-                                    <input type="text" class="form-control" name="blog"
-                                        value="${memberProfile.blog}" placeholder="请输入博客地址">
-                                </div>
                             </div>
-                        </div>
 
-                        <!-- 操作按钮 -->
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <a href="${pageContext.request.contextPath}/member/password-change.jsp"
-                                    class="btn btn-outline-secondary">修改密码</a>
-                                <a href="${pageContext.request.contextPath}/member/index.jsp"
-                                    class="btn btn-outline-secondary ms-2">返回个人中心</a>
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex gap-3">
+                                    <a href="${pageContext.request.contextPath}/member/password-change.jsp" class="btn-outline-brand">
+                                        <i class="bi bi-lock"></i>修改密码
+                                    </a>
+                                    <a href="${pageContext.request.contextPath}/member/index.jsp" class="btn-outline-brand">
+                                        <i class="bi bi-house"></i>返回个人中心
+                                    </a>
+                                </div>
+                                <button type="submit" class="btn-brand">
+                                    <i class="bi bi-check-lg"></i>保存修改
+                                </button>
                             </div>
-                            <div>
-                                <button type="submit" class="btn btn-primary">保存修改</button>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="card-title">修改提示</h3>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                class="icon me-2 text-info" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                            </svg>
-                            用户名不可修改
-                        </li>
-                        <li class="list-group-item">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                class="icon me-2 text-info" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                            </svg>
-                            头像大小不能超过500KB
-                        </li>
-                        <li class="list-group-item">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                class="icon me-2 text-info" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                            </svg>
-                            密码修改需要提供原密码进行验证
-                        </li>
-                        <li class="list-group-item">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                class="icon me-2 text-info" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                <polyline points="11 12 12 12 12 16 13 16"></polyline>
-                            </svg>
-                            新密码长度不少于6位
-                        </li>
-                    </ul>
+
+            <div class="col-lg-4">
+                <div class="card-design">
+                    <div class="card-header-design">
+                        <h3 class="card-title-design">
+                            <i class="bi bi-info-circle text-brand"></i>修改提示
+                        </h3>
+                    </div>
+                    <div class="card-body-design">
+                        <div class="tip-card">
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="bi bi-1-circle"></i>
+                                </div>
+                                <div class="tip-text">用户名不可修改</div>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="bi bi-2-circle"></i>
+                                </div>
+                                <div class="tip-text">头像大小不能超过500KB</div>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="bi bi-3-circle"></i>
+                                </div>
+                                <div class="tip-text">密码修改需要提供原密码进行验证</div>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="bi bi-4-circle"></i>
+                                </div>
+                                <div class="tip-text">新密码长度不少于6位</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -320,9 +546,7 @@
 </div>
 
 <script>
-    // 显示通知函数 - Tabler alert 样式，带关闭按钮
     function showNotification(message, type) {
-        // 移除已存在的通知
         const existingNotification = document.getElementById('notification');
         if (existingNotification) {
             existingNotification.remove();
@@ -333,18 +557,18 @@
         notification.className = 'alert alert-' + (type === 'success' ? 'success' : 'danger') + ' alert-dismissible';
         notification.setAttribute('role', 'alert');
         notification.style.marginBottom = '20px';
-        
-        const icon = type === 'success' 
-            ? '<svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l5 5l10 -10"></path></svg>'
-            : '<svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+        notification.style.borderRadius = 'var(--radius-standard)';
+
+        const icon = type === 'success'
+            ? '<i class="bi bi-check-circle me-2"></i>'
+            : '<i class="bi bi-exclamation-circle me-2"></i>';
 
         const title = type === 'success' ? '操作成功' : '操作失败';
-        
-        notification.innerHTML = icon + 
-            '<div><h4 class="alert-title">' + title + '</h4><div class="text-secondary">' + message + '</div></div>' +
-            '<a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>';
 
-        // 插入到表单最前面
+        notification.innerHTML = icon +
+            '<div><h4 class="alert-title">' + title + '</h4><div class="text-secondary">' + message + '</div></div>' +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+
         const container = document.querySelector('.container-xl');
         if (container) {
             container.insertBefore(notification, container.firstChild);
@@ -370,7 +594,17 @@
 
         const reader = new FileReader();
         reader.onload = function (e) {
-            document.getElementById('avatarPreview').src = e.target.result;
+            const preview = document.getElementById('avatarPreview');
+            if (preview) {
+                preview.src = e.target.result;
+            } else {
+                const fallback = document.querySelector('.avatar-fallback');
+                if (fallback) {
+                    fallback.style.backgroundImage = 'url(' + e.target.result + ')';
+                    fallback.style.backgroundSize = 'cover';
+                    fallback.textContent = '';
+                }
+            }
         };
         reader.readAsDataURL(file);
     });
@@ -400,10 +634,8 @@
     });
 </script>
 
-<!-- Quill富文本编辑器初始化 -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 初始化Quill编辑器
         var quill = new Quill('#editor-container', {
             theme: 'snow',
             placeholder: '请输入个人简介...',
@@ -423,15 +655,12 @@
             }
         });
 
-        // 获取隐藏域
         var hiddenInput = document.getElementById('bio-hidden');
 
-        // 如果隐藏域已有内容，设置为编辑器内容
         if (hiddenInput && hiddenInput.value) {
             quill.root.innerHTML = hiddenInput.value;
         }
 
-        // 在表单提交前同步编辑器内容到隐藏域
         var form = document.getElementById('profileForm');
         if (form) {
             form.addEventListener('submit', function() {

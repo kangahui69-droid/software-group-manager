@@ -57,6 +57,22 @@ public class GroupMemberDAO {
         return false;
     }
 
+    public void deleteByGroupId(Integer groupId) {
+        String sql = "DELETE FROM group_member WHERE group_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, groupId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+    }
+
     public boolean isMember(Integer groupId, Integer userId) {
         String sql = "SELECT COUNT(*) FROM group_member WHERE group_id = ? AND user_id = ?";
         Connection conn = null;
@@ -175,6 +191,47 @@ public class GroupMemberDAO {
         return 0;
     }
 
+    public int getUnreadCount(Integer groupId, Integer userId) {
+        String sql = "SELECT COUNT(*) FROM group_message gm " +
+                     "LEFT JOIN group_member gm2 ON gm.group_id = gm2.group_id AND gm2.user_id = ? " +
+                     "WHERE gm.group_id = ? AND gm.sent_at > IFNULL(gm2.last_read_at, '1970-01-01')";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2, groupId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
+
+    public void updateLastReadAt(Integer groupId, Integer userId) {
+        String sql = "UPDATE group_member SET last_read_at = NOW() WHERE group_id = ? AND user_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, groupId);
+            pstmt.setInt(2, userId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, null);
+        }
+    }
+
     private GroupMember mapResultSetToMember(ResultSet rs) throws SQLException {
         GroupMember member = new GroupMember();
         member.setId(rs.getInt("id"));
@@ -185,6 +242,9 @@ public class GroupMemberDAO {
         member.setUsername(rs.getString("username"));
         member.setName(rs.getString("name"));
         member.setAvatarFileId(rs.getString("avatar_file_id"));
+        try {
+            member.setLastReadAt(rs.getTimestamp("last_read_at"));
+        } catch (SQLException e) { }
         return member;
     }
 
@@ -196,5 +256,28 @@ public class GroupMemberDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 统计群聊总数
+     */
+    public int countGroups() {
+        String sql = "SELECT COUNT(*) FROM activity_group";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
     }
 }

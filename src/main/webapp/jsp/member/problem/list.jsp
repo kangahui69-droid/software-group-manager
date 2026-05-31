@@ -4,112 +4,242 @@
     <jsp:param name="title" value="问题反馈" />
     <jsp:param name="active" value="problem" />
 </jsp:include>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
 
-<div class="page-wrapper">
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="page-header d-print-none">
-                <div class="row g-2 align-items-center">
-                    <div class="col">
-                        <h2 class="page-title">
-                            <i class="bi bi-exclamation-triangle me-2"></i>问题反馈
-                        </h2>
-                    </div>
-                    <div class="col-auto">
-                        <button class="btn btn-primary" onclick="showSubmitModal()">
-                            <i class="bi bi-plus-circle me-2"></i>提交新反馈
-                        </button>
-                    </div>
-                </div>
+<style>
+    .member-hero {
+        background: linear-gradient(135deg, var(--brand-blue), var(--primary-light));
+        border-radius: var(--radius-generous);
+        padding: 32px 40px;
+        margin-bottom: 32px;
+        color: white;
+    }
+
+    .member-hero-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .member-hero-subtitle {
+        font-family: var(--font-ui);
+        font-size: 0.94rem;
+        opacity: 0.9;
+    }
+
+    .card-design {
+        background: var(--bg-white);
+        border-radius: var(--radius-generous);
+        box-shadow: var(--shadow-brand-purple);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body-design {
+        padding: 0;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-standard);
+    }
+
+    .btn-sm-brand {
+        background-color: var(--brand-blue);
+        color: white;
+        border-radius: var(--radius-standard);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+    }
+
+    .btn-sm-brand:hover {
+        background-color: var(--primary-600);
+        color: white;
+    }
+
+    .table-design {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-design th {
+        font-family: var(--font-ui);
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-bottom: 2px solid var(--border-gray);
+        padding: 14px 20px;
+        text-align: left;
+        font-size: 0.81rem;
+    }
+
+    .table-design td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+        font-family: var(--font-ui);
+        font-size: 0.875rem;
+    }
+
+    .table-design tbody tr:hover {
+        background: rgba(20, 86, 240, 0.03);
+    }
+
+    .badge-design {
+        font-family: var(--font-ui);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+    }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: var(--radius-standard);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+</style>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="member-hero">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <a href="${pageContext.request.contextPath}/member/index.jsp" class="back-btn">
+                    <i class="bi bi-arrow-left"></i>返回
+                </a>
             </div>
+            <h1 class="member-hero-title">
+                <i class="bi bi-exclamation-triangle me-2"></i>问题反馈
+            </h1>
+            <p class="member-hero-subtitle">提交和查看您的问题反馈</p>
+        </div>
 
-            <c:if test="${not empty param.success}">
-                <div class="alert alert-success alert-dismissible">
-                    <i class="bi bi-check-circle me-2"></i>${param.success}
-                </div>
-            </c:if>
+        <div class="d-flex justify-content-end mb-4">
+            <button class="btn-brand" onclick="showSubmitModal()">
+                <i class="bi bi-plus-circle"></i>提交新反馈
+            </button>
+        </div>
 
-            <div class="row row-cards">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="table-responsive">
-                            <table class="table table-vcenter card-table table-striped">
-                                <thead>
+        <c:if test="${not empty param.success}">
+            <div class="alert alert-success alert-dismissible">
+                <i class="bi bi-check-circle me-2"></i>${param.success}
+            </div>
+        </c:if>
+
+        <div class="card-design">
+            <div class="card-body-design">
+                <table class="table-design">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>标题</th>
+                            <th>分类</th>
+                            <th>状态</th>
+                            <th>提交时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:choose>
+                            <c:when test="${empty reports}">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted" style="padding: 48px;">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        暂无反馈记录
+                                    </td>
+                                </tr>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach var="report" items="${reports}">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>标题</th>
-                                        <th>分类</th>
-                                        <th>状态</th>
-                                        <th>提交时间</th>
-                                        <th class="w-1">操作</th>
+                                        <td style="color: var(--text-muted);">${report.id}</td>
+                                        <td>
+                                            <a href="javascript:void(0)" onclick="showDetail(${report.id})" class="text-decoration-none" style="color: var(--text-dark); font-weight: 500;">${report.title}</a>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${report.category == 'VERIFIED'}">
+                                                    <span class="badge-design" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">属实</span>
+                                                </c:when>
+                                                <c:when test="${report.category == 'UNVERIFIED'}">
+                                                    <span class="badge-design" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">待验证</span>
+                                                </c:when>
+                                                <c:when test="${report.category == 'INVALID'}">
+                                                    <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">不属实</span>
+                                                </c:when>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${report.category == 'VERIFIED'}">
+                                                    <c:choose>
+                                                        <c:when test="${report.status == 'PENDING'}">
+                                                            <span class="badge-design" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">待处理</span>
+                                                        </c:when>
+                                                        <c:when test="${report.status == 'SOLVING'}">
+                                                            <span class="badge-design" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">正在解决</span>
+                                                        </c:when>
+                                                        <c:when test="${report.status == 'SOLVED'}">
+                                                            <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">已解决</span>
+                                                        </c:when>
+                                                        <c:when test="${report.status == 'UNSOLVED'}">
+                                                            <span class="badge-design" style="background: rgba(100, 116, 139, 0.1); color: #64748b;">未解决</span>
+                                                        </c:when>
+                                                    </c:choose>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span style="color: var(--text-muted);">-</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td style="color: var(--text-secondary);">${report.createdAt}</td>
+                                        <td>
+                                            <button class="btn-sm-brand" onclick="showDetail(${report.id})">
+                                                <i class="bi bi-eye"></i>查看
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <c:choose>
-                                        <c:when test="${empty reports}">
-                                            <tr>
-                                                <td colspan="6" class="text-center text-muted py-4">
-                                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                                    暂无反馈记录
-                                                </td>
-                                            </tr>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <c:forEach var="report" items="${reports}">
-                                                <tr>
-                                                    <td>${report.id}</td>
-                                                    <td>
-                                                        <a href="javascript:void(0)" onclick="showDetail(${report.id})">${report.title}</a>
-                                                    </td>
-                                                    <td>
-                                                        <c:choose>
-                                                            <c:when test="${report.category == 'VERIFIED'}">
-                                                                <span class="badge bg-danger">属实</span>
-                                                            </c:when>
-                                                            <c:when test="${report.category == 'UNVERIFIED'}">
-                                                                <span class="badge bg-warning">待验证</span>
-                                                            </c:when>
-                                                            <c:when test="${report.category == 'INVALID'}">
-                                                                <span class="badge bg-success">不属实</span>
-                                                            </c:when>
-                                                        </c:choose>
-                                                    </td>
-                                                    <td>
-                                                        <c:choose>
-                                                            <c:when test="${report.category == 'VERIFIED'}">
-                                                                <c:choose>
-                                                                    <c:when test="${report.status == 'PENDING'}">
-                                                                        <span class="badge bg-warning">待处理</span>
-                                                                    </c:when>
-                                                                    <c:when test="${report.status == 'SOLVING'}">
-                                                                        <span class="badge bg-info">正在解决</span>
-                                                                    </c:when>
-                                                                    <c:when test="${report.status == 'SOLVED'}">
-                                                                        <span class="badge bg-success">已解决</span>
-                                                                    </c:when>
-                                                                    <c:when test="${report.status == 'UNSOLVED'}">
-                                                                        <span class="badge bg-secondary">未解决</span>
-                                                                    </c:when>
-                                                                </c:choose>
-                                                            </c:when>
-                                                            <c:otherwise>
-                                                                <span class="text-muted">-</span>
-                                                            </c:otherwise>
-                                                        </c:choose>
-                                                    </td>
-                                                    <td>${report.createdAt}</td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-primary" onclick="showDetail(${report.id})">查看</button>
-                                                    </td>
-                                                </tr>
-                                            </c:forEach>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

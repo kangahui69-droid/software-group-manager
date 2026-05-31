@@ -368,4 +368,27 @@ public class ProblemReportDAO {
             e.printStackTrace();
         }
     }
+
+    /**
+     * 统计待处理的问题数量
+     */
+    public int countPending() {
+        String sql = "SELECT COUNT(*) FROM problem_report WHERE status = 'pending'";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return 0;
+    }
 }

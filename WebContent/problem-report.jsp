@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>问题反馈 - 软件小组管理系统</title>
+    <link rel="icon" href="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" type="image/jpeg">
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -19,7 +20,7 @@
         <div class="container container-tight py-4">
             <div class="text-center mb-4">
                 <a href="${pageContext.request.contextPath}/index.jsp" class="navbar-brand navbar-brand-autodark">
-                    <i class="bi bi-cpu text-primary me-2 h1 mb-0"></i>
+                    <img src="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" alt="Logo" style="width: 48px; height: 48px; border-radius: 12px; object-fit: cover;" class="me-2">
                     <span class="h1 mb-0">软件小组</span>
                 </a>
             </div>

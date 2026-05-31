@@ -25,9 +25,16 @@ public class FileStorageDAO {
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setObject(1, fileStorage.getCreateBy());
             pstmt.setString(2, fileStorage.getOriginalName());
-            pstmt.setString(3, fileStorage.getStoredName() != null ? fileStorage.getStoredName() : fileStorage.getOriginalName());
+
+            String storedName = fileStorage.getStoredName() != null ? fileStorage.getStoredName() : fileStorage.getOriginalName();
+            pstmt.setString(3, storedName);
             pstmt.setString(4, fileStorage.getFilePath());
-            pstmt.setString(5, fileStorage.getFileType());
+
+            String fileType = fileStorage.getFileType();
+            if (fileType != null && fileType.length() > 200) {
+                fileType = fileType.substring(0, 200);
+            }
+            pstmt.setString(5, fileType);
             pstmt.setObject(6, fileStorage.getFileSize());
             pstmt.setString(7, fileStorage.getCategory());
 
@@ -39,6 +46,7 @@ public class FileStorageDAO {
                 }
             }
         } catch (SQLException e) {
+            System.out.println("[FileStorageDAO] SQL错误: " + e.getMessage());
             e.printStackTrace();
         } finally {
             closeResources(conn, pstmt, generatedKeys);
@@ -148,11 +156,17 @@ public class FileStorageDAO {
         fileStorage.setId(rs.getInt("id"));
         fileStorage.setCreateBy(rs.getInt("create_by"));
         fileStorage.setOriginalName(rs.getString("original_name"));
+        fileStorage.setStoredName(rs.getString("stored_name"));
         fileStorage.setFilePath(rs.getString("file_path"));
         fileStorage.setFileType(rs.getString("file_type"));
         fileStorage.setFileSize(rs.getLong("file_size"));
         fileStorage.setCategory(rs.getString("category"));
         fileStorage.setCreatedAt(rs.getTimestamp("created_at"));
+        try {
+            fileStorage.setStatus(rs.getInt("status"));
+        } catch (SQLException e) {
+            fileStorage.setStatus(1);
+        }
         return fileStorage;
     }
 

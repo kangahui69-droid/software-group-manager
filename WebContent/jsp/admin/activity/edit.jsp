@@ -169,45 +169,6 @@
 
 <script>
 (function() {
-    var STATUS_UPCOMING = 'upcoming';
-    var STATUS_ONGOING = 'ongoing';
-    var STATUS_COMPLETED = 'completed';
-    var STATUS_CANCELED = 'canceled';
-
-    function calculateStatus(activityStartTime, activityEndTime) {
-        var now = new Date();
-        var startTime = activityStartTime ? new Date(activityStartTime) : null;
-        var endTime = activityEndTime ? new Date(activityEndTime) : null;
-        
-        if (!startTime || !endTime) {
-            return STATUS_UPCOMING;
-        }
-        
-        if (now < startTime) {
-            return STATUS_UPCOMING;
-        }
-        if (now > endTime) {
-            return STATUS_COMPLETED;
-        }
-        return STATUS_ONGOING;
-    }
-
-    function updateStatusSelect() {
-        var statusSelect = document.querySelector('select[name="status"]');
-        var activityStartInput = document.querySelector('input[name="activityStartTime"]');
-        var activityEndInput = document.querySelector('input[name="activityEndTime"]');
-        
-        if (!statusSelect || !activityStartInput || !activityEndInput) return;
-        
-        var currentStatus = statusSelect.value;
-        if (currentStatus === STATUS_CANCELED) {
-            return;
-        }
-        
-        var newStatus = calculateStatus(activityStartInput.value, activityEndInput.value);
-        statusSelect.value = newStatus;
-    }
-
     // 仅在新建活动时设置默认值（activity为空）
     if (!${not empty activity}) {
         // 计算下一个周六
@@ -256,19 +217,5 @@
             regEndInput.value = formatDateTime(regEnd);
         }
     }
-
-    // 绑定时间变化事件，自动更新状态
-    var activityStartInput = document.querySelector('input[name="activityStartTime"]');
-    var activityEndInput = document.querySelector('input[name="activityEndTime"]');
-    
-    if (activityStartInput) {
-        activityStartInput.addEventListener('change', updateStatusSelect);
-    }
-    if (activityEndInput) {
-        activityEndInput.addEventListener('change', updateStatusSelect);
-    }
-
-    // 页面加载时根据当前时间设置状态（仅非canceled状态）
-    updateStatusSelect();
 })();
 </script>

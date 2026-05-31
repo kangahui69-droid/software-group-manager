@@ -43,11 +43,7 @@ public class LoginServlet extends HttpServlet {
             }
 
             // 根据角色跳转
-            if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                response.sendRedirect(request.getContextPath() + "/admin/dashboard");
-            } else {
-                response.sendRedirect(request.getContextPath() + "/member/index.jsp");
-            }
+            response.sendRedirect(request.getContextPath() + "/index.jsp");
         } else {
             request.setAttribute("error", "用户名或密码错误");
             request.getRequestDispatcher("/login.jsp").forward(request, response);

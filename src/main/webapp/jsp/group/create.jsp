@@ -17,6 +17,11 @@
                 <h2 class="page-title">创建群聊</h2>
                 <div class="text-muted">创建一个新的群聊</div>
             </div>
+            <div class="col-auto">
+                <a href="${pageContext.request.contextPath}/group/my-groups" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>返回
+                </a>
+            </div>
         </div>
     </div>
 </div>
