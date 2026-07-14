@@ -106,15 +106,18 @@
   - 默认池配置：maximumPoolSize=20、minimumIdle=5、connectionTimeout=30s、idleTimeout=10min
   - `getPoolStatus()` 返回真实池状态；`closeDataSource()` 关闭池
 
-### 3.4 Config 配置类扩展 `[未开始]`
-- **文件**：`src/main/java/config/Config.java`（小幅新增）
+### 3.4 Config 配置类扩展 `[已完成]`
+- **文件**：`src/main/java/config/Config.java`（小幅新增+重构）
 - **内容**：
-  - 新增 `getIntProperty(key, default)` 辅助方法
-  - 读取 hikaricp 相关配置（maximumPoolSize等）
+  - 新增 `getIntProperty(key, default)` 辅助方法，读取整数配置
+  - 新增 `getLongProperty(key, default)` 辅助方法，读取长整数配置
+  - 提取 `parseInteger/parseLong` 私有方法统一空值/格式异常处理
+  - 提取5个默认值常量消除魔法值，`getMaxFileSize/getMaxRequestSize/getSessionTimeout/getDesKey/getFileStorageBaseDir` 统一委托给类型安全方法
+  - 配套测试：`ConfigTest.java`（29个用例，覆盖正常路径/边界/异常/HikariCP配置读取）
 
-### 3.5 config.properties 补充默认值 `[未开始]`
+### 3.5 config.properties 补充默认值 `[已完成]`
 - **文件**：`src/main/resources/config.properties`（修改，只改模板，不动config.local.properties）
-- **内容**：补充 hikaricp 配置键默认值
+- **内容**：补充 hikaricp 配置键默认值（maximumPoolSize=10, minimumIdle=5, connectionTimeout=30000, idleTimeout=600000, maxLifetime=1800000, connectionTestQuery=SELECT 1, validationTimeout=5000）
 
 ### 3.6 BaseApiServlet 基类 `[未开始]`
 - **文件**：`src/main/java/servlet/BaseApiServlet.java`（新建，~80行）
@@ -418,6 +421,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-14 | P0 3.4 | 完成Config配置类扩展及单元测试（28个用例全部通过） | Claude Code |
 | 2026-07-14 | P0 3.3 | 完成DBUtil启用HikariCP及单元测试（27个用例全部通过） | Claude Code |
 | 2026-07-14 | P0 3.2 | 完成Result统一响应模型及单元测试（31个用例全部通过） | Claude Code |
 | 2026-07-14 | P0 3.1 | 完成TransactionTemplate工具类及单元测试（14个用例全部通过） | Claude Code |
