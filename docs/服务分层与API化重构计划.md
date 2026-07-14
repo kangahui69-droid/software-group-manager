@@ -1,0 +1,422 @@
+# 服务分层 + API化重构计划（为 MCP/Agent 化与 APP 化奠基）
+
+> **编制日期**：2026-07-13
+> **对应规划文档**：《高校软件小组官方网站发展规划方案 V2.0》第二阶段"服务端架构预备升级"
+> **文档用途**：作为重构执行过程的跟踪文档，每完成一项请更新状态标签。
+
+## 状态标签说明
+
+| 标签 | 含义 |
+|------|------|
+| `[未开始]` | 尚未开始实施 |
+| `[进行中]` | 正在实施 |
+| `[已完成]` | 已实施并通过验证 |
+| `[跳过]` | 经评估不需要/暂缓实施 |
+
+---
+
+## 一、背景与目标
+
+### 1.1 背景
+
+根据《高校软件小组官方网站发展规划方案 V2.0》，项目第二阶段"全面APP化与移动服务拓展"明确要求：
+- 多端（Web+App）数据一致性
+- 单体后端初步解耦
+- 向 MCP（Model Context Protocol）标准靠拢
+- API 接口高可用
+
+第三阶段业务闭环、第四阶段Agent化都依赖稳定的业务能力层。
+
+### 1.2 现状问题
+
+31个Servlet共约11000行代码，业务逻辑、事务控制、权限校验、参数解析、JSON序列化、文件流读写全部混在Servlet里：
+- ProjectServlet 1353行、ActivityServlet 1309行，甚至包含原始JDBC Connection管理和内联SQL
+- AIService 为支持 `[ACTION]` 机制，自己重写了一遍活动报名、项目提交等业务逻辑（2604行），与Web端逻辑不一致
+- 未来APP（Flutter/RN/小程序）无法复用——移动端需要JSON API，不能解析JSP+302 redirect
+- 未来MCP Server无法注册Tool——没有可复用的业务方法
+- 事务散落在Servlet里，AIService所有写操作无事务保护
+- DBUtil 声明了HikariCP依赖但实际用DriverManager，每次请求新建连接
+
+**唯一正面参考**：AIServlet → AIService 已是"薄Controller + 厚Service"形态（Gson在Servlet、业务在AIService）。
+
+### 1.3 目标
+
+1. **Service层**：把核心业务逻辑从Servlet抽到Service，一个方法=一个业务用例=一个事务边界
+2. **统一API**：新增 `/api/*` 前缀的REST JSON端点，返回统一格式 `{code, message, data}`
+3. **基础设施**：启用HikariCP连接池、抽TransactionTemplate事务工具、统一Result模型
+4. **零破坏**：保留现有JSP页面和URL，新旧并存（Strangler Pattern），用户无感知
+5. **AIService重构**：让 `[ACTION]` 机制调用Service层方法，消除重复逻辑
+
+### 1.4 不做的事（范围控制）
+
+
+
+
+- 不拆微服务（单体内分层；Service边界=未来拆分边界，但过早拆分是过度工程）
+- 不引入Spring（手写TransactionTemplate保持零依赖，Java8 lambda够用）
+- 不改JSP页面（现有URL、表单、交互全部保留）
+- 不重写前端为Vue/React
+- 暂不做JWT/Token认证（先保持Session Cookie，AuthFilter预留扩展点）
+- 暂不实现MCP Server本身（P3后续做，本计划只打基础）
+- 不做Push推送、LBS签到、点对点私信等APP新功能
+
+### 1.5 与桌面规划文档的对齐
+
+- 对应规划第二阶段第3点"服务端架构预备升级"，是APP开发的**前置技术准备**（无API层则Flutter/RN无从调起）
+- 执行顺序：3（服务端升级）→ 1（APP平移）→ 2（APP新功能），而非1→2→3
+- P3+预留后续阶段扩展路径
+
+---
+
+## 二、执行阶段总览
+
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| **P0** | 基础设施层（HikariCP、TransactionTemplate、Result、BaseApiServlet、AuthFilter扩展、DAO事务重载） | `[进行中]` |
+| **P1** | 核心Service层抽取（5个新Service + AIService重构 + 5个Servlet改造） | `[未开始]` |
+| **P2** | 核心REST API层（5个新API Servlet，纯新增） | `[未开始]` |
+| **P3+** | MCP Server、第二批次Service、JWT认证、RBAC、Git集成、AI沙箱、Agent调度（后续规划） | `[未开始-后续阶段]` |
+
+---
+
+## 三、P0：基础设施层（无业务侵入）
+
+### 3.1 TransactionTemplate 工具类 `[已完成]`
+- **文件**：`src/main/java/util/TransactionTemplate.java`（新建，~60行）
+- **内容**：
+  - 函数式事务工具：`execute(Connection -> T)` / `executeWithoutResult(Connection -> void)`
+  - 自动管理 setAutoCommit(false)/commit/rollback/finally恢复与关闭
+  - RuntimeException 自动触发回滚
+  - 从 ActivityServlet 现有手动事务模式抽象
+
+### 3.2 Result 统一响应模型 `[未开始]`
+- **文件**：`src/main/java/util/Result.java`（新建，~50行）
+- **内容**：
+  - 统一响应模型：`{int code, String message, Object data}`
+  - 静态工厂：`Result.ok()`/`ok(data)`/`error(msg)`/`error(code,msg)`
+  - `isSuccess()` 判断方法
+  - 错误码分段：401未登录、403无权限、400参数错误、4xxx业务错误、500系统错误
+
+### 3.3 DBUtil 启用 HikariCP `[未开始]`
+- **文件**：`src/main/java/util/DBUtil.java`（修改）
+- **内容**：
+  - 改为 `HikariDataSource` 单例，从Config读取 `db.*` 配置（已有key）
+  - `getConnection()` 从HikariCP池拿连接，替代 DriverManager
+  - 保留 `closeConnection/closeResources/closeQuietly` 签名不变
+  - 默认池配置：maximumPoolSize=20、minimumIdle=5、connectionTimeout=30s、idleTimeout=10min
+  - `getPoolStatus()` 返回真实池状态；`closeDataSource()` 关闭池
+
+### 3.4 Config 配置类扩展 `[未开始]`
+- **文件**：`src/main/java/config/Config.java`（小幅新增）
+- **内容**：
+  - 新增 `getIntProperty(key, default)` 辅助方法
+  - 读取 hikaricp 相关配置（maximumPoolSize等）
+
+### 3.5 config.properties 补充默认值 `[未开始]`
+- **文件**：`src/main/resources/config.properties`（修改，只改模板，不动config.local.properties）
+- **内容**：补充 hikaricp 配置键默认值
+
+### 3.6 BaseApiServlet 基类 `[未开始]`
+- **文件**：`src/main/java/servlet/BaseApiServlet.java`（新建，~80行）
+- **内容**：
+  - 所有 `/api/*` Servlet的抽象基类
+  - 封装 Gson实例、`writeJson(resp, Result)`、统一异常捕获(Exception→500)、取当前用户、解析JSON请求体
+  - 预留CORS开关
+
+### 3.7 AuthFilter 扩展 `[未开始]`
+- **文件**：`src/main/java/filter/AuthFilter.java`（小幅扩展）
+- **内容**：
+  - 新增 `/api/*` 路径的认证逻辑（未登录返回401 JSON，而非redirect到login.jsp）
+  - 抽出 `isAuthenticated(req)` 方法，为未来Token认证留扩展点
+  - 补全已知gap：把 `/attendance/*`、`/study/*` 加入受保护路径
+
+### 3.8 DAO 层事务重载规范 `[未开始]`
+- **涉及DAO**：Activity、Registration、Project、Award、User、FileStorage、MemberProfile、AwardMember、AwardImage、ProjectMember、ProjectFile、ProjectImage、ProjectPlan、ProjectProgress、ProjectHistory
+- **内容**：
+  - 对写操作（insert/update/delete）补充接受 `Connection conn` 参数的重载
+  - 无参版本内部 `try(conn=getConnection()){调有参版本}` 保持不变
+  - 已有此模式的DAO（ActivityDAO、RegistrationDAO）保持不动
+
+### P0 验证清单 `[未开始]`
+- [ ] `mvn clean compile` 无错误
+- [ ] `mvn clean package -DskipTests` 生成war成功
+- [ ] 启动Tomcat，现有JSP页面正常登录/浏览
+- [ ] DBUtil从HikariCP池拿连接（日志或池状态验证）
+
+---
+
+## 四、P1：核心Service层抽取
+
+**原则**：Service不依赖Servlet API，不做JSON序列化，不做forward/redirect——只接受普通参数/DTO、执行业务、返回Result。
+
+### 4.1 ActivityService 活动服务 `[未开始]`
+- **文件**：`src/main/java/service/ActivityService.java`（新建）
+- **方法清单**：
+  - `createActivity(ActivityDTO, userId)` → 创建活动（含状态校验、自动建群逻辑）
+  - `updateActivity(id, ActivityDTO, userId)` → 更新
+  - `deleteActivity(id, userId)` → 删除（校验已确认人数）
+  - `register(activityId, userId)` → 报名（事务：锁→查状态→查容量→查重复→插记录→更新人数）
+  - `approveParticipant(activityId, userId, operatorId)` → 审批通过
+  - `rejectParticipant(activityId, userId, operatorId)` → 审批拒绝
+  - `batchApprove(activityId, userIds, operatorId)` → 批量通过
+  - `batchReject(activityId, userIds, operatorId)` → 批量拒绝
+  - `approveActivity(activityId, operatorId)` → 活动审核通过
+  - `rejectActivity(activityId, reason, operatorId)` → 活动审核驳回
+  - `cancelActivity(activityId, operatorId)` → 取消活动
+  - `generateActivityNews(activityId)` → 活动结束自动生成新闻
+  - `listActivities(filter, page)` → 活动列表
+  - `getActivityDetail(id, userId)` → 详情+当前用户报名状态
+  - `getMyActivities(userId, page)` → 我报名的活动
+  - `getMyCreatedActivities(userId, page)` → 我创建的活动
+- **事务边界**：register/approveParticipant/rejectParticipant/batchApprove/batchReject 用 TransactionTemplate
+- **配套改造**：ActivityServlet对应方法改为调ActivityService
+
+### 4.2 UserService 用户服务 `[未开始]`
+- **文件**：`src/main/java/service/UserService.java`（新建）
+- **方法清单**：
+  - `login(username, password)` → 登录验证（返回User+角色）
+  - `changePassword(userId, oldPwd, newPwd)` → 修改密码
+  - `updateProfile(userId, ProfileDTO)` → 更新个人档案（不可改字段校验、邮箱重复校验）
+  - `uploadAvatar(userId, Part file)` → 上传头像（校验+调FileService+更新profile+旧文件软删）
+  - `getUserDetail(userId)` → 用户详情（含profile）
+  - `listMembers(filter, page)` → 成员列表（admin）
+  - `updateAdminAvatar(adminId, Part file)` → 管理员头像
+- **配套改造**：ProfileServlet、AdminServlet、LoginServlet、MemberServlet对应方法调UserService
+
+### 4.3 FileService 文件服务 `[未开始]`
+- **文件**：`src/main/java/service/FileService.java`（新建）
+- **方法清单**：
+  - `uploadFile(Part file, category, userId)` → 上传（校验+命名+写磁盘+写DB+返回FileStorage）
+  - `viewFile(fileId)` → 读取文件元信息+物理路径（含legacy fallback）
+  - `downloadFile(fileId)` → 下载（返回流+contentType+文件名）
+  - `deleteFile(fileId, userId)` → 删除（权限校验+物理删除+DB标记）
+  - `listFiles(category, page)` → 文件列表
+- **关键**：统一走FileUtil，保留legacy fallback（getRealPath）兼容老数据
+- **配套改造**：FileStorageServlet、FileUploadServlet、FileDownloadServlet核心逻辑迁入；其他Servlet文件处理改调FileService
+
+### 4.4 ProjectService 项目服务 `[未开始]`
+- **文件**：`src/main/java/service/ProjectService.java`（新建）
+- **方法清单**：
+  - `createProject(ProjectDTO, userId)` → 创建（含"每年最多3项目"校验）
+  - `updateProject(id, ProjectDTO, userId)` → 更新
+  - `applyMember(projectId, userId)` → 申请加入（重复/已成员校验）
+  - `approveMember(projectId, userId, operatorId)` → 审批通过
+  - `rejectMember(projectId, userId, operatorId)` → 驳回
+  - `addPlan(projectId, PlanDTO, userId)` → 添加计划
+  - `addProgress(projectId, ProgressDTO, userId)` → 添加进度
+  - `transferAdmin(projectId, newAdminId, operatorId)` → 转让管理员
+  - `addLabel/removeLabel` → 标签管理
+  - `uploadProjectImage/uploadProjectFile/deleteProjectFile/downloadProjectFile` → 文件操作（调FileService）
+- **事务边界**：多表写操作用TransactionTemplate
+- **重点**：删掉ProjectServlet 1077-1352行内联JDBC SQL（文件CRUD），改调FileService+ProjectDAO
+- **统一审计**：Service里调 `projectDAO.addHistory()`
+- **配套改造**：ProjectServlet对应方法调ProjectService
+
+### 4.5 AwardService 奖项服务 `[未开始]`
+- **文件**：`src/main/java/service/AwardService.java`（新建）
+- **方法清单**：
+  - `submitAward(AwardDTO, userId, Part[] images)` → 提交奖项（日期解析/年份推导/状态PENDING/多图调FileService）
+  - `approveAward(id, operatorId)` → 审批通过
+  - `rejectAward(id, reason, operatorId)` → 驳回
+  - `addAwardImage(id, Part file, userId)` → 添加图片
+  - `listAwards(filter, page)` → 列表
+  - `getAwardStatistics(userId)` → 个人获奖统计
+  - `filterAwardsForUser(userId, filter)` → 筛选
+- **改进**：内存统计和手拼JSON的代码改为返回DTO，由Gson统一序列化
+- **配套改造**：AwardServlet对应方法调AwardService
+
+### 4.6 AIService 重构 `[未开始]`
+- **文件**：`src/main/java/service/AIService.java`（重构，2604行→预计~1200行）
+- **内容**：
+  - 保持公共方法签名不变（AIServlet无需修改）
+  - 核心改造：`executeAction()` 里所有业务操作改为调用上述Service方法，消除重复DAO代码
+  - AIService保留：LLM调用/prompt构建/会话管理/[ACTION]解析/FAQ匹配
+- **迁移清单**（逐条验证）：
+  - `executeSignupActivity` → ActivityService.register
+  - `executeCreateActivityRequest` → ActivityService.createActivity
+  - `executeSubmitNews` → NewsService（P1暂不抽，保留内联或先做简化包装）
+  - `executeViewMyActivities/listActivities` → ActivityService
+  - `executeViewMyProjects/listProjects/createProjectRequest` → ProjectService
+  - `executeSubmitAward/listMyAwards` → AwardService
+  - 管理员action（approve/reject/list）→ 对应Service
+  - 公开查询action（list_news/recent_news/list_latest_activities）→ 对应Service
+
+### 4.7 Servlet 渐进改造顺序 `[未开始]`
+按AIService依赖关系逐个迁移，迁一个稳一个：
+
+| 序号 | Servlet | 调Service | 状态 |
+|------|---------|-----------|------|
+| 1 | ProfileServlet | UserService | `[未开始]` |
+| 2 | FileStorageServlet | FileService | `[未开始]` |
+| 3 | ActivityServlet | ActivityService | `[未开始]` |
+| 4 | AwardServlet | AwardService | `[未开始]` |
+| 5 | ProjectServlet | ProjectService（最大，收益最高） | `[未开始]` |
+
+**不强制改造的Servlet**（P1阶段保持现状，后续按需抽）：
+NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionServlet、ProblemReportServlet、ProblemManagementServlet、MemberProblemServlet、ResumeServlet/ResumeAward/ResumeEducation/ResumeProject/ResumeSkill、GroupAdminServlet、GroupMemberServlet、LogServlet、PasswordServlet、AdminServlet（仅头像部分随UserService改造）、MemberServlet、FileUploadServlet、FileDownloadServlet、CSRFTokenServlet、LoginServlet、LogoutServlet
+
+改造后Servlet每个action方法模式：取参→取用户→调service→根据Result sendRedirect或setAttribute+forward（5-20行）。
+
+### P1 验证清单 `[未开始]`
+- [ ] `mvn clean package -DskipTests` 成功
+- [ ] 核心JSP功能冒烟：登录/改密/头像上传
+- [ ] 活动：创建/报名/审批/批量审批/删除
+- [ ] 奖项：提交/审批/图片上传
+- [ ] 项目：创建/申请/审批/上传文件/计划/进度
+- [ ] 文件：上传/下载/查看/删除
+- [ ] AIServlet AI对话正常，AI触发的[ACTION]操作走Service层
+- [ ] 现有页面URL/交互/流程无任何变化
+- [ ] ActivityServlet从1309行降到400-500行
+- [ ] ProjectServlet从1353行降到500行左右
+
+---
+
+## 五、P2：核心REST API层（纯新增，不动现有JSP/Servlet）
+
+**API约定**：
+- Content-Type: application/json; charset=UTF-8（上传用multipart）
+- 成功：`{"code":0,"message":"ok","data":{...}}`
+- 失败：`{"code":4xxx,"message":"...","data":null}`
+- 分页：`data: {list:[], total, page, pageSize}`
+- 认证：P2复用Session Cookie；未来加JWT Token
+- 所有API Servlet继承BaseApiServlet
+
+### 5.1 ActivityApiServlet 活动API `[未开始]`
+- **文件**：`src/main/java/servlet/api/ActivityApiServlet.java`（新建）
+- **路径**：`/api/activities/*`
+- **端点**：
+  - `GET /api/activities` → 活动列表（page/status/keyword）
+  - `GET /api/activities/{id}` → 活动详情
+  - `POST /api/activities` → 创建活动（JSON body）
+  - `PUT /api/activities/{id}` → 更新
+  - `DELETE /api/activities/{id}` → 删除
+  - `POST /api/activities/{id}/register` → 报名
+  - `POST /api/activities/{id}/approve-user` → 审批参与者通过
+  - `POST /api/activities/{id}/reject-user` → 审批参与者拒绝
+  - `POST /api/activities/{id}/approve` → 活动审核通过
+  - `POST /api/activities/{id}/reject` → 活动审核驳回
+  - `GET /api/activities/my` → 我报名的活动
+  - `GET /api/activities/created-by-me` → 我创建的活动
+
+### 5.2 UserApiServlet 用户/认证API `[未开始]`
+- **文件**：`src/main/java/servlet/api/UserApiServlet.java`（新建）
+- **路径**：`/api/users/*`、`/api/auth/*`
+- **端点**：
+  - `POST /api/auth/login` → 登录
+  - `POST /api/auth/logout` → 登出
+  - `POST /api/auth/change-password` → 改密码
+  - `GET /api/users/me` → 当前用户信息（含profile、头像URL）
+  - `PUT /api/users/me` → 更新个人档案
+  - `POST /api/users/me/avatar` → 上传头像（multipart）
+  - `GET /api/users/{id}` → 用户详情
+  - `GET /api/users` → 成员列表（admin）
+
+### 5.3 FileApiServlet 文件API `[未开始]`
+- **文件**：`src/main/java/servlet/api/FileApiServlet.java`（新建）
+- **路径**：`/api/files/*`
+- **端点**：
+  - `POST /api/files/upload` → 上传（multipart, category参数）
+  - `GET /api/files/{id}` → 文件元信息
+  - `GET /api/files/{id}/download` → 下载
+  - `GET /api/files/{id}/view` → 查看（inline，图片/头像用）
+  - `DELETE /api/files/{id}` → 删除
+  - `GET /api/files` → 文件列表（按category）
+
+### 5.4 ProjectApiServlet 项目API `[未开始]`
+- **文件**：`src/main/java/servlet/api/ProjectApiServlet.java`（新建）
+- **路径**：`/api/projects/*`
+- **端点**：CRUD + 成员申请/审批 + 计划/进度 + 文件/标签/成员
+
+### 5.5 AwardApiServlet 奖项API `[未开始]`
+- **文件**：`src/main/java/servlet/api/AwardApiServlet.java`（新建）
+- **路径**：`/api/awards/*`
+- **端点**：提交/审批/列表/详情/统计/图片管理
+
+### 5.6 web.xml / 注解注册 `[未开始]`
+- 注册所有新API Servlet，检查不与现有Servlet路径冲突
+- 注意双重注册问题：检查web.xml和@WebServlet不重复
+
+### P2 验证清单 `[未开始]`
+- [ ] `mvn clean package` 成功
+- [ ] curl/Postman：登录POST `/api/auth/login` 获取cookie
+- [ ] 带cookie GET `/api/activities` 拿到JSON列表
+- [ ] POST `/api/activities/{id}/register` 报名，返回正确code/data
+- [ ] multipart POST `/api/files/upload` 上传成功
+- [ ] 未登录访问受保护API返回401 JSON
+- [ ] 无权限访问返回403 JSON
+- [ ] 业务校验失败返回对应4xxx错误码和message
+- [ ] 现有JSP功能完全不受影响
+
+---
+
+## 六、P3+：后续阶段规划（不在本计划内实施）
+
+| 阶段 | 内容 | 对应规划 | 状态 |
+|------|------|---------|------|
+| P3-1 | MCP Server（SSE endpoint，核心Service注册为MCP Tools） | 第二阶段 | `[未开始-后续]` |
+| P3-2 | MessageService（点对点私信）+ Push推送 | 第二阶段APP新功能 | `[未开始-后续]` |
+| P3-3 | 第二批次Service：GroupService/NewsService/RecruitService/AttendanceService/StudySessionService/ProblemService/ResumeService/LogService | 第二/三阶段 | `[未开始-后续]` |
+| P3-4 | 扫码签到/LBS打卡API（考勤扩展） | 第二阶段 | `[未开始-后续]` |
+| P3-5 | JWT Token认证（APP友好，与Session并存） | 第二阶段 | `[未开始-后续]` |
+| P3-6 | 精细化RBAC权限下沉到Service | 第三阶段 | `[未开始-后续]` |
+| P3-7 | 赛展一体化闭环Service（报名→成绩→奖状） | 第三阶段 | `[未开始-后续]` |
+| P3-8 | 一键简历生成ResumeService | 第三阶段 | `[未开始-后续]` |
+| P3-9 | Git集成Service（仓库绑定、提交数据、Issue状态） | 第三阶段 | `[未开始-后续]` |
+| P3-10 | 数据看板聚合API（大屏） | 第三阶段 | `[未开始-后续]` |
+| P3-11 | 日志深度分析Service（用户行为、性能瓶颈） | 第三阶段 | `[未开始-后续]` |
+| P4-1 | AI自动化新闻组织（AI生成新闻初稿） | 第四阶段 | `[未开始-后续]` |
+| P4-2 | 智能问答+知识图谱Service | 第四阶段 | `[未开始-后续]` |
+| P4-3 | AI沙箱接口（外部算法/大模型服务接入） | 第四阶段 | `[未开始-后续]` |
+| P4-4 | 数据仓库ETL（从Service事件采集） | 第四阶段 | `[未开始-后续]` |
+| P4-5 | 人群画像+教育反向推荐 | 第四阶段 | `[未开始-后续]` |
+| P4-6 | Agent调度层（专属AI Agent，主动式服务） | 第四阶段 | `[未开始-后续]` |
+
+---
+
+## 七、关键复用资源
+
+| 资源 | 路径 | 用途 |
+|------|------|------|
+| AIClientUtil 单例模式 | `src/main/java/util/AIClientUtil.java` | Service层实例化DAO的参考模式 |
+| Gson序列化 | pom.xml `com.google.code.gson:gson:2.10.1` | 统一JSON序列化 |
+| AuthHelper | `src/main/java/util/AuthHelper.java` | Servlet/API层取当前用户 |
+| FileUtil | `src/main/java/util/FileUtil.java` | 文件路径操作（getCategoryDir/resolvePhysicalPath） |
+| Config单入口 | `src/main/java/config/Config.java` | 配置读取 |
+| DAO事务重载模式 | ActivityDAO、RegistrationDAO中 `method(Connection conn)` 方法 | 事务方法模式基础 |
+
+---
+
+## 八、风险与注意事项
+
+1. **事务Connection一致性**：同一事务内多个DAO调用必须用同一个Connection（从TransactionTemplate传入），否则事务失效
+2. **AIService.executeAction逐条迁移**：每个action type映射到对应Service方法，一次改一个action并测试
+3. **文件legacy fallback必须保留**：FileService保留getRealPath回退，避免老数据读不到
+4. **config.local.properties真实密码不动**：配置改动只动config.properties模板
+5. **不做"大爆炸"重写**：P1按Service一个一个做，每个完成后跑JSP冒烟测试
+6. **TransactionTemplate回滚约定**：业务校验失败直接`return Result.error(...)`（未写数据不回滚）；DB/IO异常throw RuntimeException触发回滚
+7. **Servlet双重注册检查**：新API Servlet注册时检查web.xml和@WebServlet不重复
+8. **Service不依赖Servlet API**：Service只收userId等普通参数，HttpServletRequest/Response只在Controller层使用，保持Service可被MCP/测试直接调用
+
+---
+
+## 九、技术选型说明（为什么这样选）
+
+| 决策 | 选择 | 理由 |
+|------|------|------|
+| 事务管理 | 手写TransactionTemplate（lambda） | 零依赖，Java8兼容，与现有手动事务模式一致，概念和Spring PlatformTransactionManager同名可迁移 |
+| 不引入Spring | — | 学生项目规模不适合；现有Servlet+new DAO()模式简单够用；Spring会改变技术栈和配置成本 |
+| 连接池 | HikariCP | 依赖已在pom.xml、config已预留key，只是未启用；性能最好的JDBC连接池；改DBUtil一处即可全局生效 |
+| JSON库 | Gson | 已在pom.xml；AIServlet已经在用；不用再引入Jackson |
+| 响应模型 | 统一Result类 | 替代现在散落在各Servlet的setAttribute+forward、sendRedirect参数、手拼JSON、response.sendError等多种返回方式 |
+| JSP处理 | 保留、新旧并存 | 零用户感知风险；Strangler Pattern渐进式迁移；JSP+jQuery对内部管理系统足够 |
+| APP认证 | 暂用Session Cookie | P2阶段App端可手动管理Cookie；P3-5再加JWT，保持演进空间 |
+| 微服务 | 不拆 | 单体内分层足够；Service边界就是未来拆分边界；过早拆是过度工程 |
+
+---
+
+## 十、变更记录
+
+| 日期 | 阶段 | 变更内容 | 操作人 |
+|------|------|---------|--------|
+| 2026-07-14 | P0 3.1 | 完成TransactionTemplate工具类及单元测试（14个用例全部通过） | Claude Code |
+| 2026-07-13 | — | 初始计划编制 | Claude Code |
