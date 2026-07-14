@@ -97,7 +97,7 @@
   - `isSuccess()` 判断方法
   - 错误码分段：401未登录、403无权限、400参数错误、4xxx业务错误、500系统错误
 
-### 3.3 DBUtil 启用 HikariCP `[未开始]`
+### 3.3 DBUtil 启用 HikariCP `[已完成]`
 - **文件**：`src/main/java/util/DBUtil.java`（修改）
 - **内容**：
   - 改为 `HikariDataSource` 单例，从Config读取 `db.*` 配置（已有key）
@@ -418,6 +418,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-14 | P0 3.3 | 完成DBUtil启用HikariCP及单元测试（27个用例全部通过） | Claude Code |
 | 2026-07-14 | P0 3.2 | 完成Result统一响应模型及单元测试（31个用例全部通过） | Claude Code |
 | 2026-07-14 | P0 3.1 | 完成TransactionTemplate工具类及单元测试（14个用例全部通过） | Claude Code |
 | 2026-07-13 | — | 初始计划编制 | Claude Code |
