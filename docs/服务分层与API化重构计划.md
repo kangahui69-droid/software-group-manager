@@ -136,12 +136,15 @@
   - 重构提取私有辅助方法：resolveHttpStatus/resolveErrorCode/serializeAndFlush/readRequestBody
 - **配套测试**：`BaseApiServletTest.java`（54个用例，覆盖正常路径/边界/异常/CORS/JSON解析）
 
-### 3.7 AuthFilter 扩展 `[未开始]`
-- **文件**：`src/main/java/filter/AuthFilter.java`（小幅扩展）
+### 3.7 AuthFilter 扩展 `[已完成]`
+- **文件**：`src/main/java/filter/AuthFilter.java`（扩展）
 - **内容**：
   - 新增 `/api/*` 路径的认证逻辑（未登录返回401 JSON，而非redirect到login.jsp）
   - 抽出 `isAuthenticated(req)` 方法，为未来Token认证留扩展点
   - 补全已知gap：把 `/attendance/*`、`/study/*` 加入受保护路径
+  - 重构消除重复代码：提取 `hasMemberOrAdminRole/setJsonContentType/isEmpty` 私有方法
+  - isPublicPath拆分为5个子方法：isAiPath/isRecruitPath/isNewsPath/isIndexPath/isProblemPath
+- **配套测试**：`AuthFilterTest.java`（82个用例，覆盖认证/路径判断/权限检查/角色枚举）
 
 ### 3.8 DAO 层事务重载规范 `[未开始]`
 - **涉及DAO**：Activity、Registration、Project、Award、User、FileStorage、MemberProfile、AwardMember、AwardImage、ProjectMember、ProjectFile、ProjectImage、ProjectPlan、ProjectProgress、ProjectHistory
@@ -431,6 +434,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-14 | P0 3.7 | 完成AuthFilter扩展：API路径401 JSON响应/认证方法化/attendance-study保护；重构isPublicPath拆分5子方法/提取权限辅助方法；AuthFilterTest 82个用例全部通过 | Claude Code |
 | 2026-07-14 | P0 3.6 | 完成BaseApiServlet基类：writeJson/handleException/getCurrentUser/parseJsonRequest及快捷响应方法；重构消除重复代码提取私有辅助方法；BaseApiServletTest 54个用例全部通过 | Claude Code |
 | 2026-07-14 | P0 3.4 | 完成Config配置类扩展：TDD驱动新增getIntProperty/getLongProperty + 重构提取常量与parseInteger/parseLong消除重复；ConfigTest 29个用例全部通过（TDD: Red→Green→Refactor） | Claude Code |
 | 2026-07-14 | P0 3.3 | 完成DBUtil启用HikariCP及单元测试（27个用例全部通过） | Claude Code |
