@@ -73,7 +73,7 @@
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | **P0** | 基础设施层（HikariCP、TransactionTemplate、Result、BaseApiServlet、AuthFilter扩展、DAO事务重载） | `[已完成]` |
-| **P1** | 核心Service层抽取（5个新Service + AIService重构 + 5个Servlet改造） | `[未开始]` |
+| **P1** | 核心Service层抽取（5个新Service + AIService重构 + 5个Servlet改造） | `[进行中]` |
 | **P2** | 核心REST API层（5个新API Servlet，纯新增） | `[未开始]` |
 | **P3+** | MCP Server、第二批次Service、JWT认证、RBAC、Git集成、AI沙箱、Agent调度（后续规划） | `[未开始-后续阶段]` |
 
@@ -172,7 +172,7 @@
 
 **原则**：Service不依赖Servlet API，不做JSON序列化，不做forward/redirect——只接受普通参数/DTO、执行业务、返回Result。
 
-### 4.1 ActivityService 活动服务 `[未开始]`
+### 4.1 ActivityService 活动服务 `[已完成]`
 - **文件**：`src/main/java/service/ActivityService.java`（新建）
 - **方法清单**：
   - `createActivity(ActivityDTO, userId)` → 创建活动（含状态校验、自动建群逻辑）
@@ -441,6 +441,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-14 | P1 4.1 | 完成ActivityService活动服务：16个业务方法（创建/更新/删除/报名/单个审批/批量审批/活动审核/取消/生成新闻/列表/详情/我的活动/我创建的活动）；99个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；代码重构消除重复（合并isApproveable+isRejectable为isPendingApproval、提取requireAdminForActivity/batchUpdateStatusWithTransaction/normalizePageParams辅助方法）；移除未使用代码 | Claude Code |
 | 2026-07-14 | P0 3.8 | 完成DAO层事务重载规范：UserDAO和AwardImageDAO实现Connection重载；清理调试输出；Servlet适配（RecruitServlet/AdminServlet/MemberServlet）；H2测试环境修复（SET REFERENTIAL_INTEGRITY/移除外键约束）；新增UserDAOTransactionTest(19用例)和AwardImageDAOTransactionTest(16用例)；全量445测试100%通过 | Claude Code |
 | 2026-07-14 | P0 3.7 | 完成AuthFilter扩展：API路径401 JSON响应/认证方法化/attendance-study保护；重构isPublicPath拆分5子方法/提取权限辅助方法；AuthFilterTest 82个用例全部通过 | Claude Code |
 | 2026-07-14 | P0 3.6 | 完成BaseApiServlet基类：writeJson/handleException/getCurrentUser/parseJsonRequest及快捷响应方法；重构消除重复代码提取私有辅助方法；BaseApiServletTest 54个用例全部通过 | Claude Code |
