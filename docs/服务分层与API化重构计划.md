@@ -89,7 +89,7 @@
   - RuntimeException 自动触发回滚
   - 从 ActivityServlet 现有手动事务模式抽象
 
-### 3.2 Result 统一响应模型 `[未开始]`
+### 3.2 Result 统一响应模型 `[已完成]`
 - **文件**：`src/main/java/util/Result.java`（新建，~50行）
 - **内容**：
   - 统一响应模型：`{int code, String message, Object data}`
@@ -418,5 +418,6 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-14 | P0 3.2 | 完成Result统一响应模型及单元测试（31个用例全部通过） | Claude Code |
 | 2026-07-14 | P0 3.1 | 完成TransactionTemplate工具类及单元测试（14个用例全部通过） | Claude Code |
 | 2026-07-13 | — | 初始计划编制 | Claude Code |
