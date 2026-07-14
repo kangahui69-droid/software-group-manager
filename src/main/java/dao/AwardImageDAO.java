@@ -67,43 +67,81 @@ public class AwardImageDAO {
      * 插入奖项图片
      */
     public boolean insert(AwardImage image) {
-        String sql = "INSERT INTO award_image (award_id, member_id, is_main, file_storage_id) VALUES (?, ?, ?, ?)";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            return insert(image, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 插入奖项图片（事务重载版本）
+     */
+    public boolean insert(AwardImage image, Connection conn) {
+        String sql = "INSERT INTO award_image (award_id, member_id, is_main, file_storage_id) VALUES (?, ?, ?, ?)";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setInt(1, image.getAwardId());
             pstmt.setObject(2, image.getMemberId());
             pstmt.setBoolean(3, image.getIsMain() != null ? image.getIsMain() : false);
             pstmt.setInt(4, image.getFileStorageId());
-            return pstmt.executeUpdate() > 0;
+            boolean result = pstmt.executeUpdate() > 0;
+            if (result) {
+                rs = pstmt.getGeneratedKeys();
+                if (rs.next()) {
+                    image.setId(rs.getInt(1));
+                }
+            }
+            return result;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("插入奖项图片失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, rs);
         }
-        return false;
     }
 
     /**
      * 删除奖项图片
      */
     public boolean deleteById(Integer id) {
-        String sql = "DELETE FROM award_image WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return deleteById(id, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 删除奖项图片（事务重载版本）
+     */
+    public boolean deleteById(Integer id, Connection conn) {
+        String sql = "DELETE FROM award_image WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("删除奖项图片失败：图片不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("删除奖项图片失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**

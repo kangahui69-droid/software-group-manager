@@ -96,38 +96,28 @@ public class AwardDAO {
      */
     public List<Award> findByStatus(String status) {
         List<Award> awards = new ArrayList<>();
-        System.out.println("=== findByStatus called with status: " + status);
         String sql;
         if (status == null || status.isEmpty() || "ALL".equals(status)) {
             sql = "SELECT * FROM award ORDER BY created_at DESC";
-            System.out.println("=== Using SQL without WHERE clause (status is null/empty/ALL)");
         } else {
             sql = "SELECT * FROM award WHERE award_status = ? ORDER BY created_at DESC";
-            System.out.println("=== Using SQL with WHERE award_status = ?");
         }
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = DBUtil.getConnection();
-            System.out.println("=== Database connection obtained");
             if (status == null || status.isEmpty() || "ALL".equals(status)) {
                 pstmt = conn.prepareStatement(sql);
             } else {
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, status);
-                System.out.println("=== Set parameter 1 = " + status);
             }
             rs = pstmt.executeQuery();
-            System.out.println("=== Query executed successfully");
-            int count = 0;
             while (rs.next()) {
                 awards.add(mapResultSetToAward(rs));
-                count++;
             }
-            System.out.println("=== findByStatus returned " + count + " awards");
         } catch (SQLException e) {
-            System.err.println("=== SQL Error in findByStatus: " + e.getMessage());
             e.printStackTrace();
         } finally {
             closeResources(conn, pstmt, rs);
@@ -269,12 +259,25 @@ public class AwardDAO {
      * 添加奖项
      */
     public boolean insert(Award award) {
-        String sql = "INSERT INTO award (name, competition, year, competition_time, competition_location, competition_session, award_type, award_category, award_level, competition_level, team_name, award_status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
+        try {
+            conn = DBUtil.getConnection();
+            return insert(award, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 添加奖项（事务重载版本）
+     */
+    public boolean insert(Award award, Connection conn) {
+        String sql = "INSERT INTO award (name, competition, year, competition_time, competition_location, competition_session, award_type, award_category, award_level, competition_level, team_name, award_status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
         ResultSet generatedKeys = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, award.getName());
             pstmt.setString(2, award.getCompetition());
@@ -289,7 +292,7 @@ public class AwardDAO {
             pstmt.setString(11, award.getTeamName());
             pstmt.setString(12, award.getAwardStatus() != null ? award.getAwardStatus() : "PENDING");
             pstmt.setInt(13, award.getCreatedBy());
-            
+
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 generatedKeys = pstmt.getGeneratedKeys();
@@ -300,8 +303,9 @@ public class AwardDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("插入奖项失败", e);
         } finally {
-            closeResources(conn, pstmt, generatedKeys);
+            closeResources(null, pstmt, generatedKeys);
         }
         return false;
     }
@@ -310,32 +314,58 @@ public class AwardDAO {
      * 更新奖项审核状态
      */
     public boolean updateAwardStatus(Integer id, String status) {
-        String sql = "UPDATE award SET award_status = ? WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return updateAwardStatus(id, status, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 更新奖项审核状态（事务重载版本）
+     */
+    public boolean updateAwardStatus(Integer id, String status, Connection conn) {
+        String sql = "UPDATE award SET award_status = ? WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, status);
             pstmt.setInt(2, id);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新奖项状态失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
-    
+
     /**
      * 更新奖项信息
      */
     public boolean update(Award award) {
-        String sql = "UPDATE award SET name = ?, competition = ?, year = ?, competition_time = ?, competition_location = ?, competition_session = ?, award_type = ?, award_category = ?, award_level = ?, competition_level = ?, team_name = ?, award_status = ? WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return update(award, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 更新奖项信息（事务重载版本）
+     */
+    public boolean update(Award award, Connection conn) {
+        String sql = "UPDATE award SET name = ?, competition = ?, year = ?, competition_time = ?, competition_location = ?, competition_session = ?, award_type = ?, award_category = ?, award_level = ?, competition_level = ?, team_name = ?, award_status = ? WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, award.getName());
             pstmt.setString(2, award.getCompetition());
@@ -350,117 +380,190 @@ public class AwardDAO {
             pstmt.setString(11, award.getTeamName());
             pstmt.setString(12, award.getAwardStatus());
             pstmt.setInt(13, award.getId());
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("更新奖项信息失败：奖项不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新奖项信息失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
-    
+
     /**
      * 审核通过奖项
      */
     public boolean approveAward(Integer id, Integer approvedBy) {
-        String sql = "UPDATE award SET award_status = 'APPROVED', approved_by = ?, approved_at = NOW() WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return approveAward(id, approvedBy, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 审核通过奖项（事务重载版本）
+     */
+    public boolean approveAward(Integer id, Integer approvedBy, Connection conn) {
+        String sql = "UPDATE award SET award_status = 'APPROVED', approved_by = ?, approved_at = NOW() WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, approvedBy);
             pstmt.setInt(2, id);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("审批奖项失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
-    
+
     /**
      * 拒绝奖项
      */
     public boolean rejectAward(Integer id, Integer approvedBy) {
-        String sql = "UPDATE award SET award_status = 'REJECTED', approved_by = ?, approved_at = NOW() WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return rejectAward(id, approvedBy, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 拒绝奖项（事务重载版本）
+     */
+    public boolean rejectAward(Integer id, Integer approvedBy, Connection conn) {
+        String sql = "UPDATE award SET award_status = 'REJECTED', approved_by = ?, approved_at = NOW() WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, approvedBy);
             pstmt.setInt(2, id);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("拒绝奖项失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 添加奖项成员关联
      */
     public boolean addMember(Integer awardId, Integer memberId) {
-        String sql = "INSERT INTO award_member (award_id, member_id) VALUES (?, ?)";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return addMember(awardId, memberId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 添加奖项成员关联（事务重载版本）
+     */
+    public boolean addMember(Integer awardId, Integer memberId, Connection conn) {
+        String sql = "INSERT INTO award_member (award_id, member_id) VALUES (?, ?)";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, awardId);
             pstmt.setInt(2, memberId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("添加奖项成员关联失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 移除奖项成员关联
      */
     public boolean removeMember(Integer awardId, Integer memberId) {
-        String sql = "DELETE FROM award_member WHERE award_id = ? AND member_id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return removeMember(awardId, memberId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 移除奖项成员关联（事务重载版本）
+     */
+    public boolean removeMember(Integer awardId, Integer memberId, Connection conn) {
+        String sql = "DELETE FROM award_member WHERE award_id = ? AND member_id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, awardId);
             pstmt.setInt(2, memberId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("移除奖项成员关联失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 删除奖项（软删除）
      */
     public boolean delete(Integer awardId) {
-        String sql = "UPDATE award SET deleted = 1 WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return delete(awardId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 删除奖项（软删除，事务重载版本）
+     */
+    public boolean delete(Integer awardId, Connection conn) {
+        String sql = "UPDATE award SET deleted = 1 WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, awardId);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("删除奖项失败：奖项不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("删除奖项失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**

@@ -20,6 +20,8 @@ public class H2Database {
         Config.reloadConfig();
         try (Connection conn = DBUtil.getConnection();
              Statement stmt = conn.createStatement()) {
+            // 先禁用外键检查，允许无序创建表
+            stmt.execute("SET REFERENTIAL_INTEGRITY FALSE");
             String sql = readResource("/h2-schema.sql");
             for (String statement : sql.split(";")) {
                 String s = statement.trim();
@@ -27,6 +29,7 @@ public class H2Database {
                     stmt.execute(s);
                 }
             }
+            stmt.execute("SET REFERENTIAL_INTEGRITY TRUE");
             insertBaseData(stmt);
             initialized = true;
             System.out.println("[H2Database] 测试库初始化完成");

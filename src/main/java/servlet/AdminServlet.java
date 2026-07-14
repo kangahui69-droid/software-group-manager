@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import util.FileUtil;
 
 /**
  * 管理员Servlet
@@ -375,13 +376,14 @@ public class AdminServlet extends HttpServlet {
                 request.setAttribute("error", "添加用户失败，该学号可能已存在");
                 showUserList(request, response);
             }
-        } catch (SQLException e) {
+        } catch (RuntimeException e) {
             e.printStackTrace();
-            String errorMsg = e.getMessage();
+            Throwable cause = e.getCause();
+            String errorMsg = (cause != null) ? cause.getMessage() : e.getMessage();
             if (errorMsg != null && errorMsg.contains("Duplicate")) {
                 request.setAttribute("error", "添加用户失败，该学号已被使用");
             } else {
-                request.setAttribute("error", "添加用户失败: " + e.getMessage());
+                request.setAttribute("error", "添加用户失败: " + errorMsg);
             }
             showUserList(request, response);
         }
@@ -577,12 +579,7 @@ public class AdminServlet extends HttpServlet {
                 String uniqueFileName = "avatar_" + currentUser.getId() + "_" + System.currentTimeMillis() + "."
                         + fileExtension;
 
-                // 头像要求存储于 localstorage 的 image/avatar 文件夹 (这里理解为 WebContent 下的 localstorage/images/avatar)
-                String uploadDir = getServletContext().getRealPath("/localstorage/images/avatar");
-                java.io.File uploadDirFile = new java.io.File(uploadDir);
-                if (!uploadDirFile.exists()) {
-                    uploadDirFile.mkdirs();
-                }
+                String uploadDir = FileUtil.getCategoryDir("images/avatar");
                 String filePath = uploadDir + java.io.File.separator + uniqueFileName;
                 avatarPart.write(filePath);
 
