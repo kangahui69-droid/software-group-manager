@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS activity_participant (
     notes text,
     deleted TINYINT DEFAULT '0',
     PRIMARY KEY (activity_id,user_id)
+    -- 外键约束在H2测试环境中省略，reset()使用TRUNCATE不受影响
 );
 
 CREATE TABLE IF NOT EXISTS admin_profile (

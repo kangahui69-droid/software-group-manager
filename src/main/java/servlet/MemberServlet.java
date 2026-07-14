@@ -288,9 +288,11 @@ public class MemberServlet extends HttpServlet {
                 } else {
                     response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "添加成员失败");
                 }
-            } catch (SQLException e) {
+            } catch (RuntimeException e) {
                 e.printStackTrace();
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "添加成员失败: " + e.getMessage());
+                Throwable cause = e.getCause();
+                String errorMsg = (cause != null) ? cause.getMessage() : e.getMessage();
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "添加成员失败: " + errorMsg);
             }
             return;
         }

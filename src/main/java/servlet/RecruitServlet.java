@@ -335,16 +335,6 @@ public class RecruitServlet extends HttpServlet {
                         recruitDAO.update(app);
                     }
                 }
-            } catch (java.sql.SQLIntegrityConstraintViolationException e) {
-                e.printStackTrace();
-                request.setAttribute("error", "申请失败：数据冲突（可能是邮箱已被使用）");
-                listApplications(request, response);
-                return;
-            } catch (java.sql.SQLException e) {
-                e.printStackTrace();
-                request.setAttribute("error", "申请失败：数据库错误 - " + e.getMessage());
-                listApplications(request, response);
-                return;
             } catch (Exception e) {
                 e.printStackTrace();
                 request.setAttribute("error", "申请失败：系统错误 - " + e.getMessage());

@@ -16,12 +16,28 @@ public class FileStorageDAO {
      * 插入文件记录
      */
     public Integer insert(FileStorage fileStorage) {
-        String sql = "INSERT INTO file_storage (create_by, original_name, stored_name, file_path, file_type, file_size, category) VALUES (?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
+        try {
+            conn = DBUtil.getConnection();
+            return insert(fileStorage, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 插入文件记录（事务重载版本）
+     */
+    public Integer insert(FileStorage fileStorage, Connection conn) {
+        if (fileStorage.getOriginalName() == null || fileStorage.getOriginalName().trim().isEmpty()) {
+            throw new RuntimeException("插入文件记录失败：原始文件名不能为空");
+        }
+        String sql = "INSERT INTO file_storage (create_by, original_name, stored_name, file_path, file_type, file_size, category) VALUES (?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
         ResultSet generatedKeys = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setObject(1, fileStorage.getCreateBy());
             pstmt.setString(2, fileStorage.getOriginalName());
@@ -42,14 +58,15 @@ public class FileStorageDAO {
             if (affectedRows > 0) {
                 generatedKeys = pstmt.getGeneratedKeys();
                 if (generatedKeys.next()) {
-                    return generatedKeys.getInt(1);
+                    int generatedId = generatedKeys.getInt(1);
+                    fileStorage.setId(generatedId);
+                    return generatedId;
                 }
             }
         } catch (SQLException e) {
-            System.out.println("[FileStorageDAO] SQL错误: " + e.getMessage());
-            e.printStackTrace();
+            throw new RuntimeException("插入文件记录失败", e);
         } finally {
-            closeResources(conn, pstmt, generatedKeys);
+            closeResources(null, pstmt, generatedKeys);
         }
         return null;
     }
@@ -132,20 +149,37 @@ public class FileStorageDAO {
      * 删除文件记录
      */
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM file_storage WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return delete(id, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 删除文件记录（事务重载版本）
+     */
+    public boolean delete(Integer id, Connection conn) {
+        String sql = "DELETE FROM file_storage WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("删除文件记录失败：文件不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("删除文件记录失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
@@ -174,20 +208,33 @@ public class FileStorageDAO {
      * 软删除文件（更新status为0）
      */
     public boolean softDelete(Integer id) {
-        String sql = "UPDATE file_storage SET status = 0 WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return softDelete(id, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 软删除文件（更新status为0，事务重载版本）
+     */
+    public boolean softDelete(Integer id, Connection conn) {
+        String sql = "UPDATE file_storage SET status = 0 WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("软删除文件失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**

@@ -17,10 +17,6 @@ public class UserDAO {
      * 根据用户名和密码查询用户（用于登录）
      */
     public User findByUsernameAndPassword(String username, String password) {
-        System.out.println("[UserDAO] 开始登录验证 - 用户名: " + username);
-        System.out.println("[UserDAO] 输入的明文密码: " + password);
-        
-        // 先根据用户名查询用户
         String sql = "SELECT * FROM user WHERE username = ? AND status = 1";
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -30,32 +26,15 @@ public class UserDAO {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, username);
             rs = pstmt.executeQuery();
-            
+
             if (rs.next()) {
-                System.out.println("[UserDAO] 找到用户记录");
-                
-                // 获取数据库中存储的加密密码
                 String storedPassword = rs.getString("password");
-                System.out.println("[UserDAO] 数据库中的加密密码: " + storedPassword);
-                
-                // 使用DES加密用户输入的密码
                 String encryptedPassword = DESUtil.encrypt(password);
-                System.out.println("[UserDAO] 加密后的输入密码: " + encryptedPassword);
-                System.out.println("[UserDAO] 当前DES密钥: " + config.Config.getDesKey());
-                System.out.println("[UserDAO] 密码是否匹配: " + storedPassword.equals(encryptedPassword));
-                
-                // 比较加密后的密码是否匹配
                 if (storedPassword.equals(encryptedPassword)) {
-                    System.out.println("[UserDAO] 密码验证成功！");
                     return mapResultSetToUser(rs);
-                } else {
-                    System.out.println("[UserDAO] 密码验证失败！");
                 }
-            } else {
-                System.out.println("[UserDAO] 未找到用户记录");
             }
         } catch (SQLException e) {
-            System.err.println("[UserDAO] SQL异常: " + e.getMessage());
             e.printStackTrace();
         } finally {
             closeResources(conn, pstmt, rs);
@@ -144,13 +123,25 @@ public class UserDAO {
     /**
      * 添加用户
      */
-    public boolean insert(User user) throws SQLException {
-        System.out.println("=== DEBUG UserDAO.insert: username=" + user.getUsername() + ", role=" + user.getRole());
-        String sql = "INSERT INTO user (username, password, name, email, phone, role, status, must_change_password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    public boolean insert(User user) {
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return insert(user, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 添加用户（事务重载版本）
+     */
+    public boolean insert(User user, Connection conn) {
+        String sql = "INSERT INTO user (username, password, name, email, phone, role, status, must_change_password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, user.getUsername());
             pstmt.setString(2, DESUtil.encrypt(user.getPassword()));
@@ -159,23 +150,19 @@ public class UserDAO {
             pstmt.setString(5, user.getPhone());
             pstmt.setString(6, user.getRole());
             pstmt.setInt(7, user.getStatus() != null ? user.getStatus() : 1);
-            // 设置必须修改密码标志
             pstmt.setInt(8, Boolean.TRUE.equals(user.getMustChangePassword()) ? 1 : 0);
             boolean result = pstmt.executeUpdate() > 0;
             if (result) {
                 ResultSet rs = pstmt.getGeneratedKeys();
                 if (rs.next()) {
                     user.setId(rs.getInt(1));
-                    System.out.println("=== DEBUG UserDAO.insert: generated id = " + user.getId());
                 }
             }
             return result;
         } catch (SQLException e) {
-            System.out.println("=== DEBUG UserDAO.insert ERROR: " + e.getMessage());
-            e.printStackTrace();
-            throw e; // Re-throw the exception for caller to handle
+            throw new RuntimeException("插入用户失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
     }
 
@@ -183,32 +170,58 @@ public class UserDAO {
      * 更新用户状态
      */
     public boolean updateStatus(Integer id, Integer status) {
-        String sql = "UPDATE user SET status = ? WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return updateStatus(id, status, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 更新用户状态（事务重载版本）
+     */
+    public boolean updateStatus(Integer id, Integer status, Connection conn) {
+        String sql = "UPDATE user SET status = ? WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, status);
             pstmt.setInt(2, id);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新用户状态失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 更新用户信息
      */
     public boolean update(User user) {
-        String sql = "UPDATE user SET username = ?, name = ?, email = ?, phone = ?, role = ?, status = ? WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return update(user, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 更新用户信息（事务重载版本）
+     */
+    public boolean update(User user, Connection conn) {
+        String sql = "UPDATE user SET username = ?, name = ?, email = ?, phone = ?, role = ?, status = ? WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, user.getUsername());
             pstmt.setString(2, user.getName());
@@ -217,13 +230,17 @@ public class UserDAO {
             pstmt.setString(5, user.getRole());
             pstmt.setInt(6, user.getStatus() != null ? user.getStatus() : 1);
             pstmt.setInt(7, user.getId());
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("更新用户信息失败：用户不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新用户信息失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
@@ -343,20 +360,37 @@ public class UserDAO {
      * 删除用户
      */
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM user WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return delete(id, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 删除用户（事务重载版本）
+     */
+    public boolean delete(Integer id, Connection conn) {
+        String sql = "DELETE FROM user WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("删除用户失败：用户不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("删除用户失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
@@ -368,30 +402,18 @@ public class UserDAO {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            System.out.println("[DEBUG] Checking if email exists: " + email);
             conn = DBUtil.getConnection();
-            System.out.println("[DEBUG] Database connection established: " + (conn != null));
             pstmt = conn.prepareStatement(sql);
-            System.out.println("[DEBUG] PreparedStatement created: " + (pstmt != null));
             pstmt.setString(1, email);
-            System.out.println("[DEBUG] Email parameter set: " + email);
             rs = pstmt.executeQuery();
-            System.out.println("[DEBUG] Query executed, ResultSet: " + (rs != null));
             if (rs.next()) {
-                int count = rs.getInt(1);
-                System.out.println("[DEBUG] Email check result: " + count + " records found");
-                return count > 0;
-            } else {
-                System.out.println("[DEBUG] ResultSet has no rows for email: " + email);
+                return rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            System.err.println("[ERROR] Error checking email existence: " + e.getMessage());
             e.printStackTrace();
         } finally {
             closeResources(conn, pstmt, rs);
-            System.out.println("[DEBUG] Resources closed for email check");
         }
-        System.out.println("[DEBUG] Email does not exist or error occurred: " + email);
         return false;
     }
 
@@ -404,30 +426,18 @@ public class UserDAO {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            System.out.println("[DEBUG] Checking if username exists: " + username);
             conn = DBUtil.getConnection();
-            System.out.println("[DEBUG] Database connection established: " + (conn != null));
             pstmt = conn.prepareStatement(sql);
-            System.out.println("[DEBUG] PreparedStatement created: " + (pstmt != null));
             pstmt.setString(1, username);
-            System.out.println("[DEBUG] Username parameter set: " + username);
             rs = pstmt.executeQuery();
-            System.out.println("[DEBUG] Query executed, ResultSet: " + (rs != null));
             if (rs.next()) {
-                int count = rs.getInt(1);
-                System.out.println("[DEBUG] Username check result: " + count + " records found");
-                return count > 0;
-            } else {
-                System.out.println("[DEBUG] ResultSet has no rows for username: " + username);
+                return rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            System.err.println("[ERROR] Error checking username existence: " + e.getMessage());
             e.printStackTrace();
         } finally {
             closeResources(conn, pstmt, rs);
-            System.out.println("[DEBUG] Resources closed for username check");
         }
-        System.out.println("[DEBUG] Username does not exist or error occurred: " + username);
         return false;
     }
 
