@@ -115,16 +115,26 @@
   - 提取5个默认值常量消除魔法值，`getMaxFileSize/getMaxRequestSize/getSessionTimeout/getDesKey/getFileStorageBaseDir` 统一委托给类型安全方法
   - 配套测试：`ConfigTest.java`（29个用例，覆盖正常路径/边界/异常/HikariCP配置读取）
 
-### 3.5 config.properties 补充默认值 `[已完成]`
-- **文件**：`src/main/resources/config.properties`（修改，只改模板，不动config.local.properties）
-- **内容**：补充 hikaricp 配置键默认值（maximumPoolSize=10, minimumIdle=5, connectionTimeout=30000, idleTimeout=600000, maxLifetime=1800000, connectionTestQuery=SELECT 1, validationTimeout=5000）
+### 3.5 config.properties 补充默认值 + Config类型安全getter `[已完成]`
+- **文件**：`src/main/java/config/Config.java`（新增11个getter + parseString辅助方法 + 11个常量）
+- **文件**：`src/main/resources/config.properties`（补充db.driver配置键）
+- **内容**：
+  - 新增 `getDbDriver()/getDbUrl()/getDbUsername()/getDbPassword()` 数据库配置getter
+  - 新增 `getHikariMaximumPoolSize()/getHikariMinimumIdle()/getHikariConnectionTimeout()/getHikariIdleTimeout()/getHikariMaxLifetime()/getHikariConnectionTestQuery()/getHikariValidationTimeout()` 7个HikariCP配置getter
+  - String类型getter统一走parseString()处理trim/空值/null回退
+  - int/long类型getter复用已有getIntProperty/getLongProperty
+  - config.properties模板补充 `db.driver=com.mysql.cj.jdbc.Driver`
+- **配套测试**：`ConfigTest.java` 从31个用例扩展到88个用例，覆盖正常路径/边界/异常/truncate/溢出/reload回归
 
-### 3.6 BaseApiServlet 基类 `[未开始]`
-- **文件**：`src/main/java/servlet/BaseApiServlet.java`（新建，~80行）
+### 3.6 BaseApiServlet 基类 `[已完成]`
+- **文件**：`src/main/java/servlet/BaseApiServlet.java`（新建，~170行）
 - **内容**：
   - 所有 `/api/*` Servlet的抽象基类
-  - 封装 Gson实例、`writeJson(resp, Result)`、统一异常捕获(Exception→500)、取当前用户、解析JSON请求体
-  - 预留CORS开关
+  - 封装Gson实例（配置serializeNulls）、writeJson统一响应写入、handleException统一异常捕获
+  - 提供getCurrentUser/parseJsonRequest便捷方法
+  - sendUnauthorized/sendForbidden/sendBadRequest/sendError/sendSuccess快捷响应方法
+  - 重构提取私有辅助方法：resolveHttpStatus/resolveErrorCode/serializeAndFlush/readRequestBody
+- **配套测试**：`BaseApiServletTest.java`（54个用例，覆盖正常路径/边界/异常/CORS/JSON解析）
 
 ### 3.7 AuthFilter 扩展 `[未开始]`
 - **文件**：`src/main/java/filter/AuthFilter.java`（小幅扩展）
@@ -421,8 +431,10 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
-| 2026-07-14 | P0 3.4 | 完成Config配置类扩展及单元测试（28个用例全部通过） | Claude Code |
+| 2026-07-14 | P0 3.6 | 完成BaseApiServlet基类：writeJson/handleException/getCurrentUser/parseJsonRequest及快捷响应方法；重构消除重复代码提取私有辅助方法；BaseApiServletTest 54个用例全部通过 | Claude Code |
+| 2026-07-14 | P0 3.4 | 完成Config配置类扩展：TDD驱动新增getIntProperty/getLongProperty + 重构提取常量与parseInteger/parseLong消除重复；ConfigTest 29个用例全部通过（TDD: Red→Green→Refactor） | Claude Code |
 | 2026-07-14 | P0 3.3 | 完成DBUtil启用HikariCP及单元测试（27个用例全部通过） | Claude Code |
 | 2026-07-14 | P0 3.2 | 完成Result统一响应模型及单元测试（31个用例全部通过） | Claude Code |
+| 2026-07-14 | P0 3.5 | 完成Config HikariCP/DB配置类型安全getter（11个新getter + parseString辅助），补充db.driver到config.properties，ConfigTest 88个用例全部通过 | Claude Code |
 | 2026-07-14 | P0 3.1 | 完成TransactionTemplate工具类及单元测试（14个用例全部通过） | Claude Code |
 | 2026-07-13 | — | 初始计划编制 | Claude Code |

@@ -24,6 +24,17 @@ public class Config {
     private static final long DEFAULT_MAX_REQUEST_SIZE = 20971520L;
     private static final int DEFAULT_SESSION_TIMEOUT = 30;
     private static final String DEFAULT_UPLOAD_BASE_DIR = "${user.dir}/localstorage";
+    private static final String DEFAULT_DB_DRIVER = "com.mysql.cj.jdbc.Driver";
+    private static final String DEFAULT_DB_URL = "jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true";
+    private static final String DEFAULT_DB_USERNAME = "root";
+    private static final String DEFAULT_DB_PASSWORD = "";
+    private static final int DEFAULT_HIKARI_MAX_POOL_SIZE = 20;
+    private static final int DEFAULT_HIKARI_MIN_IDLE = 5;
+    private static final long DEFAULT_HIKARI_CONNECTION_TIMEOUT = 30000L;
+    private static final long DEFAULT_HIKARI_IDLE_TIMEOUT = 600000L;
+    private static final long DEFAULT_HIKARI_MAX_LIFETIME = 1800000L;
+    private static final String DEFAULT_HIKARI_CONNECTION_TEST_QUERY = "SELECT 1";
+    private static final long DEFAULT_HIKARI_VALIDATION_TIMEOUT = 5000L;
     private static final Properties properties = new Properties();
 
     static {
@@ -89,7 +100,7 @@ public class Config {
     }
 
     public static String getDesKey() {
-        return getProperty("des.key", DEFAULT_DES_KEY);
+        return parseString(getProperty("des.key"), DEFAULT_DES_KEY);
     }
 
     public static long getMaxFileSize() {
@@ -102,6 +113,50 @@ public class Config {
 
     public static int getSessionTimeout() {
         return getIntProperty("session.timeout", DEFAULT_SESSION_TIMEOUT);
+    }
+
+    public static String getDbDriver() {
+        return parseString(getProperty("db.driver"), DEFAULT_DB_DRIVER);
+    }
+
+    public static String getDbUrl() {
+        return parseString(getProperty("db.url"), DEFAULT_DB_URL);
+    }
+
+    public static String getDbUsername() {
+        return parseString(getProperty("db.username"), DEFAULT_DB_USERNAME);
+    }
+
+    public static String getDbPassword() {
+        return getProperty("db.password", DEFAULT_DB_PASSWORD);
+    }
+
+    public static int getHikariMaximumPoolSize() {
+        return getIntProperty("hikaricp.maximumPoolSize", DEFAULT_HIKARI_MAX_POOL_SIZE);
+    }
+
+    public static int getHikariMinimumIdle() {
+        return getIntProperty("hikaricp.minimumIdle", DEFAULT_HIKARI_MIN_IDLE);
+    }
+
+    public static long getHikariConnectionTimeout() {
+        return getLongProperty("hikaricp.connectionTimeout", DEFAULT_HIKARI_CONNECTION_TIMEOUT);
+    }
+
+    public static long getHikariIdleTimeout() {
+        return getLongProperty("hikaricp.idleTimeout", DEFAULT_HIKARI_IDLE_TIMEOUT);
+    }
+
+    public static long getHikariMaxLifetime() {
+        return getLongProperty("hikaricp.maxLifetime", DEFAULT_HIKARI_MAX_LIFETIME);
+    }
+
+    public static String getHikariConnectionTestQuery() {
+        return parseString(getProperty("hikaricp.connectionTestQuery"), DEFAULT_HIKARI_CONNECTION_TEST_QUERY);
+    }
+
+    public static long getHikariValidationTimeout() {
+        return getLongProperty("hikaricp.validationTimeout", DEFAULT_HIKARI_VALIDATION_TIMEOUT);
     }
 
     private static int parseInteger(String value, int defaultValue) {
@@ -124,6 +179,17 @@ public class Config {
         } catch (NumberFormatException e) {
             return defaultValue;
         }
+    }
+
+    private static String parseString(String value, String defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            return defaultValue;
+        }
+        return trimmed;
     }
 
     private static void setFallbackDesKey() {
