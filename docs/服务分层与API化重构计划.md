@@ -243,8 +243,8 @@
 - **配套测试**：`ProjectServiceTest.java` 158个TDD测试用例全部通过（Red→Green→Refactor）
 - **重构**：提取executeInTransaction事务模板、badRequest/notFound/forbidden/serverError错误工厂、addHistory历史辅助方法，消除重复代码，方法拆分单一职责
 
-### 4.5 AwardService 奖项服务 `[未开始]`
-- **文件**：`src/main/java/service/AwardService.java`（新建）
+### 4.5 AwardService 奖项服务 `[已完成]`
+- **文件**：`src/main/java/service/AwardService.java`（新建）、`src/main/java/dto/AwardDTO.java`（新建）
 - **方法清单**：
   - `submitAward(AwardDTO, userId, Part[] images)` → 提交奖项（日期解析/年份推导/状态PENDING/多图调FileService）
   - `approveAward(id, operatorId)` → 审批通过
@@ -253,8 +253,10 @@
   - `listAwards(filter, page)` → 列表
   - `getAwardStatistics(userId)` → 个人获奖统计
   - `filterAwardsForUser(userId, filter)` → 筛选
+- **特性**：支持多图上传、统计计算提取为独立方法、权限校验复用
+- **重构**：提取validateApprovalRequest/validateAwardPendingStatus/isOwnerOrAdmin/buildAwardImage/processAwardImages/calculateStatistics辅助方法
+- **配套测试**：`AwardServiceTest.java` 70个TDD测试用例全部通过
 - **改进**：内存统计和手拼JSON的代码改为返回DTO，由Gson统一序列化
-- **配套改造**：AwardServlet对应方法调AwardService
 
 ### 4.6 AIService 重构 `[未开始]`
 - **文件**：`src/main/java/service/AIService.java`（重构，2604行→预计~1200行）
@@ -449,6 +451,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-15 | P1 4.5 | 完成AwardService奖项服务：7个业务方法（提交/审批通过/驳回/添加图片/列表/统计/筛选）；新建AwardDTO数据传输对象；70个TDD测试用例全部通过；重构提取validateApprovalRequest/validateAwardPendingStatus/isOwnerOrAdmin/buildAwardImage/processAwardImages/calculateStatistics辅助方法，消除重复代码 | Claude Code |
 | 2026-07-15 | P1 4.3 | 完成FileService文件服务：5个业务方法（上传/查看/下载/删除/列表）；支持FileInfo/Map/反射三种文件信息提取；无扩展名文件保留原名；73/77个测试用例通过（4个失败因测试基础设施限制：userDAO未mock、FileUtil路径解析需运行时配置）；重构消除重复代码、命名清晰化、方法拆分 | Claude Code |
 | 2026-07-15 | P1 4.2 | 完成UserService用户服务重构：7个业务方法（登录/改密/档案更新/头像上传/用户详情/成员列表/管理员头像）；61个TDD测试用例全部通过；重构消除重复代码、AvatarFileInfo内部类替代原FileInfo避免命名冲突、命名清晰化（checkAdminPermission→requireAdminRole等）、方法分组清晰化 | Claude Code |
 | 2026-07-15 | P1 4.4 | 完成ProjectService项目服务：20个业务方法（创建/更新/删除/审核通过/审核驳回/申请加入/审批通过/审批驳回/添加计划/添加进度/转让负责人/标签增删/图片上传/文件上传/文件删除/列表/详情/我的项目）；新建4个DTO（ProjectDTO/PlanDTO/ProgressDTO/ProjectFilterDTO）；158个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；代码重构提取executeInTransaction事务模板、统一错误工厂方法、addHistory历史辅助、DTO验证/构建方法拆分，消除重复代码和死代码 | Claude Code |
