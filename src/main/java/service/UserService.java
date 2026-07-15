@@ -10,12 +10,15 @@ import model.User;
 import util.Result;
 
 import java.text.SimpleDateFormat;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
  * 用户服务层
  */
 public class UserService {
+
+    // ==================== 常量定义 ====================
 
     private static final int MAX_AVATAR_SIZE = 500 * 1024;
     private static final int MAX_INTRODUCTION_LENGTH = 500;
@@ -28,6 +31,8 @@ public class UserService {
     private static final String AVATAR_STORAGE_PATH = "/localstorage/images/avatar/";
     private static final String DEFAULT_AVATAR_EXTENSION = ".png";
     private static final String ADMIN_ROLE = "ADMIN";
+    private static final int STATUS_NORMAL = 1;
+    private static final int STATUS_DISABLED = 0;
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
@@ -36,6 +41,8 @@ public class UserService {
             "^(https?://)?(www\\.)?github\\.com/[A-Za-z0-9_-]+/?$", Pattern.CASE_INSENSITIVE);
     private static final Pattern BLOG_URL_PATTERN = Pattern.compile(
             "^(https?://)?[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/?$", Pattern.CASE_INSENSITIVE);
+
+    // ==================== 依赖注入 ====================
 
     private final UserDAO userDAO;
     private final MemberProfileDAO memberProfileDAO;
@@ -46,6 +53,8 @@ public class UserService {
         this.memberProfileDAO = memberProfileDAO;
         this.fileStorageDAO = fileStorageDAO;
     }
+
+    // ==================== 公开业务方法 ====================
 
     public Result login(String username, String password) {
         if (isBlank(username) || isBlank(password)) {
@@ -62,7 +71,7 @@ public class UserService {
             return Result.error(400, "密码错误");
         }
 
-        if (user.getStatus() != null && user.getStatus() == 0) {
+        if (user.getStatus() != null && user.getStatus() == STATUS_DISABLED) {
             return Result.error(403, "用户已被禁用");
         }
 
@@ -70,12 +79,12 @@ public class UserService {
     }
 
     public Result changePassword(Integer userId, String oldPwd, String newPwd) {
-        Result validation = validateChangePasswordParams(userId, oldPwd, newPwd);
+        Result validation = validatePasswordChange(userId, oldPwd, newPwd);
         if (validation != null) {
             return validation;
         }
 
-        User user = userDAO.findById(userId);
+        User user = requireUserExists(userId);
         if (user == null) {
             return Result.error(404, "用户不存在");
         }
@@ -89,23 +98,23 @@ public class UserService {
     }
 
     public Result updateProfile(Integer userId, ProfileDTO profileDTO) {
-        Result validation = validateProfileUpdateParams(userId, profileDTO);
+        Result validation = validateProfileUpdate(userId, profileDTO);
         if (validation != null) {
             return validation;
         }
 
-        User user = userDAO.findById(userId);
+        User user = requireUserExists(userId);
         if (user == null) {
             return Result.error(404, "用户不存在");
         }
 
-        Result immutableCheck = checkImmutableFields(user, profileDTO);
+        Result immutableCheck = validateImmutableFields(user, profileDTO);
         if (immutableCheck != null) {
             return immutableCheck;
         }
 
         MemberProfile existingProfile = memberProfileDAO.findByUserId(userId);
-        return saveProfile(user, profileDTO, existingProfile);
+        return saveUserProfile(user, profileDTO, existingProfile);
     }
 
     public Result uploadAvatar(Integer userId, Object filePart) {
@@ -113,7 +122,7 @@ public class UserService {
             return Result.error(400, "用户ID不能为空");
         }
 
-        User user = userDAO.findById(userId);
+        User user = requireUserExists(userId);
         if (user == null) {
             return Result.error(404, "用户不存在");
         }
@@ -127,7 +136,7 @@ public class UserService {
             return Result.error(400, "用户档案不存在");
         }
 
-        FileInfo fileInfo = extractFileInfo(filePart);
+        AvatarFileInfo fileInfo = extractAvatarFileInfo(filePart);
         if (fileInfo == null) {
             return Result.error(400, "文件信息获取失败");
         }
@@ -145,7 +154,7 @@ public class UserService {
             return Result.error(400, "用户ID无效");
         }
 
-        User user = userDAO.findById(userId);
+        User user = requireUserExists(userId);
         if (user == null) {
             return Result.error(404, "用户不存在");
         }
@@ -155,13 +164,10 @@ public class UserService {
     }
 
     public Result listMembers(Integer operatorId, String keyword, String role, int page, int pageSize) {
-        Result authCheck = checkAdminPermission(operatorId);
+        Result authCheck = requireAdminRole(operatorId);
         if (authCheck != null) {
             return authCheck;
         }
-
-        page = normalizePage(page);
-        pageSize = normalizePageSize(pageSize);
 
         return Result.ok(userDAO.findByConditions(keyword, role, null));
     }
@@ -174,7 +180,7 @@ public class UserService {
             return Result.error(400, "文件不能为空");
         }
 
-        Result authCheck = checkAdminPermission(adminId);
+        Result authCheck = requireAdminRole(adminId);
         if (authCheck != null) {
             return authCheck;
         }
@@ -184,7 +190,7 @@ public class UserService {
             return Result.error(400, "管理员档案不存在");
         }
 
-        FileInfo fileInfo = extractFileInfo(filePart);
+        AvatarFileInfo fileInfo = extractAvatarFileInfo(filePart);
         if (fileInfo == null) {
             return Result.error(400, "文件信息获取失败");
         }
@@ -199,7 +205,7 @@ public class UserService {
 
     // ==================== 验证方法 ====================
 
-    private Result validateChangePasswordParams(Integer userId, String oldPwd, String newPwd) {
+    private Result validatePasswordChange(Integer userId, String oldPwd, String newPwd) {
         if (userId == null) {
             return Result.error(400, "用户ID不能为空");
         }
@@ -221,7 +227,7 @@ public class UserService {
         return null;
     }
 
-    private Result validateProfileUpdateParams(Integer userId, ProfileDTO profileDTO) {
+    private Result validateProfileUpdate(Integer userId, ProfileDTO profileDTO) {
         if (userId == null) {
             return Result.error(400, "用户ID不能为空");
         }
@@ -229,11 +235,7 @@ public class UserService {
             return Result.error(400, "档案信息不能为空");
         }
 
-        Result fieldValidation = validateProfileFields(profileDTO);
-        if (fieldValidation != null) {
-            return fieldValidation;
-        }
-        return null;
+        return validateProfileFields(profileDTO);
     }
 
     private Result validateProfileFields(ProfileDTO profileDTO) {
@@ -285,14 +287,24 @@ public class UserService {
         return null;
     }
 
-    // ==================== 权限检查 ====================
+    private Result validateAvatarUpload(Integer userId, Object filePart) {
+        if (userId == null) {
+            return Result.error(400, "用户ID不能为空");
+        }
+        if (filePart == null) {
+            return Result.error(400, "文件不能为空");
+        }
+        return null;
+    }
 
-    private Result checkAdminPermission(Integer operatorId) {
+    // ==================== 权限与存在性检查 ====================
+
+    private Result requireAdminRole(Integer operatorId) {
         if (operatorId == null) {
             return Result.error(400, "操作者ID不能为空");
         }
 
-        User operator = userDAO.findById(operatorId);
+        User operator = requireUserExists(operatorId);
         if (operator == null) {
             return Result.error(404, "操作者不存在");
         }
@@ -302,9 +314,11 @@ public class UserService {
         return null;
     }
 
-    // ==================== 业务逻辑方法 ====================
+    private User requireUserExists(Integer userId) {
+        return userDAO.findById(userId);
+    }
 
-    private Result checkImmutableFields(User user, ProfileDTO profileDTO) {
+    private Result validateImmutableFields(User user, ProfileDTO profileDTO) {
         if (profileDTO.getName() != null && !profileDTO.getName().equals(user.getName())) {
             return Result.error(400, "姓名不可修改");
         }
@@ -317,7 +331,9 @@ public class UserService {
         return null;
     }
 
-    private Result saveProfile(User user, ProfileDTO profileDTO, MemberProfile existingProfile) {
+    // ==================== 业务逻辑方法 ====================
+
+    private Result saveUserProfile(User user, ProfileDTO profileDTO, MemberProfile existingProfile) {
         if (profileDTO.getEmail() != null) {
             user.setEmail(profileDTO.getEmail());
         }
@@ -354,7 +370,7 @@ public class UserService {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
                 profile.setBirthday(sdf.parse(profileDTO.getBirthday()));
             } catch (Exception e) {
-                return profile;
+                // 忽略解析错误，保持原有值
             }
         }
 
@@ -367,7 +383,7 @@ public class UserService {
         return profile;
     }
 
-    private Result saveAvatarFile(MemberProfile profile, Integer userId, FileInfo fileInfo) {
+    private Result saveAvatarFile(MemberProfile profile, Integer userId, AvatarFileInfo fileInfo) {
         FileStorage fileStorage = createAvatarFileStorage(userId, fileInfo);
 
         Integer fileId = fileStorageDAO.insert(fileStorage);
@@ -381,7 +397,7 @@ public class UserService {
         return Result.ok();
     }
 
-    private FileStorage createAvatarFileStorage(Integer userId, FileInfo fileInfo) {
+    private FileStorage createAvatarFileStorage(Integer userId, AvatarFileInfo fileInfo) {
         FileStorage fileStorage = new FileStorage();
         fileStorage.setCreateBy(userId);
         fileStorage.setOriginalName(fileInfo.fileName);
@@ -390,18 +406,18 @@ public class UserService {
         fileStorage.setFileType(fileInfo.contentType);
         fileStorage.setFileSize(fileInfo.size);
         fileStorage.setCategory(AVATAR_CATEGORY);
-        fileStorage.setStatus(1);
+        fileStorage.setStatus(STATUS_NORMAL);
         return fileStorage;
     }
 
     // ==================== 工具方法 ====================
 
-    private FileInfo extractFileInfo(Object filePart) {
+    private AvatarFileInfo extractAvatarFileInfo(Object filePart) {
         try {
             long size = (Long) filePart.getClass().getMethod("getSize").invoke(filePart);
             String contentType = (String) filePart.getClass().getMethod("getContentType").invoke(filePart);
             String fileName = (String) filePart.getClass().getMethod("getSubmittedFileName").invoke(filePart);
-            return new FileInfo(size, contentType, fileName);
+            return new AvatarFileInfo(size, contentType, fileName);
         } catch (Exception e) {
             return null;
         }
@@ -418,22 +434,11 @@ public class UserService {
         return fileName.substring(fileName.lastIndexOf('.'));
     }
 
-    private int normalizePage(int page) {
-        return page <= 0 ? 1 : page;
-    }
-
-    private int normalizePageSize(int pageSize) {
-        if (pageSize <= 0) {
-            return DEFAULT_PAGE_SIZE;
-        }
-        return Math.min(pageSize, MAX_PAGE_SIZE);
-    }
-
     private boolean isBlank(String str) {
         return str == null || str.trim().isEmpty();
     }
 
-    private void maybeSetField(String value, java.util.function.Consumer<String> setter) {
+    private void maybeSetField(String value, Consumer<String> setter) {
         if (value != null) {
             setter.accept(value);
         }
@@ -441,12 +446,12 @@ public class UserService {
 
     // ==================== 内部类 ====================
 
-    private static class FileInfo {
+    private static class AvatarFileInfo {
         final long size;
         final String contentType;
         final String fileName;
 
-        FileInfo(long size, String contentType, String fileName) {
+        AvatarFileInfo(long size, String contentType, String fileName) {
             this.size = size;
             this.contentType = contentType;
             this.fileName = fileName;

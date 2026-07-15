@@ -240,9 +240,7 @@ public class FileService {
             User user = userDAO.findById(userId);
             return user != null && ADMIN_ROLE.equals(user.getRole());
         } catch (Exception e) {
-            // userDAO未正确mock或发生异常时，不阻断管理员操作
-            // 这样设计是为了在测试环境不完全时也能正常工作
-            return true;
+            return false;
         }
     }
 
