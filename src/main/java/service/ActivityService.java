@@ -750,4 +750,53 @@ public class ActivityService {
         List<Activity> activities = activityDAO.findByCreatorId(userId);
         return Result.ok(activities);
     }
+
+    // ==================== 便捷方法（测试用）====================
+
+    /**
+     * 获取活动详情（单ID版本）
+     */
+    public Result getActivityDetail(int id) {
+        return getActivityDetail(id, null);
+    }
+
+    /**
+     * 我报名的活动（简化版本）
+     */
+    public Result getMyActivities(int userId) {
+        return getMyActivities(userId, 1, 20);
+    }
+
+    /**
+     * 删除活动（单ID版本）
+     */
+    public Result deleteActivity(int id) {
+        return deleteActivity(id, null);
+    }
+
+    /**
+     * 创建活动（Map版本）
+     */
+    public Result createActivity(java.util.Map<String, String> params, int userId) {
+        ActivityDTO dto = new ActivityDTO();
+        dto.setTitle(params.get("title"));
+        dto.setDescription(params.get("description"));
+        dto.setActivityType(params.get("activityType"));
+        dto.setLocation(params.get("location"));
+        return createActivity(dto, userId);
+    }
+
+    /**
+     * 批量审批（简化版本）
+     */
+    public Result batchApprove(java.util.List<Integer> userIds, int activityId) {
+        return batchApprove(activityId, userIds, 1);
+    }
+
+    /**
+     * 我创建的活动（简化版本）
+     */
+    public Result getMyCreatedActivities(int userId) {
+        return getMyCreatedActivities(userId, 1, 20);
+    }
 }

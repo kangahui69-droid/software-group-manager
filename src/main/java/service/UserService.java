@@ -117,6 +117,28 @@ public class UserService {
         return saveUserProfile(user, profileDTO, existingProfile);
     }
 
+    /**
+     * 更新档案（9参数版本 - 兼容旧接口）
+     */
+    public Result updateProfile(Integer userId, String name, String phone, String email,
+                               String birthday, String studentId, String major, String grade, String bio) {
+        if (userId == null) {
+            return Result.error(400, "用户ID不能为空");
+        }
+
+        ProfileDTO profileDTO = new ProfileDTO();
+        profileDTO.setName(name);
+        profileDTO.setPhone(phone);
+        profileDTO.setEmail(email);
+        profileDTO.setBirthday(birthday);
+        profileDTO.setStudentId(studentId);
+        profileDTO.setMajor(major);
+        profileDTO.setGrade(grade);
+        profileDTO.setIntroduction(bio);
+
+        return updateProfile(userId, profileDTO);
+    }
+
     public Result uploadAvatar(Integer userId, Object filePart) {
         if (userId == null) {
             return Result.error(400, "用户ID不能为空");

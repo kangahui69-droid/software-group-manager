@@ -830,4 +830,74 @@ public class ProjectService {
         List<Project> list = projectDAO.findProjectsByUserId(userId);
         return Result.ok(list != null ? list : Collections.emptyList());
     }
+
+    // ==================== 便捷方法（测试用）====================
+
+    /**
+     * 获取项目详情（单ID版本）
+     */
+    public Result getProjectDetail(int id) {
+        return getProjectDetail(id, null);
+    }
+
+    /**
+     * 获取我的项目（单ID版本）
+     */
+    public Result getMyProjects(int userId) {
+        return getMyProjects(userId, 1, 20);
+    }
+
+    /**
+     * 列表项目（简化版本）
+     */
+    public Result listProjects(Object filter, Object page) {
+        return listProjects(null, 1, 20);
+    }
+
+    /**
+     * 删除项目（单ID版本）
+     */
+    public Result deleteProject(int id) {
+        return deleteProject(id, null);
+    }
+
+    /**
+     * 审批项目（简化版本）
+     */
+    public Result approveProject(int id) {
+        return approveProject(id, 1);
+    }
+
+    /**
+     * 驳回项目（简化版本）
+     */
+    public Result rejectProject(int id, String reason) {
+        return rejectProject(id, reason, 1);
+    }
+
+    /**
+     * 申请加入（简化版本）
+     */
+    public Result applyJoin(int projectId, Integer userId) {
+        return applyMember(projectId, userId, null);
+    }
+
+    /**
+     * 添加计划（字符串版本）
+     */
+    public Result addPlan(int projectId, String content, Integer userId) {
+        PlanDTO dto = new PlanDTO();
+        dto.setTitle(content);
+        return addPlan(projectId, dto, userId);
+    }
+
+    /**
+     * 添加进度（字符串版本）
+     */
+    public Result addProgress(int projectId, String content, Integer userId) {
+        ProgressDTO dto = new ProgressDTO();
+        dto.setTitle(content);
+        dto.setCompletionRate(0);
+        return addProgress(projectId, dto, userId);
+    }
 }
