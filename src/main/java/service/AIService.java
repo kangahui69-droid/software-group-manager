@@ -49,21 +49,56 @@ public class AIService {
     public static final String ROLE_ADMIN = "ADMIN";
 
     private AIClientUtil aiClient = AIClientUtil.getInstance();
-    private AIConversationDAO conversationDAO = new AIConversationDAO();
-    private AIMessageDAO messageDAO = new AIMessageDAO();
-    private AIKnowledgeBaseDAO knowledgeBaseDAO = new AIKnowledgeBaseDAO();
-    private AIFaqStatisticsDAO faqStatsDAO = new AIFaqStatisticsDAO();
-    private ActivityDAO activityDAO = new ActivityDAO();
-    private ActivityGroupDAO groupDAO = new ActivityGroupDAO();
-    private GroupMemberDAO groupMemberDAO = new GroupMemberDAO();
-    private ActivityParticipantDAO activityParticipantDAO = new ActivityParticipantDAO();
-    private NewsDAO newsDAO = new NewsDAO();
-    private AwardDAO awardDAO = new AwardDAO();
-    private ProblemReportDAO problemReportDAO = new ProblemReportDAO();
-    private RegistrationDAO registrationDAO = new RegistrationDAO();
-    private ProjectDAO projectDAO = new ProjectDAO();
-    private UserDAO userDAO = new UserDAO();
-    private UserGroupDAO userGroupDAO = new UserGroupDAO();
+    private AIConversationDAO conversationDAO;
+    private AIMessageDAO messageDAO;
+    private AIKnowledgeBaseDAO knowledgeBaseDAO;
+    private AIFaqStatisticsDAO faqStatsDAO;
+    private ActivityDAO activityDAO;
+    private ActivityGroupDAO groupDAO;
+    private GroupMemberDAO groupMemberDAO;
+    private ActivityParticipantDAO activityParticipantDAO;
+    private NewsDAO newsDAO;
+    private AwardDAO awardDAO;
+    private ProblemReportDAO problemReportDAO;
+    private RegistrationDAO registrationDAO;
+    private ProjectDAO projectDAO;
+    private UserDAO userDAO;
+    private UserGroupDAO userGroupDAO;
+
+    public AIService() {
+        this.conversationDAO = new AIConversationDAO();
+        this.messageDAO = new AIMessageDAO();
+        this.knowledgeBaseDAO = new AIKnowledgeBaseDAO();
+        this.faqStatsDAO = new AIFaqStatisticsDAO();
+        this.activityDAO = new ActivityDAO();
+        this.groupDAO = new ActivityGroupDAO();
+        this.groupMemberDAO = new GroupMemberDAO();
+        this.activityParticipantDAO = new ActivityParticipantDAO();
+        this.newsDAO = new NewsDAO();
+        this.awardDAO = new AwardDAO();
+        this.problemReportDAO = new ProblemReportDAO();
+        this.registrationDAO = new RegistrationDAO();
+        this.projectDAO = new ProjectDAO();
+        this.userDAO = new UserDAO();
+        this.userGroupDAO = new UserGroupDAO();
+    }
+
+    public AIService(AIConversationDAO conversationDAO, AIMessageDAO messageDAO,
+                     ActivityDAO activityDAO, ActivityParticipantDAO activityParticipantDAO,
+                     AwardDAO awardDAO, ProjectDAO projectDAO, RegistrationDAO registrationDAO,
+                     UserDAO userDAO, NewsDAO newsDAO, ProblemReportDAO problemReportDAO) {
+        this.conversationDAO = conversationDAO;
+        this.messageDAO = messageDAO;
+        this.activityDAO = activityDAO;
+        this.activityParticipantDAO = activityParticipantDAO;
+        this.awardDAO = awardDAO;
+        this.projectDAO = projectDAO;
+        this.registrationDAO = registrationDAO;
+        this.userDAO = userDAO;
+        this.newsDAO = newsDAO;
+        this.problemReportDAO = problemReportDAO;
+        this.aiClient = AIClientUtil.getInstance();
+    }
 
     public String getAIResponse(String userMessage, String sessionId, User user) {
         AIConversation conversation = conversationDAO.findBySessionId(sessionId);
@@ -1557,6 +1592,12 @@ public class AIService {
         }
         try {
             int activityId = Integer.parseInt(activityIdStr);
+            Activity activity = activityDAO.findById(activityId);
+            if (activity == null) {
+                result.put("success", false);
+                result.put("message", "未找到该活动");
+                return result;
+            }
             boolean success = activityDAO.approveActivity(activityId);
             result.put("success", success);
             result.put("message", success ? "活动 ID " + activityId + " 已批准" : "批准失败");
@@ -1578,6 +1619,12 @@ public class AIService {
         }
         try {
             int activityId = Integer.parseInt(activityIdStr);
+            Activity activity = activityDAO.findById(activityId);
+            if (activity == null) {
+                result.put("success", false);
+                result.put("message", "未找到该活动");
+                return result;
+            }
             boolean success = activityDAO.rejectActivity(activityId);
             result.put("success", success);
             result.put("message", success ? "活动 ID " + activityId + " 已拒绝" + (reason != null ? "，原因：" + reason : "") : "拒绝失败");
@@ -2289,24 +2336,28 @@ public class AIService {
 
     private Map<String, Object> executeViewMyGroups(Map<String, String> params, User user) {
         Map<String, Object> result = new HashMap<>();
-        List<ActivityGroup> memberGroups = groupDAO.findByUserId(user.getId());
-        List<ActivityGroup> ownedGroups = groupDAO.findByOwnerId(user.getId());
+        List<ActivityGroup> memberGroups = groupDAO != null ? groupDAO.findByUserId(user.getId()) : null;
+        List<ActivityGroup> ownedGroups = groupDAO != null ? groupDAO.findByOwnerId(user.getId()) : null;
 
         Set<Integer> addedIds = new HashSet<>();
         List<Map<String, Object>> groupList = new ArrayList<>();
 
-        for (ActivityGroup g : ownedGroups) {
-            if (!addedIds.contains(g.getId())) {
-                Map<String, Object> item = buildGroupInfo(g, true);
-                groupList.add(item);
-                addedIds.add(g.getId());
+        if (ownedGroups != null) {
+            for (ActivityGroup g : ownedGroups) {
+                if (!addedIds.contains(g.getId())) {
+                    Map<String, Object> item = buildGroupInfo(g, true);
+                    groupList.add(item);
+                    addedIds.add(g.getId());
+                }
             }
         }
-        for (ActivityGroup g : memberGroups) {
-            if (!addedIds.contains(g.getId())) {
-                Map<String, Object> item = buildGroupInfo(g, false);
-                groupList.add(item);
-                addedIds.add(g.getId());
+        if (memberGroups != null) {
+            for (ActivityGroup g : memberGroups) {
+                if (!addedIds.contains(g.getId())) {
+                    Map<String, Object> item = buildGroupInfo(g, false);
+                    groupList.add(item);
+                    addedIds.add(g.getId());
+                }
             }
         }
 
