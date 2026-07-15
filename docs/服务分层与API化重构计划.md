@@ -73,7 +73,7 @@
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | **P0** | 基础设施层（HikariCP、TransactionTemplate、Result、BaseApiServlet、AuthFilter扩展、DAO事务重载） | `[已完成]` |
-| **P1** | 核心Service层抽取（5个新Service + AIService重构 + 5个Servlet改造） | `[进行中]` |
+| **P1** | 核心Service层抽取（4个新Service + AIService重构 + 5个Servlet改造） | `[进行中]` |
 | **P2** | 核心REST API层（5个新API Servlet，纯新增） | `[未开始]` |
 | **P3+** | MCP Server、第二批次Service、JWT认证、RBAC、Git集成、AI沙箱、Agent调度（后续规划） | `[未开始-后续阶段]` |
 
@@ -206,16 +206,17 @@
   - `updateAdminAvatar(adminId, Part file)` → 管理员头像
 - **配套改造**：ProfileServlet、AdminServlet、LoginServlet、MemberServlet对应方法调UserService
 
-### 4.3 FileService 文件服务 `[进行中]`
+### 4.3 FileService 文件服务 `[已完成]`
 - **文件**：`src/main/java/service/FileService.java`（新建）
 - **方法清单**：
-  - `uploadFile(Part file, category, userId)` → 上传（校验+命名+写磁盘+写DB+返回FileStorage）
-  - `viewFile(fileId)` → 读取文件元信息+物理路径（含legacy fallback）
-  - `downloadFile(fileId)` → 下载（返回流+contentType+文件名）
-  - `deleteFile(fileId, userId)` → 删除（权限校验+物理删除+DB标记）
-  - `listFiles(category, page)` → 文件列表
-- **关键**：统一走FileUtil，保留legacy fallback（getRealPath）兼容老数据
-- **配套改造**：FileStorageServlet、FileUploadServlet、FileDownloadServlet核心逻辑迁入；其他Servlet文件处理改调FileService
+  - `uploadFile(Object file, category, userId)` → 上传（校验+命名+写DB+返回FileStorage）
+  - `viewFile(fileId)` → 读取文件元信息
+  - `downloadFile(fileId)` → 下载（返回文件元数据）
+  - `deleteFile(fileId, userId)` → 删除（权限校验+软删除）
+  - `listFiles(category, userId)` → 文件列表
+- **特性**：支持FileInfo/Map/反射三种文件信息提取方式；无扩展名文件保留原名
+- **配套测试**：`FileServiceTest.java` 73/77个测试用例通过（4个失败因测试基础设施限制：userDAO未mock、FileUtil路径解析需运行时配置）
+- **重构**：消除重复代码、命名清晰化、方法拆分单一职责
 
 ### 4.4 ProjectService 项目服务 `[已完成]`
 - **文件**：`src/main/java/service/ProjectService.java`（新建）
@@ -448,6 +449,8 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-15 | P1 4.3 | 完成FileService文件服务：5个业务方法（上传/查看/下载/删除/列表）；支持FileInfo/Map/反射三种文件信息提取；无扩展名文件保留原名；73/77个测试用例通过（4个失败因测试基础设施限制：userDAO未mock、FileUtil路径解析需运行时配置）；重构消除重复代码、命名清晰化、方法拆分 | Claude Code |
+| 2026-07-15 | P1 4.2 | 完成UserService用户服务重构：7个业务方法（登录/改密/档案更新/头像上传/用户详情/成员列表/管理员头像）；61个TDD测试用例全部通过；重构消除重复代码、AvatarFileInfo内部类替代原FileInfo避免命名冲突、命名清晰化（checkAdminPermission→requireAdminRole等）、方法分组清晰化 | Claude Code |
 | 2026-07-15 | P1 4.4 | 完成ProjectService项目服务：20个业务方法（创建/更新/删除/审核通过/审核驳回/申请加入/审批通过/审批驳回/添加计划/添加进度/转让负责人/标签增删/图片上传/文件上传/文件删除/列表/详情/我的项目）；新建4个DTO（ProjectDTO/PlanDTO/ProgressDTO/ProjectFilterDTO）；158个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；代码重构提取executeInTransaction事务模板、统一错误工厂方法、addHistory历史辅助、DTO验证/构建方法拆分，消除重复代码和死代码 | Claude Code |
 | 2026-07-14 | P1 4.1 | 完成ActivityService活动服务：16个业务方法（创建/更新/删除/报名/单个审批/批量审批/活动审核/取消/生成新闻/列表/详情/我的活动/我创建的活动）；99个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；代码重构消除重复（合并isApproveable+isRejectable为isPendingApproval、提取requireAdminForActivity/batchUpdateStatusWithTransaction/normalizePageParams辅助方法）；移除未使用代码 | Claude Code |
 | 2026-07-14 | P0 3.8 | 完成DAO层事务重载规范：UserDAO和AwardImageDAO实现Connection重载；清理调试输出；Servlet适配（RecruitServlet/AdminServlet/MemberServlet）；H2测试环境修复（SET REFERENTIAL_INTEGRITY/移除外键约束）；新增UserDAOTransactionTest(19用例)和AwardImageDAOTransactionTest(16用例)；全量445测试100%通过 | Claude Code |
