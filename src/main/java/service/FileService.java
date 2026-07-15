@@ -68,6 +68,11 @@ public class FileService {
             return Result.error(400, "文件不能为空");
         }
 
+        // 检查用户是否存在
+        if (!isValidUser(userId)) {
+            return Result.error(404, "用户不存在");
+        }
+
         FileInfo fileInfo = extractFileInfo(file);
         if (fileInfo == null) {
             return Result.error(400, "文件信息无效");
@@ -158,7 +163,7 @@ public class FileService {
 
             return Result.ok(file);
         } catch (RuntimeException e) {
-            return Result.error(500, "系统错误");
+            throw e; // 异常上抛，由TransactionTemplate处理
         }
     }
 
@@ -180,6 +185,12 @@ public class FileService {
             }
 
             if (file.getStatus() != null && file.getStatus() == STATUS_DELETED) {
+                return Result.error(404, "文件不存在");
+            }
+
+            // 检查物理文件是否存在
+            String physicalPath = FileUtil.resolvePhysicalPath(file.getFilePath());
+            if (physicalPath == null || !new File(physicalPath).exists()) {
                 return Result.error(404, "文件不存在");
             }
 
