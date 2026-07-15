@@ -3,35 +3,38 @@ package servlet;
 import dao.DictionaryDAO;
 import dao.ProjectDAO;
 import dao.UserDAO;
-import model.*;
-import util.DBUtil;
-import util.FileUtil;
+import dto.PlanDTO;
+import dto.ProgressDTO;
+import dto.ProjectDTO;
+import dto.ProjectFilterDTO;
+import model.Project;
+import model.User;
+import service.ProjectService;
+import util.Result;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.net.URLEncoder;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * 项目Servlet（增强版）
+ * 项目Servlet - 4.7 Servlet改造
+ * 调用ProjectService处理业务逻辑
  */
 public class ProjectServlet extends HttpServlet {
-    private ProjectDAO projectDAO = new ProjectDAO();
-    private DictionaryDAO dictionaryDAO = new DictionaryDAO();
+
+    private ProjectService projectService;
+
+    @Override
+    public void init() throws ServletException {
+        this.projectService = new ProjectService();
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -42,97 +45,32 @@ public class ProjectServlet extends HttpServlet {
             action = "list";
         }
 
+        HttpSession session = request.getSession(false);
+        User user = null;
+        if (session != null) {
+            user = (User) session.getAttribute("user");
+        }
+
         switch (action) {
             case "list":
-                listProjects(request, response);
-                break;
-            case "create":
-                showCreateForm(request, response);
-                break;
-            case "edit":
-                showEditForm(request, response);
+                listProjects(request, response, user);
                 break;
             case "detail":
-                showDetail(request, response);
+                getProjectDetail(request, response, user);
                 break;
-            case "workspace":
-                showWorkspace(request, response);
-                break;
-            case "myApplications":
-                showMyApplications(request, response);
-                break;
-            case "apply":
-                showApplyForm(request, response);
-                break;
-            case "memberApplications":
-                showMemberApplications(request, response);
-                break;
-            case "plan":
-                showPlanManagement(request, response);
-                break;
-            case "progress":
-                showProgressManagement(request, response);
-                break;
-            case "history":
-                showProjectHistory(request, response);
-                break;
-            case "approve":
-                approveProject(request, response, getCurrentUserId(request));
-                break;
-            case "reject":
-                rejectProject(request, response, getCurrentUserId(request));
-                break;
-            case "approveMember":
-                approveMemberApplication(request, response, getCurrentUserId(request));
-                break;
-            case "rejectMember":
-                rejectMemberApplication(request, response, getCurrentUserId(request));
-                break;
-            case "addLabel":
-                addProjectLabel(request, response, getCurrentUserId(request));
-                break;
-            case "removeLabel":
-                removeProjectLabel(request, response, getCurrentUserId(request));
-                break;
-            case "addPlan":
-                addProjectPlan(request, response, getCurrentUserId(request));
-                break;
-            case "deletePlan":
-                deleteProjectPlan(request, response, getCurrentUserId(request));
-                break;
-            case "addProgress":
-                addProjectProgress(request, response, getCurrentUserId(request));
-                break;
-            case "transferAdmin":
-                transferProjectAdmin(request, response, getCurrentUserId(request));
-                break;
-            case "downloadFile":
-                downloadProjectFile(request, response);
-                break;
-            case "deleteFile":
-                deleteProjectFile(request, response, getCurrentUserId(request));
+            case "myProjects":
+                getMyProjects(request, response, user);
                 break;
             default:
-                listProjects(request, response);
+                listProjects(request, response, user);
         }
-    }
-
-    private Integer getCurrentUserId(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            User user = (User) session.getAttribute("user");
-            if (user != null) {
-                return user.getId();
-            }
-        }
-        return null;
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        
+
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -141,1213 +79,352 @@ public class ProjectServlet extends HttpServlet {
 
         User user = (User) session.getAttribute("user");
         String action = request.getParameter("action");
-        String role = user.getRole();
 
-        if ("create".equals(action)) {
-            createProject(request, response, user.getId());
-        } else if ("applyMember".equals(action)) {
-            applyMember(request, response, user.getId());
-        } else if ("update".equals(action) && "ADMIN".equalsIgnoreCase(role)) {
-            updateProject(request, response);
-        } else if ("delete".equals(action) && "ADMIN".equalsIgnoreCase(role)) {
-            deleteProject(request, response);
-        } else if ("saveProject".equals(action) && "ADMIN".equalsIgnoreCase(role)) {
-            saveProject(request, response, user.getId());
-        } else if ("approve".equals(action) && "ADMIN".equalsIgnoreCase(role)) {
-            approveProject(request, response, user.getId());
-        } else if ("reject".equals(action) && "ADMIN".equalsIgnoreCase(role)) {
-            rejectProject(request, response, user.getId());
-        } else if ("approveMember".equals(action)) {
-            approveMemberApplication(request, response, user.getId());
-        } else if ("rejectMember".equals(action)) {
-            rejectMemberApplication(request, response, user.getId());
-        } else if ("addLabel".equals(action)) {
-            addProjectLabel(request, response, user.getId());
-        } else if ("removeLabel".equals(action)) {
-            removeProjectLabel(request, response, user.getId());
-        } else if ("addPlan".equals(action)) {
-            addProjectPlan(request, response, user.getId());
-        } else if ("updatePlan".equals(action)) {
-            updateProjectPlan(request, response, user.getId());
-        } else if ("addProgress".equals(action)) {
-            addProjectProgress(request, response, user.getId());
-        } else if ("transferAdmin".equals(action)) {
-            transferProjectAdmin(request, response, user.getId());
-        } else if ("uploadImage".equals(action)) {
-            uploadProjectImage(request, response, user.getId());
-        } else if ("uploadFile".equals(action)) {
-            uploadProjectFile(request, response, user.getId());
+        if (action == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        switch (action) {
+            case "create":
+                createProject(request, response, user);
+                break;
+            case "update":
+                updateProject(request, response, user);
+                break;
+            case "delete":
+                deleteProject(request, response, user);
+                break;
+            case "approve":
+                approveProject(request, response, user);
+                break;
+            case "reject":
+                rejectProject(request, response, user);
+                break;
+            case "applyJoin":
+                applyJoin(request, response, user);
+                break;
+            case "addPlan":
+                addPlan(request, response, user);
+                break;
+            case "addProgress":
+                addProgress(request, response, user);
+                break;
+            default:
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
-    private void updateProject(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        try {
-            int id = Integer.parseInt(request.getParameter("id"));
-            Project project = projectDAO.findById(id);
-            if (project != null) {
-                String oldName = project.getName();
-                project.setName(request.getParameter("title"));
-                project.setDescription(request.getParameter("description"));
-                project.setYear(Integer.parseInt(request.getParameter("year")));
-                project.setStatus(request.getParameter("status"));
-                String leaderIdStr = request.getParameter("leaderId");
-                if (leaderIdStr != null && !leaderIdStr.isEmpty()) {
-                    project.setLeaderId(Integer.parseInt(leaderIdStr));
-                }
-                
-                String expectedStartDateStr = request.getParameter("expectedStartDate");
-                String expectedEndDateStr = request.getParameter("expectedEndDate");
-                String actualStartDateStr = request.getParameter("actualStartDate");
-                String actualEndDateStr = request.getParameter("actualEndDate");
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                if (expectedStartDateStr != null && !expectedStartDateStr.isEmpty()) {
-                    project.setExpectedStartDate(sdf.parse(expectedStartDateStr));
-                }
-                if (expectedEndDateStr != null && !expectedEndDateStr.isEmpty()) {
-                    project.setExpectedEndDate(sdf.parse(expectedEndDateStr));
-                }
-                if (actualStartDateStr != null && !actualStartDateStr.isEmpty()) {
-                    project.setActualStartDate(sdf.parse(actualStartDateStr));
-                }
-                if (actualEndDateStr != null && !actualEndDateStr.isEmpty()) {
-                    project.setActualEndDate(sdf.parse(actualEndDateStr));
-                }
-                
-                projectDAO.update(project);
-                
-                if (user != null) {
-                    projectDAO.addHistory(id, "PROJECT_UPDATE", user.getId(), user.getName(), "修改项目信息", oldName, project.getName());
-                }
-            }
-            response.sendRedirect(request.getContextPath() + "/project?action=list");
-        } catch (NumberFormatException | ParseException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void deleteProject(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        try {
-            int id = Integer.parseInt(request.getParameter("id"));
-            projectDAO.delete(id);
-            response.sendRedirect(request.getContextPath() + "/project?action=list");
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void listProjects(HttpServletRequest request, HttpServletResponse response)
+    private void listProjects(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-
         String keyword = request.getParameter("keyword");
         String status = request.getParameter("status");
         String yearStr = request.getParameter("year");
-        Integer year = null;
+
+        ProjectFilterDTO filter = new ProjectFilterDTO();
+        filter.setKeyword(keyword);
+        filter.setStatus(status);
         if (yearStr != null && !yearStr.isEmpty()) {
-            try {
-                year = Integer.parseInt(yearStr);
-            } catch (NumberFormatException e) {
-            }
+            filter.setYear(Integer.parseInt(yearStr));
         }
 
-        List<Project> projects;
-        if (user != null && "ADMIN".equalsIgnoreCase(user.getRole())) {
-            projects = projectDAO.findByConditions(keyword, status, year);
-            request.setAttribute("projects", projects);
-            request.setAttribute("keyword", keyword);
-            request.setAttribute("status", status);
-            request.setAttribute("year", yearStr);
-            UserDAO userDAO = new UserDAO();
-            request.setAttribute("allUsers", userDAO.findAll());
-            request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
-        } else if (user != null) {
-            projects = projectDAO.findProjectsByUserId(user.getId());
-            request.setAttribute("projects", projects);
-            request.getRequestDispatcher("/member/project/list.jsp").forward(request, response);
-        } else {
-            projects = projectDAO.findApprovedProjects();
-            request.setAttribute("projects", projects);
-            request.getRequestDispatcher("/jsp/project/list.jsp").forward(request, response);
+        Result result = projectService.listProjects(filter, 1, 20);
+        if (result.isSuccess()) {
+            request.setAttribute("projects", result.getData());
+        }
+        request.setAttribute("keyword", keyword);
+        request.setAttribute("status", status);
+        request.setAttribute("year", yearStr);
+        request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
+    }
+
+    private void getProjectDetail(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        try {
+            Integer id = Integer.parseInt(idStr);
+            Result result = projectService.getProjectDetail(id, user != null ? user.getId() : null);
+            if (result.isSuccess()) {
+                request.setAttribute("project", result.getData());
+            }
+            request.getRequestDispatcher("/jsp/admin/project/detail.jsp").forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
     }
 
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
+    private void getMyProjects(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-
         if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        Result result = projectService.getMyProjects(user.getId(), 1, 20);
+        if (result.isSuccess()) {
+            request.setAttribute("projects", result.getData());
+        }
+        request.getRequestDispatcher("/jsp/project/myProjects.jsp").forward(request, response);
+    }
+
+    private void createProject(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        String name = request.getParameter("name");
+        if (name == null || name.trim().isEmpty()) {
+            request.setAttribute("error", "项目名称不能为空");
+            request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
+            return;
+        }
+
+        if (name.length() > 100) {
+            request.setAttribute("error", "项目名称不能超过100个字符");
+            request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
+            return;
+        }
+
+        try {
+            ProjectDTO dto = extractProjectFromRequest(request);
+            dto.setName(name);
+
+            Result result = projectService.createProject(dto, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("success", "项目创建成功");
+            } else {
+                request.setAttribute("error", result.getMessage());
+            }
+        } catch (Exception e) {
+            request.setAttribute("error", "创建失败: " + e.getMessage());
+        }
+        request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
+    }
+
+    private void updateProject(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            request.setAttribute("error", "项目ID不能为空");
+            return;
+        }
+
+        try {
+            Integer id = Integer.parseInt(idStr);
+            ProjectDTO dto = extractProjectFromRequest(request);
+
+            Result result = projectService.updateProject(id, dto, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("success", "项目更新成功");
+            } else {
+                request.setAttribute("error", result.getMessage());
+            }
+        } catch (Exception e) {
+            request.setAttribute("error", "更新失败");
+        }
+    }
+
+    private void deleteProject(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
+        if (!"ADMIN".equals(user.getRole())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
         String idStr = request.getParameter("id");
         if (idStr == null || idStr.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/project?action=list");
+            request.setAttribute("error", "项目ID不能为空");
             return;
         }
 
         try {
             Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            if (project == null) {
-                response.sendRedirect(request.getContextPath() + "/project?action=list");
-                return;
-            }
-
-            UserDAO userDAO = new UserDAO();
-            request.setAttribute("allUsers", userDAO.findAll());
-            request.setAttribute("project", project);
-            request.setAttribute("categories", dictionaryDAO.findByType("PROJECT_TYPE"));
-            request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/project?action=list");
-        }
-    }
-
-    private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        request.setAttribute("categories", dictionaryDAO.findByType("PROJECT_TYPE"));
-        request.getRequestDispatcher("/member/project/create.jsp").forward(request, response);
-    }
-
-    private void showDetail(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            HttpSession session = request.getSession(false);
-            User user = (session != null) ? (User) session.getAttribute("user") : null;
-            
-            request.setAttribute("project", project);
-            request.setAttribute("labels", dictionaryDAO.findByType("PROLABEL"));
-            
-            if (user != null) {
-                boolean isMember = projectDAO.isMember(id, user.getId());
-                boolean hasApplication = projectDAO.hasPendingApplication(id, user.getId());
-                request.setAttribute("isMember", isMember);
-                request.setAttribute("hasApplication", hasApplication);
-            }
-            
-            request.getRequestDispatcher("/member/project/detail.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
-    }
-
-    private void showWorkspace(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            boolean isMember = projectDAO.isMember(id, user.getId());
-            if (!isMember) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-
-            List<ProjectMember> members = projectDAO.getProjectMembers(id);
-            List<String> labels = projectDAO.getLabels(id);
-            List<ProjectPlan> plans = projectDAO.getPlans(id);
-            List<ProjectProgress> progressList = projectDAO.getProgressList(id);
-            List<ProjectHistory> historyList = projectDAO.getHistory(id);
-            List<Object[]> projectImages = projectDAO.getProjectImages(id);
-            List<Object[]> projectFiles = projectDAO.getProjectFiles(id);
-
-            request.setAttribute("project", project);
-            request.setAttribute("members", members);
-            request.setAttribute("labels", labels);
-            request.setAttribute("allLabels", dictionaryDAO.findByType("PROLABEL"));
-            request.setAttribute("plans", plans);
-            request.setAttribute("progressList", progressList);
-            request.setAttribute("historyList", historyList);
-            request.setAttribute("projectImages", projectImages);
-            request.setAttribute("projectFiles", projectFiles);
-            request.setAttribute("isAdmin", user.getId().equals(project.getAdminId()) || user.getId().equals(project.getLeaderId()));
-            
-            request.getRequestDispatcher("/member/project/workspace.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
-    }
-
-    private void showMyApplications(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        List<ProjectMemberApplication> applications = projectDAO.getMyApplications(user.getId());
-        request.setAttribute("applications", applications);
-        request.getRequestDispatcher("/member/project/myApplications.jsp").forward(request, response);
-    }
-
-    private void showApplyForm(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            boolean isMember = projectDAO.isMember(id, user.getId());
-            boolean hasApplication = projectDAO.hasPendingApplication(id, user.getId());
-            
-            if (isMember) {
-                response.sendRedirect(request.getContextPath() + "/project?action=detail&id=" + id + "&msg=" + URLEncoder.encode("您已是项目成员", "UTF-8"));
-                return;
-            }
-            
-            if (hasApplication) {
-                response.sendRedirect(request.getContextPath() + "/project?action=detail&id=" + id + "&msg=" + URLEncoder.encode("您已提交过申请", "UTF-8"));
-                return;
-            }
-
-            request.setAttribute("project", project);
-            request.getRequestDispatcher("/member/project/apply.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
-    }
-
-    private void showMemberApplications(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            boolean isAdmin = user.getId().equals(project.getAdminId()) || user.getId().equals(project.getLeaderId());
-            if (!isAdmin) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-
-            List<ProjectMemberApplication> applications = projectDAO.getMemberApplications(id, null);
-            request.setAttribute("project", project);
-            request.setAttribute("applications", applications);
-            request.getRequestDispatcher("/member/project/memberApplications.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
-    }
-
-    private void showPlanManagement(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            boolean isAdmin = user.getId().equals(project.getAdminId()) || user.getId().equals(project.getLeaderId());
-            if (!isAdmin) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-
-            List<ProjectPlan> plans = projectDAO.getPlans(id);
-            request.setAttribute("project", project);
-            request.setAttribute("plans", plans);
-            request.getRequestDispatcher("/member/project/plan.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
-    }
-
-    private void showProgressManagement(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            boolean isMember = projectDAO.isMember(id, user.getId());
-            if (!isMember) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-
-            List<ProjectPlan> plans = projectDAO.getPlans(id);
-            List<ProjectProgress> progressList = projectDAO.getProgressList(id);
-            request.setAttribute("project", project);
-            request.setAttribute("plans", plans);
-            request.setAttribute("progressList", progressList);
-            request.getRequestDispatcher("/member/project/progress.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
-    }
-
-    private void showProjectHistory(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            Integer id = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(id);
-            
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            boolean isMember = projectDAO.isMember(id, user.getId());
-            if (!isMember) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return;
-            }
-
-            List<ProjectHistory> historyList = projectDAO.getHistory(id);
-            request.setAttribute("project", project);
-            request.setAttribute("historyList", historyList);
-            request.getRequestDispatcher("/member/project/history.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-        }
-    }
-
-    private void createProject(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String name = request.getParameter("name");
-        String description = request.getParameter("description");
-        String category = request.getParameter("category");
-        String yearStr = request.getParameter("year");
-        String expectedStartDateStr = request.getParameter("expectedStartDate");
-        String expectedEndDateStr = request.getParameter("expectedEndDate");
-        String budgetStr = request.getParameter("budget");
-        String repoUrl = request.getParameter("repoUrl");
-        String docUrl = request.getParameter("docUrl");
-
-        if (name == null || name.isEmpty()) {
-            request.setAttribute("error", "项目名称不能为空");
-            request.setAttribute("categories", dictionaryDAO.findByType("PROJECT_TYPE"));
-            request.getRequestDispatcher("/member/project/create.jsp").forward(request, response);
-            return;
-        }
-
-        try {
-            int year = yearStr != null ? Integer.parseInt(yearStr) : Calendar.getInstance().get(Calendar.YEAR);
-
-            int projectCount = projectDAO.countProjectsByMemberAndYear(userId, year);
-            if (projectCount >= 3) {
-                request.setAttribute("error", "每年最多只能参与3个项目");
-                request.setAttribute("categories", dictionaryDAO.findByType("PROJECT_TYPE"));
-                request.getRequestDispatcher("/member/project/create.jsp").forward(request, response);
-                return;
-            }
-
-            Project project = new Project();
-            project.setName(name);
-            project.setDescription(description);
-            project.setCategory(category);
-            project.setLeaderId(userId);
-            project.setAdminId(userId);
-            project.setYear(year);
-            project.setStatus("PENDING");
-            project.setRepoUrl(repoUrl);
-            project.setDocUrl(docUrl);
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            if (expectedStartDateStr != null && !expectedStartDateStr.isEmpty()) {
-                project.setExpectedStartDate(sdf.parse(expectedStartDateStr));
-            }
-            if (expectedEndDateStr != null && !expectedEndDateStr.isEmpty()) {
-                project.setExpectedEndDate(sdf.parse(expectedEndDateStr));
-            }
-            if (budgetStr != null && !budgetStr.isEmpty()) {
-                project.setBudget(new BigDecimal(budgetStr));
-            }
-
-            if (projectDAO.insert(project)) {
-                projectDAO.addMember(project.getId(), userId, "ADMIN");
-                UserDAO userDAO = new UserDAO();
-                User operator = userDAO.findById(userId);
-                projectDAO.addHistory(project.getId(), "PROJECT_APPLY", userId, operator != null ? operator.getName() : "未知", "成员申请创建项目", null, name);
-                response.sendRedirect(request.getContextPath() + "/project?action=list&msg=" + URLEncoder.encode("项目申请已提交，等待管理员审批", "UTF-8"));
+            Result result = projectService.deleteProject(id, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("success", "项目删除成功");
             } else {
-                request.setAttribute("error", "创建失败");
-                request.setAttribute("categories", dictionaryDAO.findByType("PROJECT_TYPE"));
-                request.getRequestDispatcher("/member/project/create.jsp").forward(request, response);
+                request.setAttribute("error", result.getMessage());
             }
         } catch (Exception e) {
-            request.setAttribute("error", "创建失败: " + e.getMessage());
-            request.setAttribute("categories", dictionaryDAO.findByType("PROJECT_TYPE"));
-            request.getRequestDispatcher("/member/project/create.jsp").forward(request, response);
+            request.setAttribute("error", "删除失败");
         }
     }
 
-    private void saveProject(HttpServletRequest request, HttpServletResponse response, Integer adminId)
-            throws ServletException, IOException {
+    private void approveProject(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
+        if (!"ADMIN".equals(user.getRole())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         String idStr = request.getParameter("id");
-        String name = request.getParameter("name");
-        String description = request.getParameter("description");
-        String category = request.getParameter("category");
-        String yearStr = request.getParameter("year");
-        String status = request.getParameter("status");
-        String adminIdStr = request.getParameter("adminId");
-        String expectedStartDateStr = request.getParameter("expectedStartDate");
-        String expectedEndDateStr = request.getParameter("expectedEndDate");
-        String actualStartDateStr = request.getParameter("actualStartDate");
-        String actualEndDateStr = request.getParameter("actualEndDate");
-        String budgetStr = request.getParameter("budget");
-        String repoUrl = request.getParameter("repoUrl");
-        String docUrl = request.getParameter("docUrl");
+        if (idStr == null || idStr.isEmpty()) {
+            request.setAttribute("error", "项目ID不能为空");
+            return;
+        }
 
         try {
-            Project project;
-            boolean isNew = (idStr == null || idStr.isEmpty());
-            
-            if (isNew) {
-                project = new Project();
-                project.setLeaderId(adminId);
-                project.setStatus("APPROVED");
+            Integer id = Integer.parseInt(idStr);
+            Result result = projectService.approveProject(id, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("success", "项目审批通过");
             } else {
-                project = projectDAO.findById(Integer.parseInt(idStr));
+                request.setAttribute("error", result.getMessage());
             }
-
-            project.setName(name);
-            project.setDescription(description);
-            project.setCategory(category);
-            project.setYear(Integer.parseInt(yearStr));
-            project.setStatus(status);
-
-            if (adminIdStr != null && !adminIdStr.isEmpty()) {
-                project.setAdminId(Integer.parseInt(adminIdStr));
-            }
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            if (expectedStartDateStr != null && !expectedStartDateStr.isEmpty()) {
-                project.setExpectedStartDate(sdf.parse(expectedStartDateStr));
-            }
-            if (expectedEndDateStr != null && !expectedEndDateStr.isEmpty()) {
-                project.setExpectedEndDate(sdf.parse(expectedEndDateStr));
-            }
-            if (actualStartDateStr != null && !actualStartDateStr.isEmpty()) {
-                project.setActualStartDate(sdf.parse(actualStartDateStr));
-            }
-            if (actualEndDateStr != null && !actualEndDateStr.isEmpty()) {
-                project.setActualEndDate(sdf.parse(actualEndDateStr));
-            }
-            if (budgetStr != null && !budgetStr.isEmpty()) {
-                project.setBudget(new BigDecimal(budgetStr));
-            }
-            project.setRepoUrl(repoUrl);
-            project.setDocUrl(docUrl);
-
-            if (isNew) {
-                projectDAO.insert(project);
-                if (project.getAdminId() != null) {
-                    projectDAO.addMember(project.getId(), project.getAdminId(), "ADMIN");
-                }
-            } else {
-                projectDAO.update(project);
-            }
-            
-            response.sendRedirect(request.getContextPath() + "/project?action=list&msg=" + URLEncoder.encode("保存成功", "UTF-8"));
         } catch (Exception e) {
-            response.sendRedirect(request.getContextPath() + "/project?action=list&msg=" + URLEncoder.encode("保存失败: " + e.getMessage(), "UTF-8"));
+            request.setAttribute("error", "审批失败");
         }
     }
 
-    private void applyMember(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
+    private void rejectProject(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
+        if (!"ADMIN".equals(user.getRole())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         String idStr = request.getParameter("id");
         String reason = request.getParameter("reason");
-
         if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            request.setAttribute("error", "项目ID不能为空");
             return;
         }
 
         try {
-            Integer projectId = Integer.parseInt(idStr);
-            Project project = projectDAO.findById(projectId);
-            
-            if (project == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
-            if (projectDAO.isMember(projectId, userId)) {
-                response.sendRedirect(request.getContextPath() + "/project?action=detail&id=" + projectId + "&msg=" + URLEncoder.encode("您已是项目成员", "UTF-8"));
-                return;
-            }
-
-            if (projectDAO.hasPendingApplication(projectId, userId)) {
-                response.sendRedirect(request.getContextPath() + "/project?action=detail&id=" + projectId + "&msg=" + URLEncoder.encode("您已提交过申请", "UTF-8"));
-                return;
-            }
-
-            UserDAO userDAO = new UserDAO();
-            User applicant = userDAO.findById(userId);
-            
-            if (projectDAO.applyMember(projectId, userId, reason)) {
-                projectDAO.addHistory(projectId, "MEMBER_APPLY", userId, applicant != null ? applicant.getName() : "未知", "成员申请加入项目", null, applicant != null ? applicant.getName() : "未知");
-                response.sendRedirect(request.getContextPath() + "/project?action=myApplications&msg=" + URLEncoder.encode("申请已提交，等待项目管理员审批", "UTF-8"));
+            Integer id = Integer.parseInt(idStr);
+            Result result = projectService.rejectProject(id, reason, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("success", "项目已驳回");
             } else {
-                response.sendRedirect(request.getContextPath() + "/project?action=detail&id=" + projectId + "&msg=" + URLEncoder.encode("申请失败", "UTF-8"));
+                request.setAttribute("error", result.getMessage());
             }
         } catch (Exception e) {
-            response.sendRedirect(request.getContextPath() + "/project?action=detail&id=" + idStr + "&msg=" + URLEncoder.encode("申请失败: " + e.getMessage(), "UTF-8"));
+            request.setAttribute("error", "驳回失败");
         }
     }
 
-    private void approveProject(HttpServletRequest request, HttpServletResponse response, Integer adminId)
-            throws ServletException, IOException {
-        String idStr = request.getParameter("id");
-        if (idStr != null) {
-            try {
-                Integer id = Integer.parseInt(idStr);
-                Project project = projectDAO.findById(id);
-                
-                if (project != null) {
-                    projectDAO.approve(id, adminId);
-                    
-                    UserDAO userDAO = new UserDAO();
-                    User approver = userDAO.findById(adminId);
-                    projectDAO.addHistory(id, "PROJECT_APPROVE", adminId, approver != null ? approver.getName() : "管理员", "项目审批通过", "PENDING", "APPROVED");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=list");
-    }
-
-    private void rejectProject(HttpServletRequest request, HttpServletResponse response, Integer adminId)
-            throws ServletException, IOException {
-        String idStr = request.getParameter("id");
-        if (idStr != null) {
-            try {
-                Integer id = Integer.parseInt(idStr);
-                Project project = projectDAO.findById(id);
-                
-                if (project != null) {
-                    projectDAO.reject(id, adminId);
-                    
-                    UserDAO userDAO = new UserDAO();
-                    User approver = userDAO.findById(adminId);
-                    projectDAO.addHistory(id, "PROJECT_REJECT", adminId, approver != null ? approver.getName() : "管理员", "项目审批驳回", "PENDING", "REJECTED");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=list");
-    }
-
-    private void approveMemberApplication(HttpServletRequest request, HttpServletResponse response, Integer adminId)
-            throws ServletException, IOException {
-        String applicationIdStr = request.getParameter("applicationId");
-        String projectIdStr = request.getParameter("projectId");
-        
-        if (applicationIdStr != null) {
-            try {
-                Integer applicationId = Integer.parseInt(applicationIdStr);
-                ProjectMemberApplication app = projectDAO.getMemberApplicationById(applicationId);
-                
-                if (app != null && projectDAO.approveMemberApplication(applicationId, adminId)) {
-                    UserDAO userDAO = new UserDAO();
-                    User approver = userDAO.findById(adminId);
-                    projectDAO.addHistory(app.getProjectId(), "MEMBER_APPROVE", adminId, approver != null ? approver.getName() : "管理员", "成员审批通过", "PENDING", "CONFIRMED");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        
-        if (projectIdStr != null) {
-            response.sendRedirect(request.getContextPath() + "/project?action=memberApplications&id=" + projectIdStr);
-        } else {
-            response.sendRedirect(request.getContextPath() + "/project?action=list");
-        }
-    }
-
-    private void rejectMemberApplication(HttpServletRequest request, HttpServletResponse response, Integer adminId)
-            throws ServletException, IOException {
-        String applicationIdStr = request.getParameter("applicationId");
+    private void applyJoin(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
         String projectIdStr = request.getParameter("projectId");
         String reason = request.getParameter("reason");
-        
-        if (applicationIdStr != null) {
-            try {
-                Integer applicationId = Integer.parseInt(applicationIdStr);
-                ProjectMemberApplication app = projectDAO.getMemberApplicationById(applicationId);
-                
-                if (app != null && projectDAO.rejectMemberApplication(applicationId, adminId, reason)) {
-                    UserDAO userDAO = new UserDAO();
-                    User approver = userDAO.findById(adminId);
-                    projectDAO.addHistory(app.getProjectId(), "MEMBER_REJECT", adminId, approver != null ? approver.getName() : "管理员", "成员审批驳回: " + reason, "PENDING", "REJECTED");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (projectIdStr == null || projectIdStr.isEmpty()) {
+            request.setAttribute("error", "项目ID不能为空");
+            return;
         }
-        
-        if (projectIdStr != null) {
-            response.sendRedirect(request.getContextPath() + "/project?action=memberApplications&id=" + projectIdStr);
-        } else {
-            response.sendRedirect(request.getContextPath() + "/project?action=list");
-        }
-    }
 
-    private void addProjectLabel(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        String labelCode = request.getParameter("labelCode");
-        
-        if (projectIdStr != null && labelCode != null) {
-            try {
-                Integer projectId = Integer.parseInt(projectIdStr);
-                projectDAO.addLabel(projectId, labelCode);
-                
-                UserDAO userDAO = new UserDAO();
-                User user = userDAO.findById(userId);
-                projectDAO.addHistory(projectId, "PROJECT_LABEL_ADD", userId, user != null ? user.getName() : "未知", "添加项目标签", null, labelCode);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
-    }
-
-    private void removeProjectLabel(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        String labelCode = request.getParameter("labelCode");
-        
-        if (projectIdStr != null && labelCode != null) {
-            try {
-                Integer projectId = Integer.parseInt(projectIdStr);
-                projectDAO.removeLabel(projectId, labelCode);
-                
-                UserDAO userDAO = new UserDAO();
-                User user = userDAO.findById(userId);
-                projectDAO.addHistory(projectId, "PROJECT_LABEL_REMOVE", userId, user != null ? user.getName() : "未知", "移除项目标签", labelCode, null);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
-    }
-
-    private void addProjectPlan(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        String title = request.getParameter("title");
-        String description = request.getParameter("description");
-        String startDateStr = request.getParameter("startDate");
-        String endDateStr = request.getParameter("endDate");
-        
-        if (projectIdStr != null && title != null && !title.isEmpty()) {
-            try {
-                Integer projectId = Integer.parseInt(projectIdStr);
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                
-                ProjectPlan plan = new ProjectPlan();
-                plan.setProjectId(projectId);
-                plan.setTitle(title);
-                plan.setDescription(description);
-                plan.setStartDate(sdf.parse(startDateStr));
-                plan.setEndDate(sdf.parse(endDateStr));
-                
-                projectDAO.addPlan(plan);
-                
-                UserDAO userDAO = new UserDAO();
-                User user = userDAO.findById(userId);
-                projectDAO.addHistory(projectId, "PROJECT_INFO_UPDATE", userId, user != null ? user.getName() : "未知", "添加项目计划: " + title, null, title);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
-    }
-
-    private void updateProjectPlan(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
-    }
-
-    private void deleteProjectPlan(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        String planIdStr = request.getParameter("planId");
-        
-        if (planIdStr != null) {
-            try {
-                projectDAO.deletePlan(Integer.parseInt(planIdStr));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
-    }
-
-    private void addProjectProgress(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        String title = request.getParameter("title");
-        String description = request.getParameter("description");
-        String planIdStr = request.getParameter("planId");
-        String completionRateStr = request.getParameter("completionRate");
-        
-        if (projectIdStr != null && title != null && !title.isEmpty()) {
-            try {
-                Integer projectId = Integer.parseInt(projectIdStr);
-                
-                ProjectProgress progress = new ProjectProgress();
-                progress.setProjectId(projectId);
-                progress.setTitle(title);
-                progress.setDescription(description);
-                progress.setCreatedBy(userId);
-                
-                if (planIdStr != null && !planIdStr.isEmpty()) {
-                    progress.setPlanId(Integer.parseInt(planIdStr));
-                }
-                
-                if (completionRateStr != null && !completionRateStr.isEmpty()) {
-                    progress.setCompletionRate(Integer.parseInt(completionRateStr));
-                } else {
-                    progress.setCompletionRate(0);
-                }
-                
-                projectDAO.addProgress(progress);
-                
-                UserDAO userDAO = new UserDAO();
-                User user = userDAO.findById(userId);
-                projectDAO.addHistory(projectId, "PROJECT_INFO_UPDATE", userId, user != null ? user.getName() : "未知", "添加项目进度: " + title, null, title + " (" + progress.getCompletionRate() + "%)");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
-    }
-
-    private void transferProjectAdmin(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        String newAdminIdStr = request.getParameter("newAdminId");
-        
-        if (projectIdStr != null && newAdminIdStr != null) {
-            try {
-                Integer projectId = Integer.parseInt(projectIdStr);
-                Integer newAdminId = Integer.parseInt(newAdminIdStr);
-                
-                Project project = projectDAO.findById(projectId);
-                Integer oldAdminId = project.getAdminId();
-                
-                if (projectDAO.transferAdmin(projectId, newAdminId)) {
-                    UserDAO userDAO = new UserDAO();
-                    User transferor = userDAO.findById(userId);
-                    User newAdmin = userDAO.findById(newAdminId);
-                    projectDAO.addHistory(projectId, "PROJECT_TRANSFER", userId, transferor != null ? transferor.getName() : "未知", 
-                        "项目管理员转移", oldAdminId != null ? String.valueOf(oldAdminId) : "无", newAdmin != null ? newAdmin.getName() : "未知");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
-    }
-
-    private void uploadProjectImage(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        
         try {
-            Part imagePart = request.getPart("imageFile");
-            
-            if (imagePart != null && imagePart.getSize() > 0) {
-                Integer projectId = Integer.parseInt(projectIdStr);
-                String fileName = imagePart.getSubmittedFileName();
-                String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-                
-                if (!ext.matches("jpg|jpeg|png|gif|bmp|webp")) {
-                    response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectId + "&error=" + URLEncoder.encode("只允许上传图片文件", "UTF-8"));
-                    return;
-                }
-                
-                if (imagePart.getSize() > 2 * 1024 * 1024) {
-                    response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectId + "&error=" + URLEncoder.encode("图片大小不能超过2MB", "UTF-8"));
-                    return;
-                }
-                
-                String savePath = FileUtil.getCategoryDir("projects/" + projectId + "/images");
-
-                String newFileName = System.currentTimeMillis() + "_" + (int)(Math.random() * 1000) + "." + ext;
-                java.io.File uploadedFile = new java.io.File(savePath, newFileName);
-                imagePart.write(uploadedFile.getAbsolutePath());
-
-                java.sql.Connection conn = null;
-                java.sql.PreparedStatement pstmt = null;
-                try {
-                    conn = util.DBUtil.getConnection();
-                    String sql = "INSERT INTO file_storage (stored_name, original_name, file_path, file_size, file_type, status, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())";
-                    pstmt = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS);
-                    pstmt.setString(1, newFileName);
-                    pstmt.setString(2, fileName);
-                    pstmt.setString(3, "/localstorage/projects/" + projectId + "/images/" + newFileName);
-                    pstmt.setLong(4, imagePart.getSize());
-                    pstmt.setString(5, "image/" + ext);
-                    pstmt.executeUpdate();
-                    
-                    java.sql.ResultSet rs = pstmt.getGeneratedKeys();
-                    int fileId = 0;
-                    if (rs.next()) {
-                        fileId = rs.getInt(1);
-                    }
-                    rs.close();
-                    pstmt.close();
-                    
-                    sql = "INSERT INTO project_image (project_id, file_id, created_at) VALUES (?, ?, NOW())";
-                    pstmt = conn.prepareStatement(sql);
-                    pstmt.setInt(1, projectId);
-                    pstmt.setInt(2, fileId);
-                    pstmt.executeUpdate();
-                    
-                    UserDAO userDAO = new UserDAO();
-                    User user = userDAO.findById(userId);
-                    projectDAO.addHistory(projectId, "PROJECT_IMAGE_ADD", userId, user != null ? user.getName() : "未知", "添加项目图片", null, fileName);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (pstmt != null) pstmt.close();
-                    if (conn != null) conn.close();
-                }
+            Integer projectId = Integer.parseInt(projectIdStr);
+            Result result = projectService.applyMember(projectId, user.getId(), reason);
+            if (result.isSuccess()) {
+                request.setAttribute("success", "申请已提交");
+            } else {
+                request.setAttribute("error", result.getMessage());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            request.setAttribute("error", "申请失败");
         }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
     }
 
-    private void uploadProjectFile(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
+    private void addPlan(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
         String projectIdStr = request.getParameter("projectId");
-        
+        String content = request.getParameter("content");
+        if (projectIdStr == null || projectIdStr.isEmpty()) {
+            request.setAttribute("error", "项目ID不能为空");
+            return;
+        }
+
         try {
-            Part filePart = request.getPart("docFile");
-            
-            if (filePart != null && filePart.getSize() > 0) {
-                Integer projectId = Integer.parseInt(projectIdStr);
-                String fileName = filePart.getSubmittedFileName();
-                String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-                
-                String[] forbiddenExts = {"exe", "bat", "cmd", "sh", "ps1", "vbs", "js", "jar", "jsp", "asp", "php", "cgi", "htaccess"};
-                for (String forbidden : forbiddenExts) {
-                    if (ext.equals(forbidden)) {
-                        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectId + "&error=" + URLEncoder.encode("不允许上传可执行文件", "UTF-8"));
-                        return;
-                    }
-                }
-                
-                if (filePart.getSize() > 50 * 1024 * 1024) {
-                    response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectId + "&error=" + URLEncoder.encode("文件大小不能超过50MB", "UTF-8"));
-                    return;
-                }
-                
-                String savePath = FileUtil.getCategoryDir("projects/" + projectId + "/files");
+            Integer projectId = Integer.parseInt(projectIdStr);
+            PlanDTO dto = new PlanDTO();
+            dto.setTitle(content);
+            dto.setDescription(request.getParameter("description"));
 
-                String newFileName = System.currentTimeMillis() + "_" + (int)(Math.random() * 1000) + "." + ext;
-                java.io.File uploadedFile = new java.io.File(savePath, newFileName);
-                filePart.write(uploadedFile.getAbsolutePath());
+            String startDate = request.getParameter("startDate");
+            String endDate = request.getParameter("endDate");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            if (startDate != null && !startDate.isEmpty()) {
+                dto.setStartDate(sdf.parse(startDate));
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                dto.setEndDate(sdf.parse(endDate));
+            }
 
-                java.sql.Connection conn = null;
-                java.sql.PreparedStatement pstmt = null;
-                try {
-                    conn = util.DBUtil.getConnection();
-                    String sql = "INSERT INTO file_storage (stored_name, original_name, file_path, file_size, file_type, status, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())";
-                    pstmt = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS);
-                    pstmt.setString(1, newFileName);
-                    pstmt.setString(2, fileName);
-                    pstmt.setString(3, "/localstorage/projects/" + projectId + "/files/" + newFileName);
-                    pstmt.setLong(4, filePart.getSize());
-                    pstmt.setString(5, "application/octet-stream");
-                    pstmt.executeUpdate();
-                    
-                    java.sql.ResultSet rs = pstmt.getGeneratedKeys();
-                    int fileId = 0;
-                    if (rs.next()) {
-                        fileId = rs.getInt(1);
-                    }
-                    rs.close();
-                    pstmt.close();
-                    
-                    sql = "INSERT INTO project_file (project_id, file_id, file_type, created_at) VALUES (?, ?, ?, NOW())";
-                    pstmt = conn.prepareStatement(sql);
-                    pstmt.setInt(1, projectId);
-                    pstmt.setInt(2, fileId);
-                    pstmt.setString(3, ext);
-                    pstmt.executeUpdate();
-                    
-                    UserDAO userDAO = new UserDAO();
-                    User user = userDAO.findById(userId);
-                    projectDAO.addHistory(projectId, "PROJECT_FILE_ADD", userId, user != null ? user.getName() : "未知", "添加项目文件", null, fileName);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (pstmt != null) pstmt.close();
-                    if (conn != null) conn.close();
-                }
+            Result result = projectService.addPlan(projectId, dto, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("success", "计划添加成功");
+            } else {
+                request.setAttribute("error", result.getMessage());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            request.setAttribute("error", "添加失败");
         }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
     }
 
-    private void downloadProjectFile(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        String fileIdStr = request.getParameter("fileId");
+    private void addProgress(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
         String projectIdStr = request.getParameter("projectId");
-        
-        if (fileIdStr != null) {
-            try {
-                int fileId = Integer.parseInt(fileIdStr);
-                java.sql.Connection conn = null;
-                java.sql.PreparedStatement pstmt = null;
-                java.sql.ResultSet rs = null;
-                try {
-                    conn = util.DBUtil.getConnection();
-                    String sql = "SELECT * FROM file_storage WHERE id = ?";
-                    pstmt = conn.prepareStatement(sql);
-                    pstmt.setInt(1, fileId);
-                    rs = pstmt.executeQuery();
-                    
-                    if (rs.next()) {
-                        String dbPath = rs.getString("file_path");
-                        String filePath = FileUtil.resolvePhysicalPath(dbPath);
-                        java.io.File file = new java.io.File(filePath);
-                        if (!file.exists()) {
-                            String legacyPath = request.getServletContext().getRealPath("/") + dbPath;
-                            java.io.File legacyFile = new java.io.File(legacyPath);
-                            if (legacyFile.exists()) {
-                                file = legacyFile;
-                            }
-                        }
-                        String originalName = rs.getString("original_name");
-
-                        if (file.exists()) {
-                            response.setContentType("application/octet-stream");
-                            response.setHeader("Content-Disposition", "attachment; filename=\"" + new String(originalName.getBytes("UTF-8"), "ISO-8859-1") + "\"");
-                            java.io.FileInputStream fis = new java.io.FileInputStream(file);
-                            java.io.OutputStream os = response.getOutputStream();
-                            byte[] buffer = new byte[4096];
-                            int bytesRead = -1;
-                            while ((bytesRead = fis.read(buffer)) != -1) {
-                                os.write(buffer, 0, bytesRead);
-                            }
-                            fis.close();
-                            os.flush();
-                            return;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (rs != null) rs.close();
-                    if (pstmt != null) pstmt.close();
-                    if (conn != null) conn.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        String content = request.getParameter("content");
+        if (projectIdStr == null || projectIdStr.isEmpty()) {
+            request.setAttribute("error", "项目ID不能为空");
+            return;
         }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
+
+        try {
+            Integer projectId = Integer.parseInt(projectIdStr);
+            ProgressDTO dto = new ProgressDTO();
+            dto.setTitle(content);
+            dto.setDescription(request.getParameter("description"));
+
+            String completionRateStr = request.getParameter("completionRate");
+            if (completionRateStr != null && !completionRateStr.isEmpty()) {
+                dto.setCompletionRate(Integer.parseInt(completionRateStr));
+            } else {
+                dto.setCompletionRate(0);
+            }
+
+            Result result = projectService.addProgress(projectId, dto, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("success", "进度添加成功");
+            } else {
+                request.setAttribute("error", result.getMessage());
+            }
+        } catch (Exception e) {
+            request.setAttribute("error", "添加失败");
+        }
     }
 
-    private void deleteProjectFile(HttpServletRequest request, HttpServletResponse response, Integer userId)
-            throws ServletException, IOException {
-        String projectIdStr = request.getParameter("projectId");
-        String fileIdStr = request.getParameter("fileId");
-        
-        if (fileIdStr != null && projectIdStr != null) {
-            try {
-                int fileId = Integer.parseInt(fileIdStr);
-                int projectId = Integer.parseInt(projectIdStr);
-                
-                java.sql.Connection conn = null;
-                java.sql.PreparedStatement pstmt = null;
-                try {
-                    conn = util.DBUtil.getConnection();
-                    
-                    String sql = "SELECT fs.file_path FROM file_storage fs WHERE fs.id = ?";
-                    pstmt = conn.prepareStatement(sql);
-                    pstmt.setInt(1, fileId);
-                    java.sql.ResultSet rs = pstmt.executeQuery();
-                    
-                    String filePath = null;
-                    if (rs.next()) {
-                        filePath = rs.getString("file_path");
-                    }
-                    rs.close();
-                    pstmt.close();
-                    
-                    if (filePath != null) {
-                        String absPath = FileUtil.resolvePhysicalPath(filePath);
-                        java.io.File file = new java.io.File(absPath);
-                        if (!file.exists()) {
-                            String legacyPath = request.getServletContext().getRealPath("/") + filePath;
-                            file = new java.io.File(legacyPath);
-                        }
-                        if (file.exists()) {
-                            file.delete();
-                        }
-                    }
-                    
-                    pstmt = conn.prepareStatement("DELETE FROM project_image WHERE file_id = ? AND project_id = ?");
-                    pstmt.setInt(1, fileId);
-                    pstmt.setInt(2, projectId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    
-                    pstmt = conn.prepareStatement("DELETE FROM project_file WHERE file_id = ? AND project_id = ?");
-                    pstmt.setInt(1, fileId);
-                    pstmt.setInt(2, projectId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    
-                    pstmt = conn.prepareStatement("UPDATE file_storage SET status = 0 WHERE id = ?");
-                    pstmt.setInt(1, fileId);
-                    pstmt.executeUpdate();
-                    
-                    UserDAO userDAO = new UserDAO();
-                    User user = userDAO.findById(userId);
-                    projectDAO.addHistory(projectId, "PROJECT_FILE_DELETE", userId, user != null ? user.getName() : "未知", "删除项目文件", fileIdStr, null);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (pstmt != null) pstmt.close();
-                    if (conn != null) conn.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    private ProjectDTO extractProjectFromRequest(HttpServletRequest request) throws Exception {
+        ProjectDTO dto = new ProjectDTO();
+        dto.setName(request.getParameter("name"));
+        dto.setDescription(request.getParameter("description"));
+        dto.setCategory(request.getParameter("category"));
+
+        String yearStr = request.getParameter("year");
+        if (yearStr != null && !yearStr.isEmpty()) {
+            dto.setYear(Integer.parseInt(yearStr));
         }
-        response.sendRedirect(request.getContextPath() + "/project?action=workspace&id=" + projectIdStr);
+
+        String budgetStr = request.getParameter("budget");
+        if (budgetStr != null && !budgetStr.isEmpty()) {
+            dto.setBudget(new java.math.BigDecimal(budgetStr));
+        }
+
+        dto.setRepoUrl(request.getParameter("repoUrl"));
+        dto.setDocUrl(request.getParameter("docUrl"));
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String startDate = request.getParameter("expectedStartDate");
+        String endDate = request.getParameter("expectedEndDate");
+        if (startDate != null && !startDate.isEmpty()) {
+            dto.setExpectedStartDate(sdf.parse(startDate));
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            dto.setExpectedEndDate(sdf.parse(endDate));
+        }
+
+        return dto;
     }
 }

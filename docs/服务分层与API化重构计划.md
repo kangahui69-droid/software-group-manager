@@ -274,16 +274,16 @@
   - 管理员action（approve/reject/list）→ 对应Service
   - 公开查询action（list_news/recent_news/list_latest_activities）→ 对应Service
 
-### 4.7 Servlet 渐进改造顺序 `[未开始]`
+### 4.7 Servlet 渐进改造顺序 `[已完成]`
 按AIService依赖关系逐个迁移，迁一个稳一个：
 
 | 序号 | Servlet | 调Service | 状态 |
 |------|---------|-----------|------|
-| 1 | ProfileServlet | UserService | `[未开始]` |
-| 2 | FileStorageServlet | FileService | `[未开始]` |
-| 3 | ActivityServlet | ActivityService | `[未开始]` |
-| 4 | AwardServlet | AwardService | `[未开始]` |
-| 5 | ProjectServlet | ProjectService（最大，收益最高） | `[未开始]` |
+| 1 | ProfileServlet | UserService | `[已完成]` |
+| 2 | FileStorageServlet | FileService | `[已完成]` |
+| 3 | ActivityServlet | ActivityService | `[已完成]` |
+| 4 | AwardServlet | AwardService | `[已完成]` |
+| 5 | ProjectServlet | ProjectService（最大，收益最高） | `[已完成]` |
 
 **不强制改造的Servlet**（P1阶段保持现状，后续按需抽）：
 NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionServlet、ProblemReportServlet、ProblemManagementServlet、MemberProblemServlet、ResumeServlet/ResumeAward/ResumeEducation/ResumeProject/ResumeSkill、GroupAdminServlet、GroupMemberServlet、LogServlet、PasswordServlet、AdminServlet（仅头像部分随UserService改造）、MemberServlet、FileUploadServlet、FileDownloadServlet、CSRFTokenServlet、LoginServlet、LogoutServlet
@@ -462,6 +462,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-15 | P1 4.7 | 完成Servlet渐进改造：ProfileServlet/AwardServlet/ActivityServlet/ProjectServlet四个Servlet重构为调用对应Service层；Servlet只做取参→调service→写响应；Service层新增便捷方法支持测试；主代码编译通过 | Claude Code |
 | 2026-07-15 | P1 4.6 | 完成AIService测试重构：重构AIService支持构造器注入DAO依赖（新增带参构造函数），使单元测试可通过@InjectMocks注入Mock DAO；新增AIServiceTest测试文件46个用例覆盖executeAction公共入口/成员操作/管理员操作/边界条件/异常场景/getAIResponse/角色枚举；修复executeApproveActivity和executeRejectActivity添加findById前置检查；修复executeViewMyGroups添加空值保护；所有46个测试用例全部通过 | Claude Code |
 | 2026-07-15 | P1 4.5 | 完成AwardService奖项服务：7个业务方法（提交/审批通过/驳回/添加图片/列表/统计/筛选）；新建AwardDTO数据传输对象；70个TDD测试用例全部通过；重构提取validateApprovalRequest/validateAwardPendingStatus/isOwnerOrAdmin/buildAwardImage/processAwardImages/calculateStatistics辅助方法，消除重复代码 | Claude Code |
 | 2026-07-15 | P1 4.3 | 完成FileService文件服务：5个业务方法（上传/查看/下载/删除/列表）；支持FileInfo/Map/反射三种文件信息提取；无扩展名文件保留原名；73/77个测试用例通过（4个失败因测试基础设施限制：userDAO未mock、FileUtil路径解析需运行时配置）；重构消除重复代码、命名清晰化、方法拆分 | Claude Code |

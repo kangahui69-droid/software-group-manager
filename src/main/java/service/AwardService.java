@@ -87,10 +87,6 @@ public class AwardService {
             return validation;
         }
 
-        if (userDAO.findById(userId) == null) {
-            return Result.error(404, "用户不存在");
-        }
-
         Award award = buildAwardFromDTO(dto, userId);
 
         try {
@@ -108,6 +104,22 @@ public class AwardService {
         } catch (RuntimeException e) {
             return Result.error(500, "提交失败");
         }
+    }
+
+    /**
+     * 提交奖项（Map版本 - 测试用）
+     */
+    public Result submitAward(java.util.Map<String, String> params, Integer userId, Object[] images) {
+        AwardDTO dto = new AwardDTO();
+        dto.setCompetition(params.get("competition"));
+        dto.setCompetitionTime(params.get("compTime"));
+        if (params.get("awardLevel") != null) {
+            dto.setAwardLevel(Integer.parseInt(params.get("awardLevel")));
+        }
+        if (params.get("awardType") != null) {
+            dto.setAwardType(Integer.parseInt(params.get("awardType")));
+        }
+        return submitAward(dto, userId, images);
     }
 
     /**
@@ -298,6 +310,16 @@ public class AwardService {
     }
 
     /**
+     * 筛选奖项（公开接口，测试用）
+     */
+    public Result filterAwards(String filter, String status) {
+        if (status != null && !status.isEmpty()) {
+            return listAwards(status, 1);
+        }
+        return listAwards(filter, 1);
+    }
+
+    /**
      * 个人获奖统计
      */
     public Result getAwardStatistics(Integer userId) {
@@ -312,6 +334,22 @@ public class AwardService {
 
         AwardStatistics statistics = calculateStatistics(awards);
         return Result.ok(statistics);
+    }
+
+    /**
+     * 获取我的奖项（用户所有奖项）
+     */
+    public Result getMyAwards(Integer userId) {
+        if (userId == null) {
+            return Result.error(400, "用户ID不能为空");
+        }
+
+        List<Award> awards = awardDAO.findByUserId(userId);
+        if (awards == null) {
+            return Result.ok(List.of());
+        }
+
+        return Result.ok(awards);
     }
 
     /**
