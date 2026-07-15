@@ -206,7 +206,7 @@
   - `updateAdminAvatar(adminId, Part file)` → 管理员头像
 - **配套改造**：ProfileServlet、AdminServlet、LoginServlet、MemberServlet对应方法调UserService
 
-### 4.3 FileService 文件服务 `[未开始]`
+### 4.3 FileService 文件服务 `[进行中]`
 - **文件**：`src/main/java/service/FileService.java`（新建）
 - **方法清单**：
   - `uploadFile(Part file, category, userId)` → 上传（校验+命名+写磁盘+写DB+返回FileStorage）
