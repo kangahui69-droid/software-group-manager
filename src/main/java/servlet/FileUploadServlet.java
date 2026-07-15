@@ -21,7 +21,7 @@ import java.io.PrintWriter;
  */
 @MultipartConfig(maxFileSize = 10 * 1024 * 1024) // 最大10MB
 public class FileUploadServlet extends HttpServlet {
-    private static final String UPLOAD_DIR = "localstorage/files/";
+    private static final String UPLOAD_SUBDIR = "files";
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -44,19 +44,13 @@ public class FileUploadServlet extends HttpServlet {
 
             String originalFileName = getFileName(filePart);
             String storedFileName = FileUtil.generateStoredFileName(originalFileName);
-            String userDir = UPLOAD_DIR + userId + "/";
+            String userSubDir = UPLOAD_SUBDIR + "/" + userId;
+            File userDirFile = new File(FileUtil.getCategoryDir(userSubDir));
 
-            // 确保目录存在
-            String realPath = getServletContext().getRealPath("/");
-            File userDirFile = new File(realPath + userDir);
-            FileUtil.ensureDirectoryExists(userDirFile.getAbsolutePath());
-
-            // 保存文件
             String filePath = userDirFile.getAbsolutePath() + File.separator + storedFileName;
             filePart.write(filePath);
 
-            // 返回文件路径
-            String relativePath = userDir + storedFileName;
+            String relativePath = "/localstorage/" + userSubDir + "/" + storedFileName;
             response.setContentType("application/json;charset=UTF-8");
             PrintWriter out = response.getWriter();
             out.print("{\"success\":true,\"filePath\":\"" + relativePath + "\",\"fileName\":\"" + originalFileName + "\"}");

@@ -13,40 +13,60 @@ public class ActivityParticipantDAO {
     }
 
     public boolean register(Integer activityId, Integer userId, boolean autoApproved) {
+        try (Connection conn = DBUtil.getConnection()) {
+            return register(activityId, userId, autoApproved, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        }
+    }
+
+    public boolean register(Integer activityId, Integer userId, boolean autoApproved, Connection conn) {
         String sql = "INSERT INTO activity_participant (activity_id, user_id, status) VALUES (?, ?, ?)";
-        Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, activityId);
             pstmt.setInt(2, userId);
             pstmt.setString(3, autoApproved ? "approved" : "pending");
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && (msg.contains("Duplicate") || msg.contains("Unique index") || msg.contains("primary key"))) {
+                return false;
+            }
             e.printStackTrace();
+            throw new RuntimeException("报名失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
+    }
+
+    public boolean register(Integer activityId, Integer userId, Connection conn) {
+        return register(activityId, userId, false, conn);
     }
 
     public boolean cancelRegistration(Integer activityId, Integer userId) {
+        try (Connection conn = DBUtil.getConnection()) {
+            return cancelRegistration(activityId, userId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        }
+    }
+
+    public boolean cancelRegistration(Integer activityId, Integer userId, Connection conn) {
         String sql = "DELETE FROM activity_participant WHERE activity_id = ? AND user_id = ?";
-        Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, activityId);
             pstmt.setInt(2, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("取消报名失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public boolean isRegistered(Integer activityId, Integer userId) {
@@ -139,25 +159,43 @@ public class ActivityParticipantDAO {
     }
 
     public boolean updateStatus(Integer activityId, Integer userId, String status) {
+        try (Connection conn = DBUtil.getConnection()) {
+            return updateStatus(activityId, userId, status, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        }
+    }
+
+    public boolean updateStatus(Integer activityId, Integer userId, String status, Connection conn) {
         String sql = "UPDATE activity_participant SET status = ? WHERE activity_id = ? AND user_id = ?";
-        Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, status);
             pstmt.setInt(2, activityId);
             pstmt.setInt(3, userId);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("更新报名状态失败：用户未报名该活动");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新报名状态失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public int batchUpdateParticipantStatus(List<Integer> userIds, Integer activityId, String participantStatus) {
+        try (Connection conn = DBUtil.getConnection()) {
+            return batchUpdateParticipantStatus(userIds, activityId, participantStatus, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        }
+    }
+
+    public int batchUpdateParticipantStatus(List<Integer> userIds, Integer activityId, String participantStatus, Connection conn) {
         if (userIds == null || userIds.isEmpty()) {
             return 0;
         }
@@ -169,11 +207,9 @@ public class ActivityParticipantDAO {
             }
         }
         sql.append(")");
-        
-        Connection conn = null;
+
         PreparedStatement pstmt = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql.toString());
             pstmt.setString(1, participantStatus);
             pstmt.setInt(2, activityId);
@@ -183,10 +219,10 @@ public class ActivityParticipantDAO {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("批量更新报名状态失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return 0;
     }
 
     public String getParticipantStatus(Integer activityId, Integer userId) {

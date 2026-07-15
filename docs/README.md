@@ -18,32 +18,35 @@
 ## 项目结构
 
 ```
-Software_group/
+software_group_AI/
 ├── pom.xml                      # Maven 配置文件
 ├── src/
 │   └── main/
 │       ├── java/               # Java 源代码
 │       │   ├── servlet/        # Servlet 控制器
+│       │   ├── service/        # 业务服务层
 │       │   ├── dao/            # 数据访问层 (DAO)
 │       │   ├── model/          # 实体类 (POJO)
 │       │   ├── filter/         # Servlet 过滤器
+│       │   ├── listener/       # 监听器
 │       │   ├── util/           # 工具类
 │       │   └── config/         # 配置类
 │       ├── resources/          # 配置文件
-│       │   └── config.properties
-│       └── webapp/             # Web 资源 (等同于 WebContent)
+│       │   ├── config.properties        # 配置模板
+│       │   └── config.local.properties  # 本地配置（不提交Git）
+│       └── webapp/             # Web 资源（Maven标准目录）
 │           ├── WEB-INF/
 │           │   └── web.xml     # Web 配置
 │           ├── admin/          # 管理员页面
 │           ├── member/         # 成员页面
 │           ├── jsp/            # 公共 JSP
+│           ├── css/ js/ images/
 │           └── index.jsp
-├── WebContent/                 # Web 资源 (开发目录)
-├── docs/                       # 项目文档
-├── database/                   # 数据库备份
-├── tools/                      # 开发工具
-└── target/                     # Maven 构建输出
-    └── software-group.war      # 部署包
+├── sql/                         # 数据库脚本
+├── localstorage/                # 用户上传文件（不提交Git）
+├── docs/                        # 项目文档
+└── target/                      # Maven 构建输出
+    └── software-group.war       # 部署包
 ```
 
 ## 功能模块
@@ -77,11 +80,11 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 ```
 
-导入数据库文件：`database/` 目录下的最新 SQL 文件
+导入数据库文件：`sql/` 目录下的最新 SQL 文件（如 `software_group.sql`）
 
 ### 3. 修改配置文件
 
-编辑 `src/main/resources/config.properties`：
+复制 `src/main/resources/config.properties` 为 `src/main/resources/config.local.properties`，编辑其中的数据库密码：
 
 ```properties
 # 数据库配置
@@ -97,7 +100,7 @@ des.key=your_secret_key
 
 ```bash
 # 进入项目目录
-cd Software_group
+cd software_group_AI
 
 # 使用 Maven 编译
 mvn clean compile
@@ -140,12 +143,14 @@ $TOMCAT_HOME/bin/startup.sh
 
 | 文档 | 说明 |
 |------|------|
-| [docs/INSTALL.md](docs/INSTALL.md) | 详细安装指南 |
-| [docs/database.md](docs/database.md) | 数据库结构设计 |
-| [docs/CONFIG_GUIDE.md](docs/CONFIG_GUIDE.md) | 配置指南 |
-| [docs/高校软件小组管理系统.md](docs/高校软件小组管理系统.md) | 系统功能说明 |
-| [tools/README.md](tools/README.md) | 开发工具说明 |
-| AI_README.md | AI 开发规范 |
+| [启动说明.md](启动说明.md) | 详细启动指南 |
+| [database.md](database.md) | 数据库结构设计 |
+| [高校软件小组管理系统.md](高校软件小组管理系统.md) | 系统需求与设计说明 |
+| [COLOR_SYSTEM.md](COLOR_SYSTEM.md) | 设计系统/颜色规范 |
+| [dictionary_doc.md](dictionary_doc.md) | 数据字典参考 |
+| [用户权限划分表.txt](用户权限划分表.txt) | 角色权限矩阵 |
+| [AI_INTENT_IMPROVEMENT.md](AI_INTENT_IMPROVEMENT.md) | AI助手功能增强方案 |
+| [测试用例文档.md](测试用例文档.md) | 功能测试用例 |
 
 ## 技术架构图
 

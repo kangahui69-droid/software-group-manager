@@ -553,7 +553,7 @@ public class ActivityServlet extends HttpServlet {
             // 生成HTML文件
             String fileName = System.currentTimeMillis() + "_activity.html";
             String relativePath = "localstorage/news/activity/" + fileName;
-            String realPath = getServletContext().getRealPath("/" + relativePath);
+            String realPath = FileUtil.resolvePhysicalPath("/" + relativePath);
 
             File htmlFile = new File(realPath);
             FileUtil.ensureDirectoryExists(htmlFile.getParent());

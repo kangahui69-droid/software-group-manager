@@ -140,9 +140,15 @@ public class NewsServlet extends HttpServlet {
                 Integer id = Integer.parseInt(idStr);
                 News news = newsDAO.findById(id);
                 if (news != null) {
-                    // 读取HTML内容
-                    String realPath = getServletContext().getRealPath("/" + news.getContentPath());
+                    String realPath = FileUtil.resolvePhysicalPath("/" + news.getContentPath());
                     File htmlFile = new File(realPath);
+                    if (!htmlFile.exists()) {
+                        String legacyPath = getServletContext().getRealPath("/" + news.getContentPath());
+                        File legacyFile = new File(legacyPath);
+                        if (legacyFile.exists()) {
+                            htmlFile = legacyFile;
+                        }
+                    }
                     String content = "";
                     if (htmlFile.exists()) {
                         content = new String(java.nio.file.Files.readAllBytes(htmlFile.toPath()), "UTF-8");
@@ -177,8 +183,15 @@ public class NewsServlet extends HttpServlet {
             }
 
             // 读取HTML内容
-            String realPath = getServletContext().getRealPath("/" + news.getContentPath());
+            String realPath = FileUtil.resolvePhysicalPath("/" + news.getContentPath());
             File htmlFile = new File(realPath);
+            if (!htmlFile.exists()) {
+                String legacyPath = getServletContext().getRealPath("/" + news.getContentPath());
+                File legacyFile = new File(legacyPath);
+                if (legacyFile.exists()) {
+                    htmlFile = legacyFile;
+                }
+            }
             String content = "";
             if (htmlFile.exists()) {
                 content = new String(java.nio.file.Files.readAllBytes(htmlFile.toPath()), "UTF-8");
@@ -224,12 +237,10 @@ public class NewsServlet extends HttpServlet {
         }
 
         try {
-            // 生成HTML文件路径
             String fileName = System.currentTimeMillis() + "_" + type + ".html";
             String relativePath = "localstorage/news/" + type + "/" + fileName;
-            String realPath = getServletContext().getRealPath("/" + relativePath);
+            String realPath = FileUtil.resolvePhysicalPath("/" + relativePath);
 
-            // 确保目录存在
             File htmlFile = new File(realPath);
             FileUtil.ensureDirectoryExists(htmlFile.getParent());
 
@@ -293,7 +304,7 @@ public class NewsServlet extends HttpServlet {
             }
 
             // 更新HTML内容（已净化）
-            String realPath = getServletContext().getRealPath("/" + news.getContentPath());
+            String realPath = FileUtil.resolvePhysicalPath("/" + news.getContentPath());
 
             File htmlFile = new File(realPath);
             FileUtil.ensureDirectoryExists(htmlFile.getParent());

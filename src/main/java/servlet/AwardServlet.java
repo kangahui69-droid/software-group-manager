@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import util.FileUtil;
 
 /**
  * 奖项Servlet
@@ -657,11 +658,7 @@ public class AwardServlet extends HttpServlet {
                             fileExtension = originalFileName.substring(dotIndex);
                         }
                         String fileName = System.currentTimeMillis() + "_" + System.nanoTime() + fileExtension;
-                        String uploadPath = getServletContext().getRealPath("/") + UPLOAD_DIR;
-                        File uploadDir = new File(uploadPath);
-                        if (!uploadDir.exists()) {
-                            uploadDir.mkdirs();
-                        }
+                        String uploadPath = FileUtil.getCategoryDir("images/award");
 
                         String filePath = uploadPath + File.separator + fileName;
                         part.write(filePath);
@@ -669,7 +666,7 @@ public class AwardServlet extends HttpServlet {
 
                         AwardImage image = new AwardImage();
                         image.setAwardId(awardId);
-                        image.setImagePath(UPLOAD_DIR + "/" + fileName);
+                        image.setImagePath("/localstorage/images/award/" + fileName);
                         image.setOriginalName(originalFileName);
                         awardImageDAO.insert(image);
                     }
@@ -823,18 +820,14 @@ public class AwardServlet extends HttpServlet {
             for (Part part : parts) {
                 if (part.getName().equals("image") && part.getSize() > 0) {
                     String fileName = System.currentTimeMillis() + "_" + part.getSubmittedFileName();
-                    String uploadPath = getServletContext().getRealPath("") + UPLOAD_DIR;
-                    File uploadDir = new File(uploadPath);
-                    if (!uploadDir.exists()) {
-                        uploadDir.mkdirs();
-                    }
+                    String uploadPath = FileUtil.getCategoryDir("images/award");
 
                     String filePath = uploadPath + File.separator + fileName;
                     part.write(filePath);
 
                     AwardImage image = new AwardImage();
                     image.setAwardId(awardId);
-                    image.setImagePath(UPLOAD_DIR + "/" + fileName);
+                    image.setImagePath("/localstorage/images/award/" + fileName);
                     image.setOriginalName(part.getSubmittedFileName());
                     awardImageDAO.insert(image);
                 }

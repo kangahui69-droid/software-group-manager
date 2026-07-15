@@ -28,7 +28,7 @@ public class AIClientUtil {
         gson = new GsonBuilder().create();
         provider = Config.getProperty("ai.provider", "volcengine");
         apiUrl = Config.getProperty("ai.api.url", "https://ark.cn-beijing.volces.com/api/v3/chat/completions");
-        apiKey = Config.getProperty("ai.api.key", "285de049-e86b-4305-9449-73c2acc516b1");
+        apiKey = Config.getProperty("ai.api.key", "");
         model = Config.getProperty("ai.model", "doubao-pro-32k");
     }
 

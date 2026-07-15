@@ -28,6 +28,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import javax.servlet.ServletException;
+import util.FileUtil;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -50,7 +51,7 @@ public class GroupServlet extends HttpServlet {
     private ActivityDAO activityDAO = new ActivityDAO();
     private RegistrationDAO registrationDAO = new RegistrationDAO();
     private FileStorageDAO fileStorageDAO = new FileStorageDAO();
-    private final String UPLOAD_BASE_DIR = "localstorage/group_files";
+    private static final String UPLOAD_BASE_DIR = "group_files";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -434,12 +435,7 @@ public class GroupServlet extends HttpServlet {
 
         System.out.println("[群聊文件上传] 文件名: " + fileName + ", 大小: " + filePart.getSize() + ", 类型: " + filePart.getContentType());
 
-        String uploadPath = getServletContext().getRealPath("/" + UPLOAD_BASE_DIR);
-        File uploadDir = new File(uploadPath);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
-        }
-
+        String uploadPath = FileUtil.getCategoryDir(UPLOAD_BASE_DIR);
         String uniqueFileName = System.currentTimeMillis() + "_" + fileName;
         String filePath = uploadPath + File.separator + uniqueFileName;
 
@@ -459,7 +455,7 @@ public class GroupServlet extends HttpServlet {
         fileStorage.setCreateBy(currentUser.getId());
         fileStorage.setOriginalName(fileName);
         fileStorage.setStoredName(uniqueFileName);
-        fileStorage.setFilePath("/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
+        fileStorage.setFilePath("/localstorage/" + UPLOAD_BASE_DIR + "/" + uniqueFileName);
         fileStorage.setFileType(filePart.getContentType() != null ? filePart.getContentType() : "application/octet-stream");
         fileStorage.setFileSize(filePart.getSize());
         fileStorage.setCategory("group_file");
@@ -571,19 +567,15 @@ public class GroupServlet extends HttpServlet {
         System.out.println("[群聊文件下载] storedName: " + fileStorage.getStoredName());
         System.out.println("[群聊文件下载] filePath: " + fileStorage.getFilePath());
 
-        String filePath = getServletContext().getRealPath(fileStorage.getFilePath());
+        String filePath = FileUtil.resolvePhysicalPath(fileStorage.getFilePath());
         File file = new File(filePath);
 
-        System.out.println("[群聊文件下载] 实际路径: " + filePath);
-        System.out.println("[群聊文件下载] 文件存在: " + file.exists());
-
         if (!file.exists()) {
-            String altPath = getServletContext().getRealPath("/localstorage/group_files/" + fileStorage.getStoredName());
-            File altFile = new File(altPath);
-            System.out.println("[群聊文件下载] 尝试备用路径: " + altPath + ", 存在: " + altFile.exists());
-            if (altFile.exists()) {
-                file = altFile;
-                filePath = altPath;
+            String legacyPath = getServletContext().getRealPath(fileStorage.getFilePath());
+            File legacyFile = new File(legacyPath);
+            if (legacyFile.exists()) {
+                file = legacyFile;
+                filePath = legacyPath;
             }
         }
 
