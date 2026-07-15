@@ -1,6 +1,7 @@
 package servlet;
 
 import util.DBUtil;
+import util.FileUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -12,7 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 /**
- * 文件下载Servlet
+ * 文件下载Servlet（遗留接口，优先使用 /file?action=download&id=xxx）
  */
 public class FileDownloadServlet extends HttpServlet {
     @Override
@@ -24,13 +25,12 @@ public class FileDownloadServlet extends HttpServlet {
             return;
         }
 
-        // 移除开头的斜杠
-        if (filePath.startsWith("/")) {
-            filePath = filePath.substring(1);
-        }
-
-        String realPath = getServletContext().getRealPath("/") + filePath;
+        String realPath = FileUtil.resolvePhysicalPath(filePath);
         File file = new File(realPath);
+        if (!file.exists()) {
+            String legacyPath = getServletContext().getRealPath(filePath);
+            file = new File(legacyPath);
+        }
 
         if (!file.exists() || !file.isFile()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "文件不存在");

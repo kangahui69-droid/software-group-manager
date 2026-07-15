@@ -16,6 +16,7 @@ import dao.MemberProfileDAO;
 import model.MemberProfile;
 import dao.FileStorageDAO;
 import model.FileStorage;
+import util.FileUtil;
 
 /**
  * 用户资料Servlet
@@ -194,14 +195,8 @@ public class ProfileServlet extends HttpServlet {
                         String fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
                         String uniqueFileName = "avatar_" + currentUser.getId() + "_" + System.currentTimeMillis() + "."
                                 + fileExtension;
-                        // 统一路径：localstorage/images/avatar
-                        String uploadDir = getServletContext().getRealPath("/localstorage/images/avatar");
+                        String uploadDir = FileUtil.getCategoryDir("images/avatar");
                         System.out.println("[头像上传] 上传目录: " + uploadDir);
-                        java.io.File uploadDirFile = new java.io.File(uploadDir);
-                        if (!uploadDirFile.exists()) {
-                            boolean created = uploadDirFile.mkdirs();
-                            System.out.println("[头像上传] 创建目录: " + created);
-                        }
                         String fullFilePath = uploadDir + java.io.File.separator + uniqueFileName;
                         avatarPart.write(fullFilePath);
                         System.out.println("[头像上传] 文件已保存到: " + fullFilePath);

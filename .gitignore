@@ -28,8 +28,8 @@ Thumbs.db
 nul
 
 # Local storage (user uploaded files)
-WebContent/localstorage/files/
-WebContent/localstorage/news/
+/localstorage/
+src/main/webapp/localstorage/
 
 # Compiled classes
 *.class
@@ -51,10 +51,27 @@ pom.xml.releaseBackup
 # virtual machine crash logs
 hs_err_pid*
 
+# Backup / temporary files
+*.bak
+*.bak2
+*.tmp
+*.swp
+
 # Configuration files (DO NOT COMMIT FILES WITH REAL PASSWORDS!)
 # 本地环境配置文件（包含真实密码，绝对不能提交到Git！）
 config/config.local.properties
 config/config.test.properties
 config/config.prod.properties
+src/main/resources/config.local.properties
+src/main/resources/config.test.properties
+src/main/resources/config.prod.properties
 # 但保留模板文件（已经包含在Git中）
 # !config/config.properties.template
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Embedded Tomcat test runtime
+tomcat.*/
+tomcat/

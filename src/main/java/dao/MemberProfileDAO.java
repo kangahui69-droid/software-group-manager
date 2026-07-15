@@ -52,11 +52,27 @@ public class MemberProfileDAO {
      * 添加档案
      */
     public boolean insert(MemberProfile profile) {
-        String sql = "INSERT INTO member_profile (user_id, birthday, student_id, major, grade, avatar_file_id, introduction) VALUES (?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return insert(profile, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 添加档案（事务重载版本）
+     */
+    public boolean insert(MemberProfile profile, Connection conn) {
+        if (profile.getUserId() == null) {
+            throw new RuntimeException("插入档案失败：用户ID不能为空");
+        }
+        String sql = "INSERT INTO member_profile (user_id, birthday, student_id, major, grade, avatar_file_id, introduction) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, profile.getUserId());
             pstmt.setDate(2, profile.getBirthday() != null ? new Date(profile.getBirthday().getTime()) : null);
@@ -68,21 +84,34 @@ public class MemberProfileDAO {
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("插入档案失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 更新档案
      */
     public boolean update(MemberProfile profile) {
-        String sql = "UPDATE member_profile SET birthday = ?, student_id = ?, major = ?, grade = ?, avatar_file_id = ?, introduction = ?, github = ?, blog = ? WHERE user_id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return update(profile, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 更新档案（事务重载版本）
+     */
+    public boolean update(MemberProfile profile, Connection conn) {
+        String sql = "UPDATE member_profile SET birthday = ?, student_id = ?, major = ?, grade = ?, avatar_file_id = ?, introduction = ?, github = ?, blog = ? WHERE user_id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setDate(1, profile.getBirthday() != null ? new Date(profile.getBirthday().getTime()) : null);
             pstmt.setString(2, profile.getStudentId());
@@ -93,13 +122,29 @@ public class MemberProfileDAO {
             pstmt.setString(7, profile.getGithub());
             pstmt.setString(8, profile.getBlog());
             pstmt.setInt(9, profile.getUserId());
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("更新档案失败：档案不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新档案失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
+    }
+
+    /**
+     * 添加或更新档案（事务重载版本）
+     */
+    public boolean saveOrUpdate(MemberProfile profile, Connection conn) {
+        MemberProfile existing = findByUserId(profile.getUserId());
+        if (existing != null) {
+            return update(profile, conn);
+        } else {
+            return insert(profile, conn);
+        }
     }
 
     /**

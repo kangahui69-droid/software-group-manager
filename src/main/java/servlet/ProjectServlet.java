@@ -5,6 +5,7 @@ import dao.ProjectDAO;
 import dao.UserDAO;
 import model.*;
 import util.DBUtil;
+import util.FileUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -1095,16 +1096,12 @@ public class ProjectServlet extends HttpServlet {
                     return;
                 }
                 
-                String savePath = request.getServletContext().getRealPath("/localstorage/projects/" + projectId + "/images");
-                java.io.File dir = new java.io.File(savePath);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                
+                String savePath = FileUtil.getCategoryDir("projects/" + projectId + "/images");
+
                 String newFileName = System.currentTimeMillis() + "_" + (int)(Math.random() * 1000) + "." + ext;
                 java.io.File uploadedFile = new java.io.File(savePath, newFileName);
                 imagePart.write(uploadedFile.getAbsolutePath());
-                
+
                 java.sql.Connection conn = null;
                 java.sql.PreparedStatement pstmt = null;
                 try {
@@ -1113,7 +1110,7 @@ public class ProjectServlet extends HttpServlet {
                     pstmt = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS);
                     pstmt.setString(1, newFileName);
                     pstmt.setString(2, fileName);
-                    pstmt.setString(3, "localstorage/projects/" + projectId + "/images/" + newFileName);
+                    pstmt.setString(3, "/localstorage/projects/" + projectId + "/images/" + newFileName);
                     pstmt.setLong(4, imagePart.getSize());
                     pstmt.setString(5, "image/" + ext);
                     pstmt.executeUpdate();
@@ -1173,16 +1170,12 @@ public class ProjectServlet extends HttpServlet {
                     return;
                 }
                 
-                String savePath = request.getServletContext().getRealPath("/localstorage/projects/" + projectId + "/files");
-                java.io.File dir = new java.io.File(savePath);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                
+                String savePath = FileUtil.getCategoryDir("projects/" + projectId + "/files");
+
                 String newFileName = System.currentTimeMillis() + "_" + (int)(Math.random() * 1000) + "." + ext;
                 java.io.File uploadedFile = new java.io.File(savePath, newFileName);
                 filePart.write(uploadedFile.getAbsolutePath());
-                
+
                 java.sql.Connection conn = null;
                 java.sql.PreparedStatement pstmt = null;
                 try {
@@ -1191,7 +1184,7 @@ public class ProjectServlet extends HttpServlet {
                     pstmt = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS);
                     pstmt.setString(1, newFileName);
                     pstmt.setString(2, fileName);
-                    pstmt.setString(3, "localstorage/projects/" + projectId + "/files/" + newFileName);
+                    pstmt.setString(3, "/localstorage/projects/" + projectId + "/files/" + newFileName);
                     pstmt.setLong(4, filePart.getSize());
                     pstmt.setString(5, "application/octet-stream");
                     pstmt.executeUpdate();
@@ -1246,10 +1239,18 @@ public class ProjectServlet extends HttpServlet {
                     rs = pstmt.executeQuery();
                     
                     if (rs.next()) {
-                        String filePath = request.getServletContext().getRealPath("/") + rs.getString("file_path");
-                        String originalName = rs.getString("original_name");
+                        String dbPath = rs.getString("file_path");
+                        String filePath = FileUtil.resolvePhysicalPath(dbPath);
                         java.io.File file = new java.io.File(filePath);
-                        
+                        if (!file.exists()) {
+                            String legacyPath = request.getServletContext().getRealPath("/") + dbPath;
+                            java.io.File legacyFile = new java.io.File(legacyPath);
+                            if (legacyFile.exists()) {
+                                file = legacyFile;
+                            }
+                        }
+                        String originalName = rs.getString("original_name");
+
                         if (file.exists()) {
                             response.setContentType("application/octet-stream");
                             response.setHeader("Content-Disposition", "attachment; filename=\"" + new String(originalName.getBytes("UTF-8"), "ISO-8859-1") + "\"");
@@ -1307,7 +1308,12 @@ public class ProjectServlet extends HttpServlet {
                     pstmt.close();
                     
                     if (filePath != null) {
-                        java.io.File file = new java.io.File(request.getServletContext().getRealPath("/") + filePath);
+                        String absPath = FileUtil.resolvePhysicalPath(filePath);
+                        java.io.File file = new java.io.File(absPath);
+                        if (!file.exists()) {
+                            String legacyPath = request.getServletContext().getRealPath("/") + filePath;
+                            file = new java.io.File(legacyPath);
+                        }
                         if (file.exists()) {
                             file.delete();
                         }

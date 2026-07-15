@@ -217,23 +217,30 @@
 - **关键**：统一走FileUtil，保留legacy fallback（getRealPath）兼容老数据
 - **配套改造**：FileStorageServlet、FileUploadServlet、FileDownloadServlet核心逻辑迁入；其他Servlet文件处理改调FileService
 
-### 4.4 ProjectService 项目服务 `[未开始]`
+### 4.4 ProjectService 项目服务 `[已完成]`
 - **文件**：`src/main/java/service/ProjectService.java`（新建）
+- **DTO文件**：`src/main/java/dto/ProjectDTO.java`、`PlanDTO.java`、`ProgressDTO.java`、`ProjectFilterDTO.java`（新建）
 - **方法清单**：
   - `createProject(ProjectDTO, userId)` → 创建（含"每年最多3项目"校验）
   - `updateProject(id, ProjectDTO, userId)` → 更新
-  - `applyMember(projectId, userId)` → 申请加入（重复/已成员校验）
-  - `approveMember(projectId, userId, operatorId)` → 审批通过
-  - `rejectMember(projectId, userId, operatorId)` → 驳回
+  - `deleteProject(id, userId)` → 删除（软删除）
+  - `approveProject(projectId, operatorId)` → 审核通过（管理员）
+  - `rejectProject(projectId, reason, operatorId)` → 审核驳回（管理员）
+  - `applyMember(projectId, userId, reason)` → 申请加入（重复/已成员/负责人校验）
+  - `approveMember(applicationId, operatorId)` → 审批通过
+  - `rejectMember(applicationId, reason, operatorId)` → 驳回
   - `addPlan(projectId, PlanDTO, userId)` → 添加计划
-  - `addProgress(projectId, ProgressDTO, userId)` → 添加进度
+  - `addProgress(projectId, ProgressDTO, userId)` → 添加进度（0-100%校验）
   - `transferAdmin(projectId, newAdminId, operatorId)` → 转让管理员
   - `addLabel/removeLabel` → 标签管理
-  - `uploadProjectImage/uploadProjectFile/deleteProjectFile/downloadProjectFile` → 文件操作（调FileService）
-- **事务边界**：多表写操作用TransactionTemplate
-- **重点**：删掉ProjectServlet 1077-1352行内联JDBC SQL（文件CRUD），改调FileService+ProjectDAO
-- **统一审计**：Service里调 `projectDAO.addHistory()`
-- **配套改造**：ProjectServlet对应方法调ProjectService
+  - `uploadProjectImage/uploadProjectFile/deleteProjectFile` → 文件操作（调FileService）
+  - `listProjects(filter, page, pageSize)` → 项目列表（分页+多条件筛选）
+  - `getProjectDetail(projectId, userId)` → 项目详情（含成员/标签/计划/进度/历史）
+  - `getMyProjects(userId, page, pageSize)` → 我的项目
+- **事务边界**：所有多表写操作用TransactionTemplate
+- **统一审计**：每次操作调 `projectDAO.addHistory()` 记录14种操作类型
+- **配套测试**：`ProjectServiceTest.java` 158个TDD测试用例全部通过（Red→Green→Refactor）
+- **重构**：提取executeInTransaction事务模板、badRequest/notFound/forbidden/serverError错误工厂、addHistory历史辅助方法，消除重复代码，方法拆分单一职责
 
 ### 4.5 AwardService 奖项服务 `[未开始]`
 - **文件**：`src/main/java/service/AwardService.java`（新建）
@@ -441,6 +448,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-15 | P1 4.4 | 完成ProjectService项目服务：20个业务方法（创建/更新/删除/审核通过/审核驳回/申请加入/审批通过/审批驳回/添加计划/添加进度/转让负责人/标签增删/图片上传/文件上传/文件删除/列表/详情/我的项目）；新建4个DTO（ProjectDTO/PlanDTO/ProgressDTO/ProjectFilterDTO）；158个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；代码重构提取executeInTransaction事务模板、统一错误工厂方法、addHistory历史辅助、DTO验证/构建方法拆分，消除重复代码和死代码 | Claude Code |
 | 2026-07-14 | P1 4.1 | 完成ActivityService活动服务：16个业务方法（创建/更新/删除/报名/单个审批/批量审批/活动审核/取消/生成新闻/列表/详情/我的活动/我创建的活动）；99个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；代码重构消除重复（合并isApproveable+isRejectable为isPendingApproval、提取requireAdminForActivity/batchUpdateStatusWithTransaction/normalizePageParams辅助方法）；移除未使用代码 | Claude Code |
 | 2026-07-14 | P0 3.8 | 完成DAO层事务重载规范：UserDAO和AwardImageDAO实现Connection重载；清理调试输出；Servlet适配（RecruitServlet/AdminServlet/MemberServlet）；H2测试环境修复（SET REFERENTIAL_INTEGRITY/移除外键约束）；新增UserDAOTransactionTest(19用例)和AwardImageDAOTransactionTest(16用例)；全量445测试100%通过 | Claude Code |
 | 2026-07-14 | P0 3.7 | 完成AuthFilter扩展：API路径401 JSON响应/认证方法化/attendance-study保护；重构isPublicPath拆分5子方法/提取权限辅助方法；AuthFilterTest 82个用例全部通过 | Claude Code |

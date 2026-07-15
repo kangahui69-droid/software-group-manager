@@ -203,12 +203,25 @@ public class ProjectDAO {
      * 添加项目
      */
     public boolean insert(Project project) {
-        String sql = "INSERT INTO project (name, description, category, leader_id, status, year, expected_start_date, expected_end_date, admin_id, budget, repo_url, doc_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
+        try {
+            conn = DBUtil.getConnection();
+            return insert(project, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 添加项目（事务重载版本）
+     */
+    public boolean insert(Project project, Connection conn) {
+        String sql = "INSERT INTO project (name, description, category, leader_id, status, year, expected_start_date, expected_end_date, admin_id, budget, repo_url, doc_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, project.getName());
             pstmt.setString(2, project.getDescription());
@@ -216,19 +229,19 @@ public class ProjectDAO {
             pstmt.setInt(4, project.getLeaderId());
             pstmt.setString(5, project.getStatus() != null ? project.getStatus().toLowerCase() : "pending");
             pstmt.setInt(6, project.getYear());
-            
+
             if (project.getExpectedStartDate() != null) {
                 pstmt.setDate(7, new java.sql.Date(project.getExpectedStartDate().getTime()));
             } else {
                 pstmt.setNull(7, java.sql.Types.DATE);
             }
-            
+
             if (project.getExpectedEndDate() != null) {
                 pstmt.setDate(8, new java.sql.Date(project.getExpectedEndDate().getTime()));
             } else {
                 pstmt.setNull(8, java.sql.Types.DATE);
             }
-            
+
             if (project.getAdminId() != null) {
                 pstmt.setInt(9, project.getAdminId());
             } else {
@@ -237,7 +250,7 @@ public class ProjectDAO {
             pstmt.setBigDecimal(10, project.getBudget());
             pstmt.setString(11, project.getRepoUrl());
             pstmt.setString(12, project.getDocUrl());
-            
+
             int result = pstmt.executeUpdate();
             if (result > 0) {
                 rs = pstmt.getGeneratedKeys();
@@ -248,63 +261,102 @@ public class ProjectDAO {
             return result > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("插入项目失败", e);
         } finally {
-            closeResources(conn, pstmt, rs);
+            closeResources(null, pstmt, rs);
         }
-        return false;
     }
 
     /**
      * 审批项目
      */
     public boolean approve(Integer projectId, Integer adminId) {
-        String sql = "UPDATE project SET status = 'approved', approved_by = ?, approved_at = NOW() WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return approve(projectId, adminId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 审批项目（事务重载版本）
+     */
+    public boolean approve(Integer projectId, Integer adminId, Connection conn) {
+        String sql = "UPDATE project SET status = 'approved', approved_by = ?, approved_at = NOW() WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, adminId);
             pstmt.setInt(2, projectId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("审批项目失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 拒绝项目
      */
     public boolean reject(Integer projectId, Integer adminId) {
-        String sql = "UPDATE project SET status = 'rejected', approved_by = ?, approved_at = NOW() WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return reject(projectId, adminId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 拒绝项目（事务重载版本）
+     */
+    public boolean reject(Integer projectId, Integer adminId, Connection conn) {
+        String sql = "UPDATE project SET status = 'rejected', approved_by = ?, approved_at = NOW() WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, adminId);
             pstmt.setInt(2, projectId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("拒绝项目失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 更新项目
      */
     public boolean update(Project project) {
-        String sql = "UPDATE project SET name=?, description=?, category=?, leader_id=?, status=?, year=?, expected_start_date=?, expected_end_date=?, actual_start_date=?, actual_end_date=?, admin_id=?, budget=?, repo_url=?, doc_url=? WHERE id=?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return update(project, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 更新项目（事务重载版本）
+     */
+    public boolean update(Project project, Connection conn) {
+        String sql = "UPDATE project SET name=?, description=?, category=?, leader_id=?, status=?, year=?, expected_start_date=?, expected_end_date=?, actual_start_date=?, actual_end_date=?, admin_id=?, budget=?, repo_url=?, doc_url=? WHERE id=?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, project.getName());
             pstmt.setString(2, project.getDescription());
@@ -312,85 +364,119 @@ public class ProjectDAO {
             pstmt.setInt(4, project.getLeaderId());
             pstmt.setString(5, project.getStatus());
             pstmt.setInt(6, project.getYear());
-            
+
             if (project.getExpectedStartDate() != null) {
                 pstmt.setDate(7, new java.sql.Date(project.getExpectedStartDate().getTime()));
             } else {
                 pstmt.setNull(7, java.sql.Types.DATE);
             }
-            
+
             if (project.getExpectedEndDate() != null) {
                 pstmt.setDate(8, new java.sql.Date(project.getExpectedEndDate().getTime()));
             } else {
                 pstmt.setNull(8, java.sql.Types.DATE);
             }
-            
+
             if (project.getActualStartDate() != null) {
                 pstmt.setDate(9, new java.sql.Date(project.getActualStartDate().getTime()));
             } else {
                 pstmt.setNull(9, java.sql.Types.DATE);
             }
-            
+
             if (project.getActualEndDate() != null) {
                 pstmt.setDate(10, new java.sql.Date(project.getActualEndDate().getTime()));
             } else {
                 pstmt.setNull(10, java.sql.Types.DATE);
             }
-            
+
             if (project.getAdminId() != null) {
                 pstmt.setInt(11, project.getAdminId());
             } else {
                 pstmt.setNull(11, java.sql.Types.INTEGER);
             }
-            
+
             if (project.getBudget() != null) {
                 pstmt.setBigDecimal(12, project.getBudget());
             } else {
                 pstmt.setNull(12, java.sql.Types.DECIMAL);
             }
-            
+
             pstmt.setString(13, project.getRepoUrl());
             pstmt.setString(14, project.getDocUrl());
             pstmt.setInt(15, project.getId());
-            
-            return pstmt.executeUpdate() > 0;
+
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("更新项目失败：项目不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新项目失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 删除项目（软删除）
      */
     public boolean delete(Integer id) {
-        String sql = "UPDATE project SET deleted = 1 WHERE id=?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return delete(id, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 删除项目（软删除，事务重载版本）
+     */
+    public boolean delete(Integer id, Connection conn) {
+        String sql = "UPDATE project SET deleted = 1 WHERE id=?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("删除项目失败：项目不存在");
+            }
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("删除项目失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
      * 添加项目成员
      */
     public boolean addMember(Integer projectId, Integer memberId, String role) {
-        String sql = "INSERT INTO project_member (project_id, user_id, role) VALUES (?, ?, ?)";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return addMember(projectId, memberId, role, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
+     * 添加项目成员（事务重载版本）
+     */
+    public boolean addMember(Integer projectId, Integer memberId, String role, Connection conn) {
+        String sql = "INSERT INTO project_member (project_id, user_id, role) VALUES (?, ?, ?)";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, projectId);
             pstmt.setInt(2, memberId);
@@ -398,10 +484,10 @@ public class ProjectDAO {
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("添加项目成员失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
@@ -476,39 +562,59 @@ public class ProjectDAO {
     }
 
     public boolean addLabel(Integer projectId, String labelCode) {
-        String sql = "INSERT INTO project_label (project_id, label_code) VALUES (?, ?)";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return addLabel(projectId, labelCode, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean addLabel(Integer projectId, String labelCode, Connection conn) {
+        String sql = "INSERT INTO project_label (project_id, label_code) VALUES (?, ?)";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, projectId);
             pstmt.setString(2, labelCode);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("添加项目标签失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public boolean removeLabel(Integer projectId, String labelCode) {
-        String sql = "DELETE FROM project_label WHERE project_id = ? AND label_code = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return removeLabel(projectId, labelCode, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean removeLabel(Integer projectId, String labelCode, Connection conn) {
+        String sql = "DELETE FROM project_label WHERE project_id = ? AND label_code = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, projectId);
             pstmt.setString(2, labelCode);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("移除项目标签失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public List<String> getLabels(Integer projectId) {
@@ -534,11 +640,21 @@ public class ProjectDAO {
     }
 
     public boolean addHistory(Integer projectId, String operationType, Integer operatorId, String operatorName, String description, String oldValue, String newValue) {
-        String sql = "INSERT INTO project_history (project_id, operation_type, operator_id, operator_name, description, old_value, new_value) VALUES (?, ?, ?, ?, ?, ?, ?)";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return addHistory(projectId, operationType, operatorId, operatorName, description, oldValue, newValue, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean addHistory(Integer projectId, String operationType, Integer operatorId, String operatorName, String description, String oldValue, String newValue, Connection conn) {
+        String sql = "INSERT INTO project_history (project_id, operation_type, operator_id, operator_name, description, old_value, new_value) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, projectId);
             pstmt.setString(2, operationType);
@@ -550,10 +666,10 @@ public class ProjectDAO {
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("添加项目历史失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public List<ProjectHistory> getHistory(Integer projectId) {
@@ -589,12 +705,22 @@ public class ProjectDAO {
     }
 
     public boolean addPlan(ProjectPlan plan) {
-        String sql = "INSERT INTO project_plan (project_id, title, description, start_date, end_date, order_index) VALUES (?, ?, ?, ?, ?, ?)";
         Connection conn = null;
+        try {
+            conn = DBUtil.getConnection();
+            return addPlan(plan, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean addPlan(ProjectPlan plan, Connection conn) {
+        String sql = "INSERT INTO project_plan (project_id, title, description, start_date, end_date, order_index) VALUES (?, ?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setInt(1, plan.getProjectId());
             pstmt.setString(2, plan.getTitle());
@@ -612,18 +738,28 @@ public class ProjectDAO {
             return result > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("添加项目计划失败", e);
         } finally {
-            closeResources(conn, pstmt, rs);
+            closeResources(null, pstmt, rs);
         }
-        return false;
     }
 
     public boolean updatePlan(ProjectPlan plan) {
-        String sql = "UPDATE project_plan SET title=?, description=?, start_date=?, end_date=?, order_index=? WHERE id=?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return updatePlan(plan, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean updatePlan(ProjectPlan plan, Connection conn) {
+        String sql = "UPDATE project_plan SET title=?, description=?, start_date=?, end_date=?, order_index=? WHERE id=?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, plan.getTitle());
             pstmt.setString(2, plan.getDescription());
@@ -634,27 +770,37 @@ public class ProjectDAO {
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("更新项目计划失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public boolean deletePlan(Integer planId) {
-        String sql = "DELETE FROM project_plan WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return deletePlan(planId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean deletePlan(Integer planId, Connection conn) {
+        String sql = "DELETE FROM project_plan WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, planId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("删除项目计划失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public List<ProjectPlan> getPlans(Integer projectId) {
@@ -690,12 +836,22 @@ public class ProjectDAO {
     }
 
     public boolean addProgress(ProjectProgress progress) {
-        String sql = "INSERT INTO project_progress (project_id, plan_id, title, description, completion_rate, created_by) VALUES (?, ?, ?, ?, ?, ?)";
         Connection conn = null;
+        try {
+            conn = DBUtil.getConnection();
+            return addProgress(progress, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean addProgress(ProjectProgress progress, Connection conn) {
+        String sql = "INSERT INTO project_progress (project_id, plan_id, title, description, completion_rate, created_by) VALUES (?, ?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setInt(1, progress.getProjectId());
             if (progress.getPlanId() != null) {
@@ -717,10 +873,10 @@ public class ProjectDAO {
             return result > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("添加项目进度失败", e);
         } finally {
-            closeResources(conn, pstmt, rs);
+            closeResources(null, pstmt, rs);
         }
-        return false;
     }
 
     public List<ProjectProgress> getProgressList(Integer projectId) {
@@ -758,11 +914,21 @@ public class ProjectDAO {
     }
 
     public boolean applyMember(Integer projectId, Integer userId, String reason) {
-        String sql = "INSERT INTO project_member_application (project_id, user_id, status, reason) VALUES (?, ?, 'PENDING', ?)";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return applyMember(projectId, userId, reason, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean applyMember(Integer projectId, Integer userId, String reason, Connection conn) {
+        String sql = "INSERT INTO project_member_application (project_id, user_id, status, reason) VALUES (?, ?, 'PENDING', ?)";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, projectId);
             pstmt.setInt(2, userId);
@@ -770,23 +936,33 @@ public class ProjectDAO {
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("申请加入项目失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public boolean approveMemberApplication(Integer applicationId, Integer handledBy) {
-        String sql = "UPDATE project_member_application SET status = 'CONFIRMED', handled_at = NOW(), handled_by = ? WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return approveMemberApplication(applicationId, handledBy, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean approveMemberApplication(Integer applicationId, Integer handledBy, Connection conn) {
+        String sql = "UPDATE project_member_application SET status = 'CONFIRMED', handled_at = NOW(), handled_by = ? WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, handledBy);
             pstmt.setInt(2, applicationId);
             boolean result = pstmt.executeUpdate() > 0;
-            
+
             if (result) {
                 ProjectMemberApplication app = getMemberApplicationById(applicationId);
                 if (app != null) {
@@ -796,18 +972,28 @@ public class ProjectDAO {
             return result;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("审批项目申请失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public boolean rejectMemberApplication(Integer applicationId, Integer handledBy, String reason) {
-        String sql = "UPDATE project_member_application SET status = 'REJECTED', handled_at = NOW(), handled_by = ?, reason = ? WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return rejectMemberApplication(applicationId, handledBy, reason, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean rejectMemberApplication(Integer applicationId, Integer handledBy, String reason, Connection conn) {
+        String sql = "UPDATE project_member_application SET status = 'REJECTED', handled_at = NOW(), handled_by = ?, reason = ? WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, handledBy);
             pstmt.setString(2, reason);
@@ -815,10 +1001,10 @@ public class ProjectDAO {
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("拒绝项目申请失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public ProjectMemberApplication getMemberApplicationById(Integer id) {
@@ -1009,39 +1195,59 @@ public class ProjectDAO {
     }
 
     public boolean removeMember(Integer projectId, Integer userId) {
-        String sql = "DELETE FROM project_member WHERE project_id = ? AND user_id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return removeMember(projectId, userId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean removeMember(Integer projectId, Integer userId, Connection conn) {
+        String sql = "DELETE FROM project_member WHERE project_id = ? AND user_id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, projectId);
             pstmt.setInt(2, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("移除项目成员失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     public boolean transferAdmin(Integer projectId, Integer newAdminId) {
-        String sql = "UPDATE project SET admin_id = ? WHERE id = ?";
         Connection conn = null;
-        PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
+            return transferAdmin(projectId, newAdminId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据库连接失败", e);
+        } finally {
+            closeResources(conn, null, null);
+        }
+    }
+
+    public boolean transferAdmin(Integer projectId, Integer newAdminId, Connection conn) {
+        String sql = "UPDATE project SET admin_id = ? WHERE id = ?";
+        PreparedStatement pstmt = null;
+        try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, newAdminId);
             pstmt.setInt(2, projectId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("转让项目管理员失败", e);
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(null, pstmt, null);
         }
-        return false;
     }
 
     /**
