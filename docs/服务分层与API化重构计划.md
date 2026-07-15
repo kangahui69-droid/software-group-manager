@@ -194,7 +194,7 @@
 - **事务边界**：register/approveParticipant/rejectParticipant/batchApprove/batchReject 用 TransactionTemplate
 - **配套改造**：ActivityServlet对应方法改为调ActivityService
 
-### 4.2 UserService 用户服务 `[未开始]`
+### 4.2 UserService 用户服务 `[已完成]`
 - **文件**：`src/main/java/service/UserService.java`（新建）
 - **方法清单**：
   - `login(username, password)` → 登录验证（返回User+角色）
