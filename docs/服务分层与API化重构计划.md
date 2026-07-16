@@ -340,9 +340,9 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - **测试覆盖**：64个测试用例（认证、列表、详情、CRUD、报名、审批、边界、响应格式）
 - **重构**：消除重复代码（分页解析、userId提取、权限检查）、拆分过长函数（doPost/doGet）、命名清晰化
 
-### 5.2 UserApiServlet 用户/认证API `[未开始]`
+### 5.2 UserApiServlet 用户/认证API `[已完成]`
 - **文件**：`src/main/java/servlet/api/UserApiServlet.java`（新建）
-- **路径**：`/api/users/*`、`/api/auth/*`
+- **路径**：`/api/*`（统一入口，通过stripPrefix处理/auth和/users前缀）
 - **端点**：
   - `POST /api/auth/login` → 登录
   - `POST /api/auth/logout` → 登出
@@ -352,6 +352,8 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
   - `POST /api/users/me/avatar` → 上传头像（multipart）
   - `GET /api/users/{id}` → 用户详情
   - `GET /api/users` → 成员列表（admin）
+- **测试覆盖**：50个测试用例（认证、登录、登出、改密、个人档案、头像上传、用户详情、成员列表、边界、响应格式）
+- **重构**：提取路径判断方法(isXxxPath)、认证辅助方法(requireAuth/requireAdmin)、null-safe取值(getStringValue)、ProfileDTO构建(buildProfileDTO)、消除魔法数字
 
 ### 5.3 FileApiServlet 文件API `[未开始]`
 - **文件**：`src/main/java/servlet/api/FileApiServlet.java`（新建）
