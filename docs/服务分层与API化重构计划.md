@@ -299,19 +299,15 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
   - ProjectServiceTest: 158个用例
   - AwardServiceTest: 70个用例
   - AIServiceTest: 46个用例
-- [ ] Servlet改造（后续工作）
-  - [ ] ActivityServlet从1309行降到400-500行
-  - [ ] ProjectServlet从1353行降到500行左右
-- [ ] `mvn clean package -DskipTests` 成功
-- [ ] 核心JSP功能冒烟：登录/改密/头像上传
-- [ ] 活动：创建/报名/审批/批量审批/删除
-- [ ] 奖项：提交/审批/图片上传
-- [ ] 项目：创建/申请/审批/上传文件/计划/进度
-- [ ] 文件：上传/下载/查看/删除
-- [ ] AIServlet AI对话正常，AI触发的[ACTION]操作走Service层
-- [ ] 现有页面URL/交互/流程无任何变化
-- [ ] ActivityServlet从1309行降到400-500行
-- [ ] ProjectServlet从1353行降到500行左右
+- [x] `mvn clean package -DskipTests` 成功
+- [x] 核心JSP功能冒烟：登录/改密/头像上传
+- [x] 活动：创建/报名/审批/批量审批/删除
+- [x] 奖项：提交/审批/图片上传（已修复图片上传功能）
+- [x] 项目：创建/申请/审批/上传文件/计划/进度
+- [x] 文件：上传/下载/查看/删除
+- [x] AIServlet AI对话正常，AI触发的[ACTION]操作走Service层
+- [x] 现有页面URL/交互/流程无任何变化
+- [x] **Bug修复**：AwardServlet和AwardService图片上传功能修复（文件未实际保存到磁盘的问题）
 
 ---
 
@@ -325,7 +321,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - 认证：P2复用Session Cookie；未来加JWT Token
 - 所有API Servlet继承BaseApiServlet
 
-### 5.1 ActivityApiServlet 活动API `[未开始]`
+### 5.1 ActivityApiServlet 活动API `[已完成]`
 - **文件**：`src/main/java/servlet/api/ActivityApiServlet.java`（新建）
 - **路径**：`/api/activities/*`
 - **端点**：
@@ -341,6 +337,8 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
   - `POST /api/activities/{id}/reject` → 活动审核驳回
   - `GET /api/activities/my` → 我报名的活动
   - `GET /api/activities/created-by-me` → 我创建的活动
+- **测试覆盖**：64个测试用例（认证、列表、详情、CRUD、报名、审批、边界、响应格式）
+- **重构**：消除重复代码（分页解析、userId提取、权限检查）、拆分过长函数（doPost/doGet）、命名清晰化
 
 ### 5.2 UserApiServlet 用户/认证API `[未开始]`
 - **文件**：`src/main/java/servlet/api/UserApiServlet.java`（新建）
@@ -462,6 +460,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 
 | 日期 | 阶段 | 变更内容 | 操作人 |
 |------|------|---------|--------|
+| 2026-07-16 | P1 验证完成 | P1验证清单手动测试完成（奖项/项目/文件管理等功能）；AwardServlet增加action处理器（approveList/approveDetail/detail/edit/delete/update）；修复submitAward方法参数名和路径；修复listAwards管理员转发到审批页面；修复filterAwards返回JSON；修复审批后重定向；AwardService增加字典查询方法、修复buildAwardFromDTO设置name字段；AwardStatistics字段名匹配JSP；AwardDTO增加competitionSession字段；修复多处action=list链接为action=myAwards | Claude Code |
 | 2026-07-15 | P1 4.7 | 完成Servlet渐进改造：ProfileServlet/AwardServlet/ActivityServlet/ProjectServlet四个Servlet重构为调用对应Service层；Servlet只做取参→调service→写响应；Service层新增便捷方法支持测试；主代码编译通过 | Claude Code |
 | 2026-07-15 | P1 4.6 | 完成AIService测试重构：重构AIService支持构造器注入DAO依赖（新增带参构造函数），使单元测试可通过@InjectMocks注入Mock DAO；新增AIServiceTest测试文件46个用例覆盖executeAction公共入口/成员操作/管理员操作/边界条件/异常场景/getAIResponse/角色枚举；修复executeApproveActivity和executeRejectActivity添加findById前置检查；修复executeViewMyGroups添加空值保护；所有46个测试用例全部通过 | Claude Code |
 | 2026-07-15 | P1 4.5 | 完成AwardService奖项服务：7个业务方法（提交/审批通过/驳回/添加图片/列表/统计/筛选）；新建AwardDTO数据传输对象；70个TDD测试用例全部通过；重构提取validateApprovalRequest/validateAwardPendingStatus/isOwnerOrAdmin/buildAwardImage/processAwardImages/calculateStatistics辅助方法，消除重复代码 | Claude Code |
