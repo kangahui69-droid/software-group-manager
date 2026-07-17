@@ -2,15 +2,22 @@ package service;
 
 import dao.AwardDAO;
 import dao.AwardImageDAO;
+import dao.DictionaryDAO;
 import dao.FileStorageDAO;
 import dao.UserDAO;
 import dto.AwardDTO;
 import model.Award;
 import model.AwardImage;
+import model.Dictionary;
 import model.FileStorage;
 import model.User;
+import util.FileUtil;
 import util.Result;
 
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -55,6 +62,13 @@ public class AwardService {
     private final UserDAO userDAO;
     private final FileStorageDAO fileStorageDAO;
 
+    public AwardService() {
+        this.awardDAO = new AwardDAO();
+        this.awardImageDAO = new AwardImageDAO();
+        this.userDAO = new UserDAO();
+        this.fileStorageDAO = new FileStorageDAO();
+    }
+
     public AwardService(AwardDAO awardDAO, AwardImageDAO awardImageDAO, UserDAO userDAO, FileStorageDAO fileStorageDAO) {
         this.awardDAO = awardDAO;
         this.awardImageDAO = awardImageDAO;
@@ -80,6 +94,17 @@ public class AwardService {
         }
         if (userId == null) {
             return Result.error(400, "用户ID不能为空");
+        }
+
+        // 验证用户是否存在
+        User user;
+        try {
+            user = userDAO.findById(userId);
+        } catch (RuntimeException e) {
+            return Result.error(500, "系统错误");
+        }
+        if (user == null) {
+            return Result.error(404, "用户不存在");
         }
 
         Result validation = validateAwardDTO(dto);
@@ -273,6 +298,12 @@ public class AwardService {
 
         try {
             FileStorage fileStorage = createAwardFileStorage(userId, imageInfo);
+            // 实际保存文件内容
+            boolean saved = saveImageFile(file, fileStorage);
+            if (!saved) {
+                return Result.error(500, "文件保存失败");
+            }
+
             Integer fileId = fileStorageDAO.insert(fileStorage);
             if (fileId == null || fileId <= 0) {
                 return Result.error(500, "文件保存失败");
@@ -376,6 +407,174 @@ public class AwardService {
         return Result.ok(filtered);
     }
 
+    /**
+     * 获取奖项详情
+     */
+    public Result getAwardDetail(Integer id) {
+        if (id == null) {
+            return Result.error(400, "奖项ID不能为空");
+        }
+
+        Award award = awardDAO.findById(id);
+        if (award == null) {
+            return Result.error(404, "奖项不存在");
+        }
+        return Result.ok(award);
+    }
+
+    /**
+     * 获取奖项图片列表
+     */
+    public Result getAwardImages(Integer awardId) {
+        if (awardId == null) {
+            return Result.error(400, "奖项ID不能为空");
+        }
+
+        List<AwardImage> images = awardImageDAO.findByAwardId(awardId);
+        return Result.ok(images);
+    }
+
+    /**
+     * 管理员查询奖项列表（用于审批）
+     */
+    public Result listAwardsForApproval(String status, String keyword, String awardType, String awardCategory, String awardLevel, String competitionLevel) {
+        List<Award> awards = awardDAO.findByConditions(status, keyword, awardType, awardCategory, awardLevel, competitionLevel);
+        return Result.ok(awards);
+    }
+
+    /**
+     * 删除奖项
+     */
+    public Result deleteAward(Integer id, Integer userId) {
+        if (id == null) {
+            return Result.error(400, "奖项ID不能为空");
+        }
+        if (userId == null) {
+            return Result.error(400, "用户ID不能为空");
+        }
+
+        Award award = awardDAO.findById(id);
+        if (award == null) {
+            return Result.error(404, "奖项不存在");
+        }
+
+        // 检查权限：创建者或管理员才能删除
+        if (!userId.equals(award.getCreatedBy()) && !"ADMIN".equals(userDAO.findById(userId).getRole())) {
+            return Result.error(403, "没有权限删除此奖项");
+        }
+
+        // 只有待审核状态才能删除
+        if (!STATUS_PENDING.equals(award.getAwardStatus())) {
+            return Result.error(400, "只能删除待审核的奖项");
+        }
+
+        boolean deleted = awardDAO.delete(id);
+        if (!deleted) {
+            return Result.error(500, "删除失败");
+        }
+        return Result.ok();
+    }
+
+    /**
+     * 更新奖项
+     */
+    public Result updateAward(Integer id, AwardDTO dto, Integer userId) {
+        if (id == null) {
+            return Result.error(400, "奖项ID不能为空");
+        }
+        if (userId == null) {
+            return Result.error(400, "用户ID不能为空");
+        }
+
+        Award award = awardDAO.findById(id);
+        if (award == null) {
+            return Result.error(404, "奖项不存在");
+        }
+
+        // 检查权限
+        if (!userId.equals(award.getCreatedBy())) {
+            return Result.error(403, "没有权限修改此奖项");
+        }
+
+        // 只有待审核状态才能修改
+        if (!STATUS_PENDING.equals(award.getAwardStatus())) {
+            return Result.error(400, "只能修改待审核的奖项");
+        }
+
+        // 更新字段
+        if (dto.getCompetition() != null) {
+            award.setCompetition(dto.getCompetition());
+        }
+        if (dto.getCompetitionTime() != null) {
+            award.setCompetitionTime(dto.parseCompetitionTime());
+        }
+        if (dto.getAwardLevel() != null) {
+            award.setAwardLevel(dto.getAwardLevel());
+        }
+        if (dto.getAwardType() != null) {
+            award.setAwardType(dto.getAwardType());
+        }
+        if (dto.getAwardCategory() != null) {
+            award.setAwardCategory(dto.getAwardCategory());
+        }
+        if (dto.getCompetitionLevel() != null) {
+            award.setCompetitionLevel(dto.getCompetitionLevel());
+        }
+        if (dto.getTeamName() != null) {
+            award.setTeamName(dto.getTeamName());
+        }
+        if (dto.getCompetitionLocation() != null) {
+            award.setCompetitionLocation(dto.getCompetitionLocation());
+        }
+        if (dto.getCompetitionSession() != null) {
+            award.setCompetitionSession(dto.getCompetitionSession());
+        }
+
+        boolean updated = awardDAO.update(award);
+        if (!updated) {
+            return Result.error(500, "更新失败");
+        }
+        return Result.ok();
+    }
+
+    // ==================== 字典数据获取方法 ====================
+
+    /**
+     * 获取奖项类型字典
+     */
+    public Result getAwardTypes() {
+        DictionaryDAO dictionaryDAO = new DictionaryDAO();
+        List<Dictionary> types = dictionaryDAO.findByType("award_type");
+        return Result.ok(types);
+    }
+
+    /**
+     * 获取奖项类别字典
+     */
+    public Result getAwardCategories() {
+        DictionaryDAO dictionaryDAO = new DictionaryDAO();
+        List<Dictionary> categories = dictionaryDAO.findByType("award_category");
+        return Result.ok(categories);
+    }
+
+    /**
+     * 获取奖项等级字典
+     */
+    public Result getAwardLevels() {
+        DictionaryDAO dictionaryDAO = new DictionaryDAO();
+        List<Dictionary> levels = dictionaryDAO.findByType("award_level");
+        return Result.ok(levels);
+    }
+
+    /**
+     * 获取比赛等级字典
+     */
+    public Result getCompetitionLevels() {
+        DictionaryDAO dictionaryDAO = new DictionaryDAO();
+        List<Dictionary> levels = dictionaryDAO.findByType("competition_level");
+        return Result.ok(levels);
+    }
+
     // ==================== 验证方法 ====================
 
     private Result validateAwardDTO(AwardDTO dto) {
@@ -431,21 +630,71 @@ public class AwardService {
                 Result imageValidation = validateImageFile(imageInfo.size, imageInfo.contentType);
                 if (imageValidation == null) {
                     FileStorage fileStorage = createAwardFileStorage(userId, imageInfo);
-                    Integer fileId = fileStorageDAO.insert(fileStorage);
-                    if (fileId != null && fileId > 0) {
-                        AwardImage awardImage = buildAwardImage(awardId, userId, fileId);
-                        awardImageDAO.insert(awardImage);
+                    // 实际保存文件内容
+                    boolean saved = saveImageFile(image, fileStorage);
+                    if (saved) {
+                        Integer fileId = fileStorageDAO.insert(fileStorage);
+                        if (fileId != null && fileId > 0) {
+                            AwardImage awardImage = buildAwardImage(awardId, userId, fileId);
+                            awardImageDAO.insert(awardImage);
+                        }
                     }
                 }
             }
         }
     }
 
+    /**
+     * 保存图片文件到磁盘
+     */
+    private boolean saveImageFile(Object image, FileStorage fileStorage) {
+        try {
+            InputStream inputStream = getInputStreamFromImage(image);
+            if (inputStream == null) {
+                return false;
+            }
+
+            String categorySubDir = "files/" + AWARD_CATEGORY;
+            String uploadPath = FileUtil.getCategoryDir(categorySubDir);
+            File destFile = new File(uploadPath, fileStorage.getStoredName());
+
+            Files.copy(inputStream, destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            inputStream.close();
+
+            // 更新文件路径为完整路径
+            fileStorage.setFilePath("/localstorage/" + categorySubDir + "/" + fileStorage.getStoredName());
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * 从图片对象获取输入流
+     */
+    private InputStream getInputStreamFromImage(Object image) {
+        try {
+            if (image instanceof javax.servlet.http.Part) {
+                return ((javax.servlet.http.Part) image).getInputStream();
+            }
+            // 尝试通过反射获取
+            java.lang.reflect.Method method = image.getClass().getMethod("getInputStream");
+            Object result = method.invoke(image);
+            if (result instanceof InputStream) {
+                return (InputStream) result;
+            }
+        } catch (Exception e) {
+            // 忽略
+        }
+        return null;
+    }
+
     private AwardStatistics calculateStatistics(List<Award> awards) {
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
         int nationalCount = 0;
         int provincialCount = 0;
-        int schoolCount = 0;
         int personalCount = 0;
         int teamCount = 0;
         int currentYearCount = 0;
@@ -457,8 +706,6 @@ public class AwardService {
                         nationalCount++;
                     } else if (award.getAwardLevel() == LEVEL_PROVINCIAL) {
                         provincialCount++;
-                    } else if (award.getAwardLevel() == LEVEL_SCHOOL) {
-                        schoolCount++;
                     }
                 }
                 if (award.getAwardType() != null) {
@@ -475,13 +722,12 @@ public class AwardService {
         }
 
         AwardStatistics statistics = new AwardStatistics();
-        statistics.setTotalCount(awards.size());
-        statistics.setNationalCount(nationalCount);
-        statistics.setProvincialCount(provincialCount);
-        statistics.setSchoolCount(schoolCount);
-        statistics.setPersonalCount(personalCount);
-        statistics.setTeamCount(teamCount);
-        statistics.setCurrentYearCount(currentYearCount);
+        statistics.setTotalPersonalAwards(awards.size());
+        statistics.setNationalAwards(nationalCount);
+        statistics.setProvincialAwards(provincialCount);
+        statistics.setPersonalAwards(personalCount);
+        statistics.setTeamAwards(teamCount);
+        statistics.setCurrentYearAwards(currentYearCount);
         return statistics;
     }
 
@@ -511,6 +757,7 @@ public class AwardService {
 
     private Award buildAwardFromDTO(AwardDTO dto, Integer userId) {
         Award award = new Award();
+        award.setName(dto.getCompetition());  // name字段使用competition的值
         award.setCompetition(dto.getCompetition());
         award.setYear(dto.extractYear());
         award.setCompetitionTime(dto.parseCompetitionTime());
@@ -590,68 +837,59 @@ public class AwardService {
     }
 
     public static class AwardStatistics {
-        private int totalCount;
-        private int nationalCount;
-        private int provincialCount;
-        private int schoolCount;
-        private int personalCount;
-        private int teamCount;
-        private int currentYearCount;
+        private int totalPersonalAwards;
+        private int personalAwards;
+        private int teamAwards;
+        private int nationalAwards;
+        private int provincialAwards;
+        private int currentYearAwards;
 
-        public int getTotalCount() {
-            return totalCount;
+        public int getTotalPersonalAwards() {
+            return totalPersonalAwards;
         }
 
-        public void setTotalCount(int totalCount) {
-            this.totalCount = totalCount;
+        public void setTotalPersonalAwards(int totalPersonalAwards) {
+            this.totalPersonalAwards = totalPersonalAwards;
         }
 
-        public int getNationalCount() {
-            return nationalCount;
+        public int getPersonalAwards() {
+            return personalAwards;
         }
 
-        public void setNationalCount(int nationalCount) {
-            this.nationalCount = nationalCount;
+        public void setPersonalAwards(int personalAwards) {
+            this.personalAwards = personalAwards;
         }
 
-        public int getProvincialCount() {
-            return provincialCount;
+        public int getTeamAwards() {
+            return teamAwards;
         }
 
-        public void setProvincialCount(int provincialCount) {
-            this.provincialCount = provincialCount;
+        public void setTeamAwards(int teamAwards) {
+            this.teamAwards = teamAwards;
         }
 
-        public int getSchoolCount() {
-            return schoolCount;
+        public int getNationalAwards() {
+            return nationalAwards;
         }
 
-        public void setSchoolCount(int schoolCount) {
-            this.schoolCount = schoolCount;
+        public void setNationalAwards(int nationalAwards) {
+            this.nationalAwards = nationalAwards;
         }
 
-        public int getPersonalCount() {
-            return personalCount;
+        public int getProvincialAwards() {
+            return provincialAwards;
         }
 
-        public void setPersonalCount(int personalCount) {
-            this.personalCount = personalCount;
+        public void setProvincialAwards(int provincialAwards) {
+            this.provincialAwards = provincialAwards;
         }
 
-        public int getTeamCount() {
-            return teamCount;
+        public int getCurrentYearAwards() {
+            return currentYearAwards;
         }
 
-        public void setTeamCount(int teamCount) {
-            this.teamCount = teamCount;
-        }
-
-        public int getCurrentYearCount() {
-            return currentYearCount;
-        }
-
-        public void setCurrentYearCount(int currentYearCount) {
-            this.currentYearCount = currentYearCount;
+        public void setCurrentYearAwards(int currentYearAwards) {
+            this.currentYearAwards = currentYearAwards;
         }
     }
 }
