@@ -368,10 +368,32 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - **测试覆盖**：51个测试用例（认证、文件列表、元信息、下载、查看、上传、删除、HTTP方法、边界、响应格式）
 - **重构**：提取requireAuth认证方法、FilePathInfo内部类统一路径解析、dispatchFileAction路由分发、消除魔法字符串
 
-### 5.4 ProjectApiServlet 项目API `[未开始]`
-- **文件**：`src/main/java/servlet/api/ProjectApiServlet.java`（新建）
+### 5.4 ProjectApiServlet 项目API `[已完成]`
+- **文件**：`src/main/java/servlet/api/ProjectApiServlet.java`（新建，618行）
 - **路径**：`/api/projects/*`
-- **端点**：CRUD + 成员申请/审批 + 计划/进度 + 文件/标签/成员
+- **端点**：
+  - `GET /api/projects` → 项目列表（page/status/keyword）
+  - `GET /api/projects/{id}` → 项目详情
+  - `POST /api/projects` → 创建项目
+  - `PUT /api/projects/{id}` → 更新项目
+  - `DELETE /api/projects/{id}` → 删除项目
+  - `POST /api/projects/{id}/apply` → 申请加入
+  - `POST /api/projects/{id}/approve-member` → 审批成员通过
+  - `POST /api/projects/{id}/reject-member` → 审批成员拒绝
+  - `POST /api/projects/{id}/approve` → 项目审核通过
+  - `POST /api/projects/{id}/reject` → 项目审核驳回
+  - `POST /api/projects/{id}/plans` → 添加计划
+  - `POST /api/projects/{id}/progress` → 添加进度
+  - `POST /api/projects/{id}/images` → 上传项目图片
+  - `POST /api/projects/{id}/files` → 上传项目文件
+  - `DELETE /api/projects/{id}/files/{fileId}` → 删除项目文件
+  - `POST /api/projects/{id}/labels/{labelCode}` → 添加标签
+  - `DELETE /api/projects/{id}/labels/{labelCode}` → 删除标签
+  - `POST /api/projects/{id}/transfer` → 转让管理员
+  - `GET /api/projects/my` → 我的项目
+  - `GET /api/projects/created-by-me` → 我创建的项目
+- **测试覆盖**：61个测试用例（认证、列表、详情、CRUD、申请/审批、计划/进度、文件、标签、管理员转让、我的项目、HTTP方法、边界、响应格式）
+- **重构**：提取requireAuth认证方法、switch替代长if-else链、路径判断方法化、switch-case路由分发、参数解析辅助方法消除重复
 
 ### 5.5 AwardApiServlet 奖项API `[未开始]`
 - **文件**：`src/main/java/servlet/api/AwardApiServlet.java`（新建）
