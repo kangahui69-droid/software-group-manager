@@ -395,10 +395,11 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - **测试覆盖**：61个测试用例（认证、列表、详情、CRUD、申请/审批、计划/进度、文件、标签、管理员转让、我的项目、HTTP方法、边界、响应格式）
 - **重构**：提取requireAuth认证方法、switch替代长if-else链、路径判断方法化、switch-case路由分发、参数解析辅助方法消除重复
 
-### 5.5 AwardApiServlet 奖项API `[未开始]`
+### 5.5 AwardApiServlet 奖项API `[已完成]`
 - **文件**：`src/main/java/servlet/api/AwardApiServlet.java`（新建）
 - **路径**：`/api/awards/*`
 - **端点**：提交/审批/列表/详情/统计/图片管理
+- **测试覆盖**：47个测试用例（认证、列表、详情、CRUD、审批、图片、我的奖项、统计、字典、边界、响应格式）
 
 ### 5.6 web.xml / 注解注册 `[未开始]`
 - 注册所有新API Servlet，检查不与现有Servlet路径冲突
