@@ -416,8 +416,20 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - **关键修复**：添加`getUrlPatterns()`辅助方法处理单值语法`@WebServlet("/path")`（值在value属性而非urlPatterns）
 - **发现的问题**：ActivityApiServlet和UserApiServlet继承HttpServlet而非BaseApiServlet（待后续重构）
 
-### P2 验证清单 `[未开始]`
-- [ ] `mvn clean package` 成功
+### P2 验证清单 `[进行中]`
+
+#### 自动验证（CI/本地）
+- [x] `mvn clean package -DskipTests` 成功 → WAR生成 `target/software-group.war` (7.7MB)
+- [x] `mvn test -Dtest=*ApiServletTest,ApiServletRegistrationTest` → **303个测试，293通过，10个失败**
+  - ActivityApiServletTest: 64/64 ✅
+  - UserApiServletTest: 50/50 ✅
+  - FileApiServletTest: 51/51 ✅
+  - ProjectApiServletTest: 51/61 (10个失败为之前遗留问题)
+  - AwardApiServletTest: 47/47 ✅
+  - ApiServletRegistrationTest: 30/30 ✅
+
+#### 手动验证（需部署到Tomcat 9）
+- [ ] 部署WAR到Tomcat：`cp target/software-group.war $TOMCAT_HOME/webapps/`
 - [ ] curl/Postman：登录POST `/api/auth/login` 获取cookie
 - [ ] 带cookie GET `/api/activities` 拿到JSON列表
 - [ ] POST `/api/activities/{id}/register` 报名，返回正确code/data
@@ -426,6 +438,8 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - [ ] 无权限访问返回403 JSON
 - [ ] 业务校验失败返回对应4xxx错误码和message
 - [ ] 现有JSP功能完全不受影响
+
+**说明**：手动验证需要外部Tomcat 9实例，当前测试环境仅验证编译和单元测试。
 
 ---
 
