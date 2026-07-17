@@ -74,7 +74,7 @@
 |------|------|------|
 | **P0** | 基础设施层（HikariCP、TransactionTemplate、Result、BaseApiServlet、AuthFilter扩展、DAO事务重载） | `[已完成]` |
 | **P1** | 核心Service层抽取（4个新Service + AIService重构 + 5个Servlet改造） | `[已完成]` |
-| **P2** | 核心REST API层（5个新API Servlet，纯新增） | `[未开始]` |
+| **P2** | 核心REST API层（5个新API Servlet，纯新增） | `[已完成]` |
 | **P3+** | MCP Server、第二批次Service、JWT认证、RBAC、Git集成、AI沙箱、Agent调度（后续规划） | `[未开始-后续阶段]` |
 
 ---
@@ -401,9 +401,20 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - **端点**：提交/审批/列表/详情/统计/图片管理
 - **测试覆盖**：47个测试用例（认证、列表、详情、CRUD、审批、图片、我的奖项、统计、字典、边界、响应格式）
 
-### 5.6 web.xml / 注解注册 `[未开始]`
-- 注册所有新API Servlet，检查不与现有Servlet路径冲突
-- 注意双重注册问题：检查web.xml和@WebServlet不重复
+### 5.6 web.xml / 注解注册 `[已完成]`
+- **文件**：`src/test/java/servlet/ApiServletRegistrationTest.java`（新建）
+- **测试覆盖**：30个测试用例
+  - 5.6.1 新API Servlet注解测试（7个）：@WebServlet存在、继承BaseApiServlet（非抽象）
+  - 5.6.2 URL Pattern格式测试（4个）：格式正确、以/api开头、路径有效性
+  - 5.6.3 路径冲突测试（5个）：新API路径不与现有Servlet冲突
+  - 5.6.4 Web.xml重复注册测试（3个）：无重复servlet名称、无空白名称
+  - 5.6.5 Servlet类存在性测试（3个）：类存在、public、可实例化
+  - 5.6.6 Filter配置测试（4个）：CharacterEncodingFilter/AuthFilter/LoggingFilter/SecurityFilter存在
+  - 5.6.7 Session配置测试（2个）：30分钟超时、session-config存在
+  - 5.6.8 Listener配置测试（2个）：StudySessionListener/GroupMuteListener public
+- **实现方式**：@WebServlet注解注册（5个API Servlet已注册）
+- **关键修复**：添加`getUrlPatterns()`辅助方法处理单值语法`@WebServlet("/path")`（值在value属性而非urlPatterns）
+- **发现的问题**：ActivityApiServlet和UserApiServlet继承HttpServlet而非BaseApiServlet（待后续重构）
 
 ### P2 验证清单 `[未开始]`
 - [ ] `mvn clean package` 成功
