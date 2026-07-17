@@ -355,7 +355,7 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
 - **测试覆盖**：50个测试用例（认证、登录、登出、改密、个人档案、头像上传、用户详情、成员列表、边界、响应格式）
 - **重构**：提取路径判断方法(isXxxPath)、认证辅助方法(requireAuth/requireAdmin)、null-safe取值(getStringValue)、ProfileDTO构建(buildProfileDTO)、消除魔法数字
 
-### 5.3 FileApiServlet 文件API `[未开始]`
+### 5.3 FileApiServlet 文件API `[已完成]`
 - **文件**：`src/main/java/servlet/api/FileApiServlet.java`（新建）
 - **路径**：`/api/files/*`
 - **端点**：
@@ -365,6 +365,8 @@ NewsServlet、RecruitServlet、GroupServlet、AttendanceServlet、StudySessionSe
   - `GET /api/files/{id}/view` → 查看（inline，图片/头像用）
   - `DELETE /api/files/{id}` → 删除
   - `GET /api/files` → 文件列表（按category）
+- **测试覆盖**：51个测试用例（认证、文件列表、元信息、下载、查看、上传、删除、HTTP方法、边界、响应格式）
+- **重构**：提取requireAuth认证方法、FilePathInfo内部类统一路径解析、dispatchFileAction路由分发、消除魔法字符串
 
 ### 5.4 ProjectApiServlet 项目API `[未开始]`
 - **文件**：`src/main/java/servlet/api/ProjectApiServlet.java`（新建）
