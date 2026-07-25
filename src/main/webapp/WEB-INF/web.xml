@@ -351,4 +351,59 @@
         <listener-class>listener.GroupMuteListener</listener-class>
     </listener>
 
+    <!-- ========== P2: REST API Servlet 注册 ========== -->
+    <servlet>
+        <servlet-name>ActivityApiServlet</servlet-name>
+        <servlet-class>servlet.api.ActivityApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ActivityApiServlet</servlet-name>
+        <url-pattern>/api/activities/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>UserApiServlet</servlet-name>
+        <servlet-class>servlet.api.UserApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UserApiServlet</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>FileApiServlet</servlet-name>
+        <servlet-class>servlet.api.FileApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>FileApiServlet</servlet-name>
+        <url-pattern>/api/files/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ProjectApiServlet</servlet-name>
+        <servlet-class>servlet.api.ProjectApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProjectApiServlet</servlet-name>
+        <url-pattern>/api/projects/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AwardApiServlet</servlet-name>
+        <servlet-class>servlet.api.AwardApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AwardApiServlet</servlet-name>
+        <url-pattern>/api/awards/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ResumeApiServlet</servlet-name>
+        <servlet-class>servlet.api.ResumeApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResumeApiServlet</servlet-name>
+        <url-pattern>/api/resumes/*</url-pattern>
+    </servlet-mapping>
+
 </web-app>
