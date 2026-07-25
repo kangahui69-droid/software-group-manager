@@ -373,7 +373,7 @@
 
 **涉及的DAO**：ResumeDAO, ResumeEducationDAO, ResumeSkillDAO, ResumeProjectDAO, ResumeAwardDAO, UserDAO
 
-**ResumeApiServlet 端点** `[待开发]`：
+**ResumeApiServlet 端点** `[测试完成]`：
 | 方法 | 路径 | 功能 |
 |------|------|------|
 | GET | `/api/resumes` | 简历列表 |
@@ -413,7 +413,7 @@
 - [ ] GroupApiServlet API化 + 60个测试通过
 - [ ] AttendanceApiServlet API化 + 45个测试通过
 - [x] RecruitApiServlet API化 + 41个测试通过 ✅
-- [ ] ResumeApiServlet API化 + 80个测试通过
+- [x] ResumeApiServlet API化 + 25个测试通过 ✅
 - [ ] `mvn verify` 全部通过
 - [ ] JSP功能冒烟测试通过
 
