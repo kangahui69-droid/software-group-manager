@@ -58,6 +58,14 @@ public class ResumeService {
     private final ResumeProjectDAO projectDAO;
     private final ResumeAwardDAO awardDAO;
 
+    public ResumeService() {
+        this.resumeDAO = new ResumeDAO();
+        this.educationDAO = new ResumeEducationDAO();
+        this.skillDAO = new ResumeSkillDAO();
+        this.projectDAO = new ResumeProjectDAO();
+        this.awardDAO = new ResumeAwardDAO();
+    }
+
     public ResumeService(ResumeDAO resumeDAO, ResumeEducationDAO educationDAO,
                         ResumeSkillDAO skillDAO, ResumeProjectDAO projectDAO,
                         ResumeAwardDAO awardDAO) {
