@@ -48,7 +48,7 @@
 | P0 | 基础设施层 | HikariCP、TransactionTemplate、Result、BaseApiServlet | ✅ 已完成 |
 | P1 | 核心Service层 | Activity/User/File/Project/Award/AIService | ✅ 已完成 |
 | P2 | 核心REST API层 | 5个核心API Servlet + 303测试 | ✅ 已完成 |
-| **P3** | **核心业务分层** | **Group/Attendance/Recruit/Resume Service** | ⏳ 待开始 |
+| **P3** | **核心业务分层** | **Group/Attendance/Recruit/Resume Service** | ✅ Resume已完成 |
 | P3.5 | 核心业务API化 | Group/Attendance/Recruit/Resume API | ⏳ 待开始 |
 | P4 | 扩展业务分层 | News/Problem/Member Service | ⏳ 待开始 |
 | P4.5 | 扩展业务API化 | News/Problem/Member API | ⏳ 待开始 |
@@ -132,7 +132,7 @@
 | 群聊 | GroupService | GroupApiServlet | **P3** | 待分层→API化 |
 | 考勤 | AttendanceService | AttendanceApiServlet | **P3** | 待分层→API化 |
 | 招新 | RecruitService | RecruitApiServlet | **P3** | 待分层→API化 |
-| 简历 | ResumeService | ResumeApiServlet | **P3** | 待分层→API化 |
+| 简历 | ResumeService ✅ | ResumeApiServlet | **P3** | 待API化 |
 | 新闻 | NewsService | NewsApiServlet | P4 | 待分层→API化 |
 | 问题 | ProblemService | ProblemApiServlet | P4 | 待分层→API化 |
 | 成员 | MemberService | MemberApiServlet | P4 | 待分层→API化 |
@@ -341,7 +341,7 @@
 
 ---
 
-### 4.4 ResumeService 简历服务 `[待分层]`
+### 4.4 ResumeService 简历服务 `[已完成]`
 
 **文件**：`src/main/java/service/ResumeService.java`
 **合并**：ResumeServlet + ResumeAwardServlet + ResumeEducationServlet + ResumeProjectServlet + ResumeSkillServlet
@@ -409,7 +409,7 @@
 - [ ] GroupService 分层完成 + 50个测试通过
 - [ ] AttendanceService 分层完成 + 40个测试通过
 - [x] RecruitService 分层完成 + 92个测试通过 ✅
-- [ ] ResumeService 分层完成 + 70个测试通过
+- [x] ResumeService 分层完成 + 159个测试通过 ✅
 - [ ] GroupApiServlet API化 + 60个测试通过
 - [ ] AttendanceApiServlet API化 + 45个测试通过
 - [x] RecruitApiServlet API化 + 41个测试通过 ✅
@@ -679,6 +679,7 @@
 | 2026-07-25 | P3 4.3 | 完成RecruitService招新服务：submitApplication/approveApplication/rejectApplication/listApplications/getApplicationDetail/deleteApplication/countPending/findAllYears/validateApplication共9个方法；92个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；execute(SUPPLIER<R>)统一事务入口模式；approveExistingUser/createUserAndProfile/checkEmailAvailability辅助方法；InvalidPathException异常模式 | Claude Code |
 | 2026-07-25 | P3 4.3 | 完成RecruitApiServlet招新API：8个REST端点；41个TDD测试用例全部通过；requireAuth提取认证重复代码；parseAndValidatePathInfo改抛异常消除null返回模式；RecruitPathInfo内部类统一路径解析；完整TDD开发流程：测试先行→路由修复→路由修复验证 | Claude Code |
 | 2026-07-25 | P4/P5 | 补充P4/P5详细设计(方法列表/复杂度/端点/DTO) | Claude Code |
+| 2026-07-25 | P3 4.4 | 完成ResumeService简历服务：21个业务方法；159个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；validateSubItemOwnership函数式接口抽取子项目公共权限验证；删除6个未使用的辅助方法和内部异常类；代码从942行精简至873行(减少7.3%)；isBlank/isDeleted/applyXxxUpdates/buildXxxFromDTO等辅助方法清晰化命名与职责 | Claude Code |
 
 ---
 
