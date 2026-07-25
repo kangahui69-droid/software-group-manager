@@ -373,7 +373,7 @@
 
 **涉及的DAO**：ResumeDAO, ResumeEducationDAO, ResumeSkillDAO, ResumeProjectDAO, ResumeAwardDAO, UserDAO
 
-**ResumeApiServlet 端点** `[待API化]`：
+**ResumeApiServlet 端点** `[待开发]`：
 | 方法 | 路径 | 功能 |
 |------|------|------|
 | GET | `/api/resumes` | 简历列表 |
