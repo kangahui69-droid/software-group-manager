@@ -221,7 +221,7 @@
 
 ## 四、P3阶段：核心业务分层与API化
 
-### 4.1 GroupService 群聊服务 `[待分层]`
+### 4.1 GroupService 群聊服务 `[已完成]`
 
 **文件**：`src/main/java/service/GroupService.java`
 **合并**：GroupServlet + GroupAdminServlet + GroupMemberServlet
@@ -246,7 +246,7 @@
 
 **涉及的DAO**：ActivityGroupDAO, GroupMemberDAO, GroupMessageDAO, UserGroupDAO, FileStorageDAO, UserDAO, MemberProfileDAO
 
-**GroupApiServlet 端点** `[待API化]`：
+**GroupApiServlet 端点** `[已完成]`：
 | 方法 | 路径 | 功能 |
 |------|------|------|
 | GET | `/api/groups` | 群聊列表 |
@@ -267,7 +267,7 @@
 
 ---
 
-### 4.2 AttendanceService 考勤服务 `[待分层]`
+### 4.2 AttendanceService 考勤服务 `[已完成]`
 
 **文件**：`src/main/java/service/AttendanceService.java`
 **对应**：AttendanceServlet
@@ -303,36 +303,41 @@
 
 ---
 
-### 4.3 RecruitService 招新服务 `[待分层]`
+### 4.3 RecruitService 招新服务 `[已完成]`
 
-**文件**：`src/main/java/service/RecruitService.java`
+**文件**：`src/main/java/service/RecruitService.java`（新建）
+**DTO文件**：`src/main/java/dto/RecruitApplicationDTO.java`（新建）
 **对应**：RecruitServlet
 
 **核心方法**：
 | 方法 | 功能 | 复杂度 |
 |------|------|--------|
 | submitApplication(dto) | 提交申请 | 高 |
-| listApplications(filter, page) | 申请列表 | 中 |
+| listApplications(year, status, keyword, round) | 申请列表 | 中 |
 | getApplicationDetail(id) | 申请详情 | 低 |
 | approveApplication(id, operatorId) | 审批通过 | 高 |
-| rejectApplication(id, reason, operatorId) | 审批拒绝 | 中 |
-| updateApplication(id, dto, operatorId) | 更新申请 | 中 |
-| deleteApplication(id, operatorId) | 删除申请 | 低 |
-| getStatistics() | 申请统计 | 低 |
+| rejectApplication(id, operatorId) | 审批拒绝 | 中 |
+| deleteApplication(id) | 删除申请 | 低 |
+| countPending() | 待审核数量 | 低 |
+| findAllYears() | 所有年份 | 低 |
+| validateApplication(dto) | 申请信息校验 | 中 |
 
-**涉及的DAO**：RecruitApplicationDAO, UserDAO, MemberProfileDAO, DictionaryDAO
+**涉及的DAO**：RecruitApplicationDAO, UserDAO, MemberProfileDAO
+**状态常量**：STATUS_PENDING=1、STATUS_APPROVED=2、STATUS_REJECTED=0
 
-**RecruitApiServlet 端点** `[待API化]`：
+**RecruitApiServlet 端点** `[已完成]`：
 | 方法 | 路径 | 功能 |
 |------|------|------|
-| GET | `/api/recruits` | 申请列表 |
-| GET | `/api/recruits/{id}` | 申请详情 |
-| POST | `/api/recruits/apply` | 提交申请 |
-| POST | `/api/recruits/{id}/approve` | 审批通过 |
-| POST | `/api/recruits/{id}/reject` | 审批拒绝 |
-| PUT | `/api/recruits/{id}` | 更新申请 |
-| DELETE | `/api/recruits/{id}` | 删除申请 |
-| GET | `/api/recruits/stats` | 申请统计 |
+| GET | `/api/recruit` | 申请列表 |
+| GET | `/api/recruit/{id}` | 申请详情 |
+| POST | `/api/recruit` | 提交申请 |
+| POST | `/api/recruit/{id}/approve` | 审批通过 |
+| POST | `/api/recruit/{id}/reject` | 审批拒绝 |
+| DELETE | `/api/recruit/{id}` | 删除申请 |
+| GET | `/api/recruit/years` | 所有年份 |
+| GET | `/api/recruit/count` | 待审核数量 |
+
+**TDD测试**：RecruitServiceTest 92个用例、RecruitApiServletTest 41个用例，全部通过
 
 ---
 
@@ -403,11 +408,11 @@
 
 - [ ] GroupService 分层完成 + 50个测试通过
 - [ ] AttendanceService 分层完成 + 40个测试通过
-- [ ] RecruitService 分层完成 + 45个测试通过
+- [x] RecruitService 分层完成 + 92个测试通过 ✅
 - [ ] ResumeService 分层完成 + 70个测试通过
 - [ ] GroupApiServlet API化 + 60个测试通过
 - [ ] AttendanceApiServlet API化 + 45个测试通过
-- [ ] RecruitApiServlet API化 + 50个测试通过
+- [x] RecruitApiServlet API化 + 41个测试通过 ✅
 - [ ] ResumeApiServlet API化 + 80个测试通过
 - [ ] `mvn verify` 全部通过
 - [ ] JSP功能冒烟测试通过
@@ -671,6 +676,8 @@
 | 2026-07-19 | P0-P2 | 服务分层与API化重构计划 v1.0 | Claude Code |
 | 2026-07-25 | P3-P5 | 整合为完整计划v2.0，新增"先分层后API化"原则 | Claude Code |
 | 2026-07-25 | Bug修复 | 修复Bug1(ActivityParticipantDAO)、Bug2(AwardDAO)；Bug3(ProjectApiServletTest)待分析 | Claude Code |
+| 2026-07-25 | P3 4.3 | 完成RecruitService招新服务：submitApplication/approveApplication/rejectApplication/listApplications/getApplicationDetail/deleteApplication/countPending/findAllYears/validateApplication共9个方法；92个TDD测试用例全部通过；TDD Red→Green→Refactor完整流程；execute(SUPPLIER<R>)统一事务入口模式；approveExistingUser/createUserAndProfile/checkEmailAvailability辅助方法；InvalidPathException异常模式 | Claude Code |
+| 2026-07-25 | P3 4.3 | 完成RecruitApiServlet招新API：8个REST端点；41个TDD测试用例全部通过；requireAuth提取认证重复代码；parseAndValidatePathInfo改抛异常消除null返回模式；RecruitPathInfo内部类统一路径解析；完整TDD开发流程：测试先行→路由修复→路由修复验证 | Claude Code |
 | 2026-07-25 | P4/P5 | 补充P4/P5详细设计(方法列表/复杂度/端点/DTO) | Claude Code |
 
 ---
