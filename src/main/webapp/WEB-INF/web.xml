@@ -213,6 +213,16 @@
         <url-pattern>/admin/log/*</url-pattern>
     </servlet-mapping>
 
+    <!-- 日志API Servlet -->
+    <servlet>
+        <servlet-name>LogApiServlet</servlet-name>
+        <servlet-class>servlet.api.LogApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LogApiServlet</servlet-name>
+        <url-pattern>/api/logs/*</url-pattern>
+    </servlet-mapping>
+
     <!-- 简历Servlet -->
     <servlet>
         <servlet-name>ResumeServlet</servlet-name>
