@@ -408,4 +408,20 @@ public class StudySessionDAO {
         session.setUpdatedAt(rs.getTimestamp("updated_at"));
         return session;
     }
+
+    /**
+     * 根据ID查询学习记录
+     */
+    public StudySession findById(Integer id) throws SQLException {
+        String sql = "SELECT * FROM study_session WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return extractSession(rs);
+            }
+            return null;
+        }
+    }
 }
