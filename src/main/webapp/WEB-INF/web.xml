@@ -406,4 +406,34 @@
         <url-pattern>/api/resumes/*</url-pattern>
     </servlet-mapping>
 
+    <!-- 招新API Servlet -->
+    <servlet>
+        <servlet-name>RecruitApiServlet</servlet-name>
+        <servlet-class>servlet.api.RecruitApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RecruitApiServlet</servlet-name>
+        <url-pattern>/api/recruit/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- 新闻API Servlet -->
+    <servlet>
+        <servlet-name>NewsApiServlet</servlet-name>
+        <servlet-class>servlet.api.NewsApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>NewsApiServlet</servlet-name>
+        <url-pattern>/api/news/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- 问题反馈API Servlet -->
+    <servlet>
+        <servlet-name>ProblemApiServlet</servlet-name>
+        <servlet-class>servlet.api.ProblemApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProblemApiServlet</servlet-name>
+        <url-pattern>/api/problems/*</url-pattern>
+    </servlet-mapping>
+
 </web-app>
