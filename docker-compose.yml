@@ -205,8 +205,12 @@ services:
     volumes:
       # Nginx 配置文件
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # 静态资源目录（从 app 的 volume 挂载）
+      # 用户上传文件（从 app 的 volume 挂载）
       - app_data:/usr/local/tomcat/webapps/localstorage:ro
+      # 静态资源目录（CSS/JS/Images 独立挂载到 static 目录）
+      - ./static/css:/usr/local/nginx/static/css:ro
+      - ./static/js:/usr/local/nginx/static/js:ro
+      - ./static/images:/usr/local/nginx/static/images:ro
 
     # 依赖 app 服务
     depends_on:
