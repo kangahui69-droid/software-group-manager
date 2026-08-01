@@ -1240,4 +1240,31 @@ CREATE TABLE `user_group` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+--
+-- Table structure for table `ai_message_status` (阶段二中间件引入 - AI消息异步处理)
+--
+
+DROP TABLE IF EXISTS `ai_message_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_message_status` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `message_id` varchar(64) NOT NULL COMMENT '消息唯一ID',
+  `user_id` int(11) DEFAULT NULL COMMENT '用户ID',
+  `session_id` varchar(128) DEFAULT NULL COMMENT '会话ID',
+  `user_message` text COMMENT '用户消息',
+  `ai_response` text COMMENT 'AI回复',
+  `status` varchar(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending/processing/completed/failed',
+  `error_message` varchar(500) DEFAULT NULL COMMENT '错误信息',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `completed_at` datetime DEFAULT NULL COMMENT '完成时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_message_id` (`message_id`),
+  KEY `idx_user_session` (`user_id`, `session_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI消息状态表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 -- Dump completed on 2026-07-11  8:54:46
