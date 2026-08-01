@@ -1,0 +1,162 @@
+# ========== Docker Compose 配置 ==========
+# 作用：定义和管理多容器应用的编排
+# 使用方式：docker-compose up -d（后台启动所有服务）
+
+services:
+
+  # ========== MySQL 数据库服务 ==========
+  mysql:
+    # 使用官方 MySQL 8 镜像
+    image: mysql:8
+
+    # 容器名称（方便 docker ps 查看）
+    container_name: sg_mysql
+
+    # 容器退出后自动重启（生产环境推荐）
+    restart: always
+
+    # 环境变量（MySQL 镜像会自动使用这些配置初始化数据库）
+    environment:
+      # root 密码（生产环境必须修改！）
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # 自动创建的数据库名
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-software_group}
+      # 字符集配置（必须 utf8mb4 支持中文）
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+
+    # 端口映射：宿主机端口:容器端口
+    # 访问方式：宿主机上连接 localhost:3306 就等于连接容器内的 MySQL
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+
+    # 数据卷挂载（持久化数据，容器删除后数据不丢失）
+    volumes:
+      # MySQL 数据目录（数据库文件存放位置）
+      - mysql_data:/var/lib/mysql
+      # 初始化 SQL 脚本（容器首次启动时自动执行）
+      # :ro 表示只读权限
+      - ./sql:/docker-entrypoint-initdb.d:ro
+
+    # Docker 网络（让容器之间可以互相通信）
+    networks:
+      - software-group-net
+
+    # 健康检查（确保 MySQL 完全就绪后再启动 App）
+    # 解决：App 启动太快，MySQL 还没准备好，导致连接失败
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s      # 每 10 秒检查一次
+      timeout: 5s       # 5 秒超时
+      retries: 5        # 连续失败 5 次认为不健康
+
+
+  # ========== Redis 缓存服务（阶段二中间件引入）==========
+  redis:
+    # 使用 Alpine 精简版镜像（体积小、安全）
+    image: redis:7-alpine
+
+    # 容器名称
+    container_name: sg_redis
+
+    # 容器退出后自动重启
+    restart: always
+
+    # 端口映射：宿主机访问 localhost:6379 = 容器内 6379
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+    # 数据卷挂载（持久化 Redis 数据）
+    volumes:
+      - redis_data:/data
+
+    # Docker 网络
+    networks:
+      - software-group-net
+
+    # Redis 配置
+    # appendonly yes: 开启 AOF 持久化，数据更安全
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========== 应用服务（Tomcat + WAR）==========
+  app:
+    # 从 Dockerfile 构建镜像
+    # context: 构建上下文（. 表示当前目录）
+    # dockerfile: Dockerfile 文件名
+    build:
+      context: .
+      dockerfile: Dockerfile.tomcat
+      # 构建时参数（传递给 Dockerfile，用于 envsubst 替换）
+      args:
+        DB_HOST: mysql
+        DB_PORT: "3306"
+        DB_NAME: ${MYSQL_DATABASE:-software_group}
+        DB_USER: root
+        DB_PASSWORD: ${MYSQL_PASSWORD:-root123}
+        AI_PROVIDER: ${AI_PROVIDER:-minimax}
+        AI_API_KEY: ${AI_API_KEY:-}
+        AI_API_URL: ${AI_API_URL:-}
+        AI_MODEL: ${AI_MODEL:-MiniMax-M2.7}
+        DES_KEY: ${DES_KEY:-(^&%gasie_%^)}
+        REDIS_HOST: redis
+        REDIS_PORT: "6379"
+        REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-10}
+        HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-5}
+        SESSION_TIMEOUT: ${SESSION_TIMEOUT:-30}
+        UPLOAD_BASE_DIR: /usr/local/tomcat/webapps/localstorage
+
+    container_name: sg_app
+    restart: always
+
+    # 端口映射：宿主机访问 localhost:8080 = 容器内 8080
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+    # 启动依赖：确保 MySQL 和 Redis 健康检查通过后再启动 App
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    # 环境变量（运行时注入，但 config.local.properties 已在构建时替换）
+    environment:
+      # AI 服务配置（运行时可能需要）
+      AI_PROVIDER: ${AI_PROVIDER:-minimax}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_URL: ${AI_API_URL:-}
+
+    # 数据卷挂载（文件上传目录持久化）
+    # 解决：容器内文件上传后，删除容器文件丢失的问题
+    volumes:
+      - app_data:/usr/local/tomcat/webapps/localstorage
+
+    networks:
+      - software-group-net
+
+# ========== 网络定义 ==========
+# 网络类型 bridge（桥接网络）：
+# - 容器之间可以互相通信
+# - 隔离外部网络
+# - 服务名（如 mysql）会自动 DNS 解析为容器 IP
+networks:
+  software-group-net:
+    driver: bridge
+
+# ========== 数据卷定义 ==========
+# Docker 管理的命名数据卷：
+# - 容器删除后数据卷中的数据仍然保留
+# - Docker 自动处理权限问题
+# - 适合 Windows/Linux/macOS 跨平台
+volumes:
+  mysql_data:
+  redis_data:
+  app_data:

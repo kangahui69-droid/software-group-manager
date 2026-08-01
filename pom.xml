@@ -83,6 +83,27 @@
             <version>1.17.2</version>
         </dependency>
 
+        <!-- Redis 客户端 (阶段二中间件引入) -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
+        <!-- RabbitMQ 客户端 (阶段二中间件引入) -->
+        <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>5.20.0</version>
+        </dependency>
+
+        <!-- Jackson JSON处理 (阶段二中间件引入，用于RabbitMQ消息序列化) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.16.0</version>
+        </dependency>
+
         <!-- HTTPClient 用于调用AI API -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
