@@ -72,6 +72,16 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+    <!-- Session Redis 同步过滤器（阶段二中间件引入） -->
+    <filter>
+        <filter-name>sessionRedisFilter</filter-name>
+        <filter-class>filter.SessionRedisFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>sessionRedisFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <!-- 登录Servlet -->
     <servlet>
         <servlet-name>LoginServlet</servlet-name>
@@ -444,6 +454,16 @@
     <servlet-mapping>
         <servlet-name>ProblemApiServlet</servlet-name>
         <url-pattern>/api/problems/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- 学习服务API Servlet -->
+    <servlet>
+        <servlet-name>StudyApiServlet</servlet-name>
+        <servlet-class>servlet.api.StudyApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudyApiServlet</servlet-name>
+        <url-pattern>/api/study/*</url-pattern>
     </servlet-mapping>
 
 </web-app>
