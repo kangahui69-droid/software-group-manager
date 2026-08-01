@@ -157,6 +157,17 @@ public class AIService {
         return aiResponse;
     }
 
+    /**
+     * 获取AI响应（供消费者调用，支持Integer userId）
+     */
+    public String getAIResponse(String userMessage, String sessionId, Integer userId, String userRole) {
+        User user = null;
+        if (userId != null && userId > 0) {
+            user = userDAO.findById(userId);
+        }
+        return getAIResponse(userMessage, sessionId, user);
+    }
+
     private String checkAndHandleDetailQuery(String userMessage, String userRole, User user) {
         String msg = userMessage.toLowerCase();
 
@@ -2005,7 +2016,7 @@ public class AIService {
                 group.setGroupOwnerId(user.getId());
                 group.setActivityId(activity.getId());
                 group.setCreatedAt(new Date());
-                if (groupDAO.insert(group)) {
+                if (groupDAO.insert(group) > 0) {
                     ActivityGroup createdGroup = groupDAO.findByActivityId(activity.getId());
                     if (createdGroup != null) {
                         groupMemberDAO.insertOwner(createdGroup.getId(), user.getId());
