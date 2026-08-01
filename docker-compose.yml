@@ -85,6 +85,44 @@ services:
       timeout: 5s
       retries: 5
 
+  # ========== RabbitMQ 消息队列服务（阶段二中间件引入）==========
+  rabbitmq:
+    # 使用带 management 插件的 Alpine 镜像（体积小、带管理界面）
+    image: rabbitmq:3-management-alpine
+
+    # 容器名称
+    container_name: sg_rabbitmq
+
+    # 容器退出后自动重启
+    restart: always
+
+    # 端口映射
+    # 5672: AMQP 协议端口（应用连接）
+    # 15672: 管理界面端口（浏览器访问）
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGE_PORT:-15672}:15672"
+
+    # 环境变量（设置默认用户和密码）
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin123}
+
+    # 数据卷挂载（持久化 RabbitMQ 数据和配置）
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    # Docker 网络
+    networks:
+      - software-group-net
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ========== 应用服务（Tomcat + WAR）==========
   app:
     # 从 Dockerfile 构建镜像
@@ -108,6 +146,10 @@ services:
         REDIS_HOST: redis
         REDIS_PORT: "6379"
         REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        RABBITMQ_HOST: rabbitmq
+        RABBITMQ_PORT: "5672"
+        RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+        RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin123}
         HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-10}
         HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-5}
         SESSION_TIMEOUT: ${SESSION_TIMEOUT:-30}
@@ -120,11 +162,13 @@ services:
     ports:
       - "${APP_PORT:-8080}:8080"
 
-    # 启动依赖：确保 MySQL 和 Redis 健康检查通过后再启动 App
+    # 启动依赖：确保 MySQL、Redis 和 RabbitMQ 健康检查通过后再启动 App
     depends_on:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
     # 环境变量（运行时注入，但 config.local.properties 已在构建时替换）
@@ -159,4 +203,5 @@ networks:
 volumes:
   mysql_data:
   redis_data:
+  rabbitmq_data:
   app_data:
