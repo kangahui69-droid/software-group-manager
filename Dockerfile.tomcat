@@ -1,0 +1,69 @@
+# ========== 阶段一：Docker容器化 ==========
+FROM tomcat:9-jdk11
+
+# 删除 Tomcat 默认的示例应用
+RUN rm -rf /usr/local/tomcat/webapps/*
+
+# 安装 envsubst 和 unzip/zip（用于处理 WAR 文件）
+RUN apt-get update && apt-get install -y gettext-base unzip zip && rm -rf /var/lib/apt/lists/*
+
+# ========== 构建时参数（来自 docker-compose.yml args）==========
+ARG DB_HOST=localhost
+ARG DB_PORT=3306
+ARG DB_NAME=software_group
+ARG DB_USER=root
+ARG DB_PASSWORD=root123
+ARG AI_PROVIDER=minimax
+ARG AI_API_KEY=
+ARG AI_API_URL=
+ARG AI_MODEL=MiniMax-M2.7
+ARG DES_KEY=(^&%gasie_%^)
+ARG HIKARI_MAX_POOL_SIZE=10
+ARG HIKARI_MIN_IDLE=5
+ARG SESSION_TIMEOUT=30
+ARG UPLOAD_BASE_DIR=/usr/local/tomcat/webapps/localstorage
+
+# 复制 WAR 包
+COPY target/software-group.war /usr/local/tomcat/webapps/software-group.war
+
+# 复制配置模板（作为临时文件用于环境变量替换）
+COPY src/main/resources/config.local.properties /tmp/config.template
+
+# 解压 WAR、替换配置、重新打包
+# 策略：先用 sed 去掉 ${VAR:-default} 中的默认值部分，变成 ${VAR}，然后用 envsubst 替换
+RUN cd /usr/local/tomcat/webapps && \
+    rm -rf software-group software-group-temp && \
+    mkdir -p software-group-temp && \
+    cd software-group-temp && \
+    unzip ../software-group.war && \
+    sed -e 's/\${DB_HOST:-[^}]*}/${DB_HOST}/g' \
+        -e 's/\${DB_PORT:-[^}]*}/${DB_PORT}/g' \
+        -e 's/\${DB_NAME:-[^}]*}/${DB_NAME}/g' \
+        -e 's/\${DB_USER:-[^}]*}/${DB_USER}/g' \
+        -e 's/\${DB_PASSWORD:-[^}]*}/${DB_PASSWORD}/g' \
+        -e 's/\${AI_PROVIDER:-[^}]*}/${AI_PROVIDER}/g' \
+        -e 's/\${AI_API_KEY:-[^}]*}/${AI_API_KEY}/g' \
+        -e 's/\${AI_API_URL:-[^}]*}/${AI_API_URL}/g' \
+        -e 's/\${AI_MODEL:-[^}]*}/${AI_MODEL}/g' \
+        -e 's/\${DES_KEY:-[^}]*}/${DES_KEY}/g' \
+        -e 's/\${HIKARI_MAX_POOL_SIZE:-[^}]*}/${HIKARI_MAX_POOL_SIZE}/g' \
+        -e 's/\${HIKARI_MIN_IDLE:-[^}]*}/${HIKARI_MIN_IDLE}/g' \
+        -e 's/\${SESSION_TIMEOUT:-[^}]*}/${SESSION_TIMEOUT}/g' \
+        -e 's|\${UPLOAD_BASE_DIR:-[^}]*}|${UPLOAD_BASE_DIR}|g' \
+        /tmp/config.template > /tmp/config_novar.tmp && \
+    envsubst < /tmp/config_novar.tmp > WEB-INF/classes/config.local.properties && \
+    cd .. && \
+    rm -rf software-group.war && \
+    cd software-group-temp && \
+    zip -r ../software-group.war . && \
+    cd .. && \
+    rm -rf software-group-temp /tmp/config.template /tmp/config_novar.tmp
+
+# 配置 JVM 参数
+ENV CATALINA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication"
+
+# 暴露端口
+EXPOSE 8080
+
+# 启动命令
+CMD ["catalina.sh", "run"]

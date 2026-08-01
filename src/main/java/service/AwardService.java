@@ -11,7 +11,9 @@ import model.AwardImage;
 import model.Dictionary;
 import model.FileStorage;
 import model.User;
+import util.CacheConsts;
 import util.FileUtil;
+import util.RedisUtil;
 import util.Result;
 
 import java.io.File;
@@ -540,39 +542,72 @@ public class AwardService {
     // ==================== 字典数据获取方法 ====================
 
     /**
-     * 获取奖项类型字典
+     * 获取奖项类型字典（带缓存）
      */
     public Result getAwardTypes() {
-        DictionaryDAO dictionaryDAO = new DictionaryDAO();
-        List<Dictionary> types = dictionaryDAO.findByType("award_type");
-        return Result.ok(types);
+        String cacheKey = CacheConsts.PREFIX_DICTIONARY + "award_type";
+        return getDictionaryFromCache(cacheKey, "award_type");
     }
 
     /**
-     * 获取奖项类别字典
+     * 获取奖项类别字典（带缓存）
      */
     public Result getAwardCategories() {
-        DictionaryDAO dictionaryDAO = new DictionaryDAO();
-        List<Dictionary> categories = dictionaryDAO.findByType("award_category");
-        return Result.ok(categories);
+        String cacheKey = CacheConsts.PREFIX_DICTIONARY + "award_category";
+        return getDictionaryFromCache(cacheKey, "award_category");
     }
 
     /**
-     * 获取奖项等级字典
+     * 获取奖项等级字典（带缓存）
      */
     public Result getAwardLevels() {
-        DictionaryDAO dictionaryDAO = new DictionaryDAO();
-        List<Dictionary> levels = dictionaryDAO.findByType("award_level");
-        return Result.ok(levels);
+        String cacheKey = CacheConsts.PREFIX_DICTIONARY + "award_level";
+        return getDictionaryFromCache(cacheKey, "award_level");
     }
 
     /**
-     * 获取比赛等级字典
+     * 获取比赛等级字典（带缓存）
      */
     public Result getCompetitionLevels() {
+        String cacheKey = CacheConsts.PREFIX_DICTIONARY + "competition_level";
+        return getDictionaryFromCache(cacheKey, "competition_level");
+    }
+
+    /**
+     * 从缓存获取字典数据
+     */
+    private Result getDictionaryFromCache(String cacheKey, String type) {
+        try {
+            // 尝试从缓存获取
+            String cached = RedisUtil.get(cacheKey);
+            if (cached != null && !cached.isEmpty()) {
+                // 缓存命中，反序列化返回
+                com.google.gson.Gson gson = new com.google.gson.Gson();
+                List<Dictionary> list = gson.fromJson(cached,
+                    com.google.gson.reflect.TypeToken.get(
+                        new com.google.gson.reflect.TypeToken<List<Dictionary>>(){}.getType()
+                    ).getType());
+                return Result.ok(list);
+            }
+        } catch (Exception e) {
+            // 缓存异常，打印日志，继续查询数据库
+            System.err.println("[AwardService] 缓存获取失败: " + e.getMessage());
+        }
+
+        // 缓存未命中，查询数据库
         DictionaryDAO dictionaryDAO = new DictionaryDAO();
-        List<Dictionary> levels = dictionaryDAO.findByType("competition_level");
-        return Result.ok(levels);
+        List<Dictionary> list = dictionaryDAO.findByType(type);
+
+        try {
+            // 写入缓存
+            com.google.gson.Gson gson = new com.google.gson.Gson();
+            String json = gson.toJson(list);
+            RedisUtil.set(cacheKey, json, CacheConsts.TTL_DICTIONARY);
+        } catch (Exception e) {
+            System.err.println("[AwardService] 缓存写入失败: " + e.getMessage());
+        }
+
+        return Result.ok(list);
     }
 
     // ==================== 验证方法 ====================
