@@ -17,10 +17,10 @@ import support.FastTest;
 import util.Result;
 import dto.ProfileDTO;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -1334,7 +1334,7 @@ class UserApiServletTest {
         }
 
         private void handleLogout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            javax.servlet.http.HttpSession session = req.getSession(false);
+            jakarta.servlet.http.HttpSession session = req.getSession(false);
             if (session != null) {
                 session.invalidate();
             }

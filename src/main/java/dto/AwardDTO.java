@@ -16,6 +16,7 @@ public class AwardDTO {
     private Integer awardCategory;
     private Integer competitionLevel;
     private String competitionLocation;
+    private String competitionSession;
     private String teamName;
     private String description;
 
@@ -92,6 +93,14 @@ public class AwardDTO {
 
     public void setTeamName(String teamName) {
         this.teamName = teamName;
+    }
+
+    public String getCompetitionSession() {
+        return competitionSession;
+    }
+
+    public void setCompetitionSession(String competitionSession) {
+        this.competitionSession = competitionSession;
     }
 
     public String getDescription() {

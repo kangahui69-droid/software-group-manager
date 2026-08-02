@@ -162,6 +162,7 @@ class AwardServiceTest {
             public long getSize() { return size; }
             public String getContentType() { return contentType; }
             public String getSubmittedFileName() { return fileName; }
+            public java.io.InputStream getInputStream() { return new java.io.ByteArrayInputStream(new byte[0]); }
         };
     }
 
@@ -235,7 +236,8 @@ class AwardServiceTest {
         @FastTest
         @DisplayName("提交奖项时dto为null应返回错误")
         void should_return_error_when_dto_null() {
-            Result result = awardService.submitAward(null, MEMBER_USER_ID, null);
+            AwardDTO dto = null;
+            Result result = awardService.submitAward(dto, MEMBER_USER_ID, null);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -371,6 +373,7 @@ class AwardServiceTest {
 
         @FastTest
         @DisplayName("审批奖项时id为null应返回错误")
+
         void should_return_error_when_id_null() {
             Result result = awardService.approveAward(null, ADMIN_USER_ID);
 

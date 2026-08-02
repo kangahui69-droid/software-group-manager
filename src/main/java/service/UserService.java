@@ -7,8 +7,13 @@ import dto.ProfileDTO;
 import model.FileStorage;
 import model.MemberProfile;
 import model.User;
+import util.FileUtil;
 import util.Result;
 
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -168,7 +173,7 @@ public class UserService {
             return fileValidation;
         }
 
-        return saveAvatarFile(profile, userId, fileInfo);
+        return saveAvatarFile(profile, userId, filePart, fileInfo);
     }
 
     public Result getUserDetail(Integer userId) {
@@ -222,7 +227,7 @@ public class UserService {
             return fileValidation;
         }
 
-        return saveAvatarFile(profile, adminId, fileInfo);
+        return saveAvatarFile(profile, adminId, filePart, fileInfo);
     }
 
     // ==================== 验证方法 ====================
@@ -405,11 +410,24 @@ public class UserService {
         return profile;
     }
 
-    private Result saveAvatarFile(MemberProfile profile, Integer userId, AvatarFileInfo fileInfo) {
+    private Result saveAvatarFile(MemberProfile profile, Integer userId, Object filePart, AvatarFileInfo fileInfo) {
         FileStorage fileStorage = createAvatarFileStorage(userId, fileInfo);
+
+        // 将文件写入磁盘
+        String uploadDir = FileUtil.getCategoryDir(AVATAR_CATEGORY);
+        String storedName = fileStorage.getStoredName();
+        File destFile = new File(uploadDir, storedName);
+
+        try (InputStream input = (InputStream) filePart.getClass().getMethod("getInputStream").invoke(filePart)) {
+            Files.copy(input, destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            return Result.error(500, "头像文件保存失败: " + e.getMessage());
+        }
 
         Integer fileId = fileStorageDAO.insert(fileStorage);
         if (fileId == null) {
+            // 写入失败，删除已创建的文件
+            destFile.delete();
             return Result.error(500, "文件保存失败");
         }
 

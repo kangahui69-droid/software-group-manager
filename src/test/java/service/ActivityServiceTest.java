@@ -1,7 +1,7 @@
 package service;
 
 import dao.ActivityDAO;
-import dao.RegistrationDAO;
+import dao.ActivityParticipantDAO;
 import dao.UserDAO;
 import dto.ActivityDTO;
 import dto.ActivityFilterDTO;
@@ -47,9 +47,9 @@ import org.mockito.stubbing.Answer;
  * 所有测试将失败，直至实现对应方法
  *
  * Mock说明：所有mock基于实际DAO接口签名
- * - RegistrationDAO: getParticipantCount(Integer, String) / getRegistrationStatus(Integer, Integer)
- * - RegistrationDAO: updateStatus(Integer, Integer, String, String, Connection) 需要notes参数
- * - RegistrationDAO: batchUpdateStatus(List<Integer>, Integer, String, Connection)
+ * - ActivityParticipantDAO(原RegistrationDAO): getParticipantCount(Integer, String) / getRegistrationStatus(Integer, Integer)
+ * - ActivityParticipantDAO: updateStatus(Integer, Integer, String, String, Connection) 需要notes参数
+ * - ActivityParticipantDAO: batchUpdateStatus(List<Integer>, Integer, String, Connection)
  * - ActivityDAO: approveActivity(id) / rejectActivity(id) (无status参数)
  * - ActivityDAO: findByCreatorId / 无countByCreatorId / 无countByConditions
  */
@@ -62,7 +62,7 @@ class ActivityServiceTest {
     private ActivityDAO activityDAO;
 
     @Mock
-    private RegistrationDAO registrationDAO;
+    private ActivityParticipantDAO registrationDAO;
 
     @Mock
     private UserDAO userDAO;

@@ -1,7 +1,7 @@
 package service;
 
 import dao.ActivityDAO;
-import dao.RegistrationDAO;
+import dao.ActivityParticipantDAO;
 import dao.UserDAO;
 import dto.ActivityDTO;
 import dto.ActivityFilterDTO;
@@ -69,7 +69,7 @@ public class ActivityService {
     // ==================== DAO实例 ====================
 
     private ActivityDAO activityDAO = new ActivityDAO();
-    private RegistrationDAO registrationDAO = new RegistrationDAO();
+    private ActivityParticipantDAO registrationDAO = new ActivityParticipantDAO();
     private UserDAO userDAO = new UserDAO();
 
     // ==================== 工具方法 ====================
@@ -194,11 +194,6 @@ public class ActivityService {
         User user = userDAO.findById(userId);
         if (user == null) {
             return Result.error(CODE_NOT_FOUND, "用户不存在");
-        }
-
-        // 权限校验（必须是管理员）
-        if (!"ADMIN".equals(user.getRole())) {
-            return Result.error(CODE_FORBIDDEN, "只有管理员可以创建活动");
         }
 
         // 描述长度校验（可选字段，但长度有限制）

@@ -9,10 +9,10 @@ import service.ProjectService;
 import servlet.BaseApiServlet;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
@@ -44,7 +44,7 @@ import java.util.Map;
  * - GET /api/projects/my → 我的项目
  * - GET /api/projects/created-by-me → 我创建的项目
  */
-@WebServlet(name = "ProjectApiServlet", urlPatterns = {"/api/projects", "/api/projects/*"})
+//@WebServlet(name = "ProjectApiServlet", urlPatterns = {"/api/projects", "/api/projects/*"})  // 手动在 web.xml 中注册
 public class ProjectApiServlet extends BaseApiServlet {
 
     private static final long serialVersionUID = 1L;

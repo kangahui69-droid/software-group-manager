@@ -20,9 +20,9 @@ import servlet.BaseApiServlet;
 import support.FastTest;
 import util.Result;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StringReader;

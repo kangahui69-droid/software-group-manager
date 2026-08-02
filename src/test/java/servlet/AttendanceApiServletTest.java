@@ -16,9 +16,9 @@ import service.AttendanceService;
 import support.FastTest;
 import util.Result;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -948,7 +948,7 @@ class AttendanceApiServletTest {
         }
 
         @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws javax.servlet.ServletException, java.io.IOException {
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws jakarta.servlet.ServletException, java.io.IOException {
             User currentUser = getCurrentUser(req);
             if (currentUser == null) {
                 sendUnauthorized(resp, "请先登录");
@@ -997,7 +997,7 @@ class AttendanceApiServletTest {
         }
 
         @Override
-        protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws javax.servlet.ServletException, java.io.IOException {
+        protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws jakarta.servlet.ServletException, java.io.IOException {
             User currentUser = getCurrentUser(req);
             if (currentUser == null) {
                 sendUnauthorized(resp, "请先登录");
@@ -1067,7 +1067,7 @@ class AttendanceApiServletTest {
         }
 
         @Override
-        protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws javax.servlet.ServletException, java.io.IOException {
+        protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws jakarta.servlet.ServletException, java.io.IOException {
             sendError(resp, 404, "未找到请求的路径");
         }
 

@@ -4,18 +4,19 @@ import dao.UserDAO;
 import dao.MemberProfileDAO;
 import dao.FileStorageDAO;
 import dto.ProfileDTO;
+import model.MemberProfile;
 import model.User;
 import service.UserService;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import java.io.IOException;
 
 /**
@@ -128,11 +129,29 @@ public class ProfileServlet extends HttpServlet {
         }
 
         try {
+            // 更新基本信息
             Result result = userService.updateProfile(
                     currentUser.getId(), name, phone, email, birthday, studentId, major, grade, bio);
 
             if (result.isSuccess()) {
-                request.setAttribute("success", "个人信息更新成功");
+                // 处理头像上传
+                Part avatarPart = request.getPart("avatar");
+                if (avatarPart != null && avatarPart.getSize() > 0) {
+                    Result avatarResult = userService.uploadAvatar(currentUser.getId(), avatarPart);
+                    if (avatarResult.isSuccess()) {
+                        // 更新session中的memberProfile
+                        MemberProfileDAO profileDAO = new MemberProfileDAO();
+                        model.MemberProfile updatedProfile = profileDAO.findByUserId(currentUser.getId());
+                        if (updatedProfile != null) {
+                            session.setAttribute("memberProfile", updatedProfile);
+                        }
+                        request.setAttribute("success", "个人信息和头像更新成功");
+                    } else {
+                        request.setAttribute("error", "个人信息已更新，但头像上传失败: " + avatarResult.getMessage());
+                    }
+                } else {
+                    request.setAttribute("success", "个人信息更新成功");
+                }
             } else {
                 request.setAttribute("error", result.getMessage());
             }

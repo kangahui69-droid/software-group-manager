@@ -19,7 +19,7 @@ public class AwardDAO {
      */
     public List<Award> findApproved() {
         List<Award> awards = new ArrayList<>();
-        String sql = "SELECT * FROM award WHERE award_status = 'APPROVED' ORDER BY competition_year DESC, created_at DESC";
+        String sql = "SELECT * FROM award WHERE award_status = 'APPROVED' ORDER BY year DESC, created_at DESC";
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;

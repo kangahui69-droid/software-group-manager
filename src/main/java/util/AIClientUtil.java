@@ -69,7 +69,7 @@ public class AIClientUtil {
         }
     }
 
-    public void chatStream(String systemPrompt, String userMessage, javax.servlet.http.HttpServletResponse response) throws Exception {
+    public void chatStream(String systemPrompt, String userMessage, jakarta.servlet.http.HttpServletResponse response) throws Exception {
         response.setContentType("text/event-stream;charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Cache-Control", "no-cache");

@@ -2,8 +2,8 @@ package listener;
 
 import util.GroupMuteScheduler;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 /**
  * 群聊禁言定时任务监听器

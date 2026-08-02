@@ -7,9 +7,9 @@ import support.FastTest;
 import util.AuthHelper;
 import util.Result;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

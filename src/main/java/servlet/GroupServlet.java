@@ -2,10 +2,10 @@ package servlet;
 
 import dao.ActivityDAO;
 import dao.ActivityGroupDAO;
+import dao.ActivityParticipantDAO;
 import dao.FileStorageDAO;
 import dao.GroupMemberDAO;
 import dao.GroupMessageDAO;
-import dao.RegistrationDAO;
 import dao.UserGroupDAO;
 import model.Activity;
 import model.ActivityGroup;
@@ -27,15 +27,15 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import util.FileUtil;
-import javax.servlet.annotation.MultipartConfig;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
 /**
  * 群聊Servlet
@@ -49,7 +49,7 @@ public class GroupServlet extends HttpServlet {
     private GroupMessageDAO messageDAO = new GroupMessageDAO();
     private UserGroupDAO userGroupDAO = new UserGroupDAO();
     private ActivityDAO activityDAO = new ActivityDAO();
-    private RegistrationDAO registrationDAO = new RegistrationDAO();
+    private ActivityParticipantDAO registrationDAO = new ActivityParticipantDAO();
     private FileStorageDAO fileStorageDAO = new FileStorageDAO();
     private static final String UPLOAD_BASE_DIR = "group_files";
 
@@ -324,7 +324,7 @@ public class GroupServlet extends HttpServlet {
         group.setGroupOwnerId(currentUser.getId());
         group.setActivityId(activityId);
 
-        if (groupDAO.insert(group)) {
+        if (groupDAO.insert(group) > 0) {
             ActivityGroup createdGroup = null;
             Integer newGroupId = null;
             

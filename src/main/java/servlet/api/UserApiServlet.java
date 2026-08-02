@@ -10,12 +10,12 @@ import model.User;
 import service.UserService;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,7 +35,7 @@ import java.util.Map;
  * - GET /api/users/{id} → 用户详情
  * - GET /api/users → 成员列表（admin）
  */
-@WebServlet("/api/*")
+//@WebServlet("/api/*")  // 手动在 web.xml 中注册
 public class UserApiServlet extends HttpServlet {
 
     // ==================== 常量 ====================
@@ -135,37 +135,38 @@ public class UserApiServlet extends HttpServlet {
     }
 
     private boolean isMePath(String path) {
-        return path == null || path.equals("/me") || path.equals("/me/");
+        return path == null || path.equals("/me") || path.equals("/me/") || path.equals("me");
     }
 
     private boolean isUsersPath(String path) {
-        return path == null || path.equals("/") || path.isEmpty() || path.equals("/users");
+        return path == null || path.equals("/") || path.isEmpty() || path.equals("/users") || path.equals("users");
     }
 
     private boolean isUserDetailPath(String path) {
-        if (path == null || !path.startsWith("/")) return false;
+        if (path == null) return false;
         String[] segments = path.split("/");
-        return segments.length >= 2 && isNumeric(segments[1]);
+        // path could be "123" (after stripping /users/) or "/123" (direct)
+        return segments.length >= 1 && isNumeric(segments[0]);
     }
 
     private boolean isLoginPath(String path) {
-        return "/login".equals(path);
+        return "/login".equals(path) || "login".equals(path);
     }
 
     private boolean isLogoutPath(String path) {
-        return "/logout".equals(path);
+        return "/logout".equals(path) || "logout".equals(path);
     }
 
     private boolean isChangePasswordPath(String path) {
-        return "/change-password".equals(path);
+        return "/change-password".equals(path) || "change-password".equals(path);
     }
 
     private boolean isAvatarPath(String path) {
-        return path != null && (path.equals("/me/avatar") || path.startsWith("/me/avatar"));
+        return path != null && (path.equals("/me/avatar") || path.equals("me/avatar") || path.startsWith("/me/avatar") || path.startsWith("me/avatar"));
     }
 
     private boolean isUpdateProfilePath(String path) {
-        return path != null && (path.equals("/me") || path.startsWith("/me"));
+        return path != null && (path.equals("/me") || path.equals("me") || path.startsWith("/me") || path.startsWith("me"));
     }
 
     // ==================== 处理器方法 ====================
