@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: file-service
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST:nacos}:${NACOS_PORT:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+      config:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+        file-extension: yml
+        # 共享配置（如果有）
+        # shared-configs:
+        #   - data-id: common-config.yml
+        #     group: DEFAULT_GROUP
+        #     refresh: true
