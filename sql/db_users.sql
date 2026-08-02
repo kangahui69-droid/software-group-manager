@@ -9,8 +9,8 @@
 -- ============================================================
 
 -- file-service：只访问文件相关表
-CREATE USER IF NOT EXISTS 'file_svc'@'%' IDENTIFIED BY 'file_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'file_svc'@'localhost' IDENTIFIED BY 'file_svc_pass_2024';
+CREATE USER IF NOT EXISTS 'file_svc'@'%' IDENTIFIED BY 'file_svc_pass';
+CREATE USER IF NOT EXISTS 'file_svc'@'localhost' IDENTIFIED BY 'file_svc_pass';
 
 -- user-service：访问用户、成员档案、管理员档案相关表
 CREATE USER IF NOT EXISTS 'user_svc'@'%' IDENTIFIED BY 'user_svc_pass_2024';

@@ -1,0 +1,84 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:100MB}
+      max-request-size: ${MAX_FILE_SIZE:100MB}
+      enabled: true
+
+  # MinIO 对象存储配置
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin123}
+    bucket: ${MINIO_BUCKET:software-group}
+    # MinIO 连接超时
+    connect-timeout: 5000
+    write-timeout: 10000
+    read-timeout: 10000
+
+  # 数据库配置（file-service 专用 DB 用户）
+  datasource:
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+    username: ${DB_USER:file_svc}
+    password: ${DB_PASSWORD:file_svc_pass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: file-service-pool
+
+  # Redis 配置（用于文件信息缓存）
+  redis:
+    host: ${REDIS_HOST:redis}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 5000
+    jedis:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 2
+        max-wait: -1ms
+
+# Spring Cloud Alibaba Nacos Discovery
+alibaba:
+  cloud:
+    nacos:
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+
+# Sentinel 熔断配置
+spring.cloud.sentinel:
+  enabled: true
+  # Sentinel Dashboard（可选，用于监控）
+  # dashboard: ${SENTINEL_HOST:sentinel}:${SENTINEL_PORT:8858}
+
+# OpenFeign 配置
+spring.cloud:
+  openfeign:
+    client:
+      config:
+        default:
+          loggerLevel: basic
+          connect-timeout: 5000
+          read-timeout: 10000
+    # 启用 Hystrix（如果需要）
+    # hystrix:
+    #   enabled: true
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.softwaregroup.file: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
