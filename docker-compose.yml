@@ -2,6 +2,9 @@
 # 作用：定义和管理多容器应用的编排
 # 使用方式：docker-compose up -d（后台启动所有服务）
 
+# ========== 阶段三基础设施服务（Nacos、Sentinel、MinIO）==========
+# 对应计划文档：阶段三_微服务拆分实施计划 - 3.1 基础设施搭建
+
 services:
 
   # ========== MySQL 数据库服务 ==========
@@ -121,6 +124,82 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
+      retries: 5
+
+  # ========== Nacos 服务注册中心（阶段三基础设施）==========
+  # 用于微服务注册与发现，不使用配置中心（延用本地 application.yml）
+  # 开发环境使用嵌入式 Derby 数据库，生产环境可切换为 MySQL
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: sg_nacos
+    restart: always
+    environment:
+      # 单机模式（使用嵌入式 Derby 数据库，无需 MySQL）
+      MODE: standalone
+      # Nacos 认证（开发环境关闭，生产环境必须开启）
+      NACOS_AUTH_ENABLE: false
+      # JVM 内存配置（单机模式降低资源占用）
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+    ports:
+      - "${NACOS_PORT:-8848}:8848"
+      - "${NACOS_GRPC_PORT:-9848}:9848"
+    volumes:
+      - nacos_data:/home/nacos/data
+      - nacos_logs:/home/nacos/logs
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ========== Sentinel 熔断器 Dashboard（阶段三基础设施）==========
+  # 用于服务容错和流量控制
+  sentinel:
+    image: bladex/sentinel-dashboard:latest
+    container_name: sg_sentinel
+    restart: always
+    environment:
+      # JVM 内存配置
+      JAVA_OPTS: "-Dserver.port=8858 -Dcsp.sentinel.dashboard.server=localhost:8858 -Dproject.name=sentinel-dashboard"
+    ports:
+      - "${SENTINEL_PORT:-8858}:8858"
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8858/"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+
+  # ========== MinIO 对象存储服务（阶段三基础设施）==========
+  # 替代本地文件系统共享问题，支持 S3 协议
+  minio:
+    image: minio/minio:latest
+    container_name: sg_minio
+    restart: always
+    environment:
+      # Root 用户凭证（生产环境必须修改！）
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    ports:
+      # API 端口
+      - "${MINIO_PORT:-9000}:9000"
+      # Console 管理界面端口
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - software-group-net
+    # MinIO 服务命令
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 10s
       retries: 5
 
   # ========== 应用服务（Tomcat + WAR）==========
@@ -246,3 +325,7 @@ volumes:
   redis_data:
   rabbitmq_data:
   app_data:
+  # 阶段三新增数据卷
+  nacos_data:     # Nacos 数据持久化
+  nacos_logs:     # Nacos 日志持久化
+  minio_data:     # MinIO 数据持久化
