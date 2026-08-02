@@ -8,11 +8,11 @@ import model.User;
 import service.ActivityService;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
@@ -35,7 +35,7 @@ import java.util.Map;
  * - GET /api/activities/my → 我报名的活动
  * - GET /api/activities/created-by-me → 我创建的活动
  */
-@WebServlet("/api/activities/*")
+//@WebServlet("/api/activities/*")  // 手动在 web.xml 中注册
 public class ActivityApiServlet extends HttpServlet {
 
     private static final String CONTENT_TYPE_JSON = "application/json; charset=UTF-8";
@@ -54,19 +54,43 @@ public class ActivityApiServlet extends HttpServlet {
         User currentUser = getCurrentUser(request);
 
         String pathInfo = request.getPathInfo();
+
+        // 特殊路径优先检查（/my, /created-by-me）
+        if ("/my".equals(pathInfo)) {
+            if (currentUser == null) {
+                sendUnauthorized(response);
+            } else {
+                handleGetMyActivities(request, response, currentUser);
+            }
+            return;
+        }
+        if ("/created-by-me".equals(pathInfo)) {
+            if (currentUser == null) {
+                sendUnauthorized(response);
+            } else {
+                handleGetMyCreatedActivities(request, response, currentUser);
+            }
+            return;
+        }
+
+        // 列表请求（空路径、根路径、或直接 /activities）
+        if (isRootOrEmptyPath(pathInfo) || "/activities".equals(pathInfo) || "/activities/".equals(pathInfo)) {
+            if (currentUser == null) {
+                sendUnauthorized(response);
+            } else {
+                handleListActivities(request, response, currentUser);
+            }
+            return;
+        }
+
+        // 详情请求（必须是 /activities/{数字ID} 格式）
         if (isActivityDetailPath(pathInfo)) {
             handleGetActivityDetail(request, response, currentUser);
-        } else if (currentUser == null) {
-            sendUnauthorized(response);
-        } else if (isRootOrEmptyPath(pathInfo)) {
-            handleListActivities(request, response, currentUser);
-        } else if (pathInfo.equals("/my")) {
-            handleGetMyActivities(request, response, currentUser);
-        } else if (pathInfo.equals("/created-by-me")) {
-            handleGetMyCreatedActivities(request, response, currentUser);
-        } else {
-            sendError(response, 400, "无效的请求路径");
+            return;
         }
+
+        // 其他无效路径
+        sendError(response, 400, "无效的请求路径");
     }
 
     @Override
@@ -368,7 +392,7 @@ public class ActivityApiServlet extends HttpServlet {
     // ==================== 工具方法 ====================
 
     private User getCurrentUser(HttpServletRequest request) {
-        javax.servlet.http.HttpSession session = request.getSession(false);
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
         return session != null ? (User) session.getAttribute("user") : null;
     }
 

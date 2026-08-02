@@ -400,12 +400,14 @@ class AttendanceServiceTest {
         }
 
         @FastTest
-        @DisplayName("filter为null时应返回错误")
-        void should_return_error_when_filter_null() {
+        @DisplayName("filter为null时应返回所有记录")
+        void should_return_all_records_when_filter_null() throws SQLException {
+            doReturn(Arrays.asList()).when(attendanceDAO).getAttendanceList(any(), any(), any(), anyInt(), anyInt());
+            doReturn(0).when(attendanceDAO).getTotalCount(any(), any(), any());
+
             Result result = attendanceService.listAttendance(null, 1);
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(400);
+            assertThat(result.isSuccess()).isTrue();
         }
 
         @FastTest

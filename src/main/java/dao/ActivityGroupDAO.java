@@ -12,23 +12,31 @@ import java.util.List;
  */
 public class ActivityGroupDAO {
 
-    public boolean insert(ActivityGroup group) {
+    public int insert(ActivityGroup group) {
         String sql = "INSERT INTO activity_group (activity_id, group_name, group_owner_id) VALUES (?, ?, ?)";
         Connection conn = null;
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
         try {
             conn = DBUtil.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setObject(1, group.getActivityId());
             pstmt.setString(2, group.getGroupName());
             pstmt.setInt(3, group.getGroupOwnerId());
-            return pstmt.executeUpdate() > 0;
+            pstmt.executeUpdate();
+
+            rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                int generatedId = rs.getInt(1);
+                group.setId(generatedId);
+                return generatedId;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            closeResources(conn, pstmt, null);
+            closeResources(conn, pstmt, rs);
         }
-        return false;
+        return -1;
     }
 
     public ActivityGroup findById(Integer id) {

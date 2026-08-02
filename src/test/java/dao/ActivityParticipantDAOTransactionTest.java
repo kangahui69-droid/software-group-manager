@@ -155,7 +155,7 @@ class ActivityParticipantDAOTransactionTest {
             Activity activity = createAndInsertTestActivity();
             participantDAO.register(activity.getId(), 2);
 
-            boolean result = participantDAO.updateStatus(activity.getId(), 2, "approved", conn);
+            boolean result = participantDAO.updateStatus(activity.getId(), 2, "approved", null, conn);
 
             assertThat(result).isTrue();
         }
@@ -172,10 +172,10 @@ class ActivityParticipantDAOTransactionTest {
         assertThat(result).isTrue();
     }
 
-    // ==================== batchUpdateParticipantStatus 事务重载 ====================
+    // ==================== batchUpdateStatus 事务重载 ====================
 
     @FastTest
-    @DisplayName("batchUpdateParticipantStatus(List, Integer, String, Connection) 有参版本应能批量更新状态")
+    @DisplayName("batchUpdateStatus(List, Integer, String, Connection) 有参版本应能批量更新状态")
     void should_batch_update_participant_status_with_connection() throws SQLException {
         try (Connection conn = DBUtil.getConnection()) {
             Activity activity = createAndInsertTestActivity();
@@ -183,32 +183,32 @@ class ActivityParticipantDAOTransactionTest {
 
             List<Integer> userIds = Arrays.asList(2);
 
-            int result = participantDAO.batchUpdateParticipantStatus(userIds, activity.getId(), "confirmed", conn);
+            int result = participantDAO.batchUpdateStatus(userIds, activity.getId(), "confirmed", conn);
 
             assertThat(result).isGreaterThanOrEqualTo(0);
         }
     }
 
     @FastTest
-    @DisplayName("batchUpdateParticipantStatus(List, Integer, String) 无参版本应能正常批量更新")
+    @DisplayName("batchUpdateStatus(List, Integer, String) 无参版本应能正常批量更新")
     void should_batch_update_participant_status_without_connection() {
         Activity activity = createAndInsertTestActivity();
         participantDAO.register(activity.getId(), 2);
 
         List<Integer> userIds = Arrays.asList(2);
 
-        int result = participantDAO.batchUpdateParticipantStatus(userIds, activity.getId(), "confirmed");
+        int result = participantDAO.batchUpdateStatus(userIds, activity.getId(), "confirmed");
 
         assertThat(result).isGreaterThanOrEqualTo(0);
     }
 
     @FastTest
-    @DisplayName("batchUpdateParticipantStatus 空列表应返回0")
+    @DisplayName("batchUpdateStatus 空列表应返回0")
     void should_return_zero_for_empty_user_list() throws SQLException {
         try (Connection conn = DBUtil.getConnection()) {
             Activity activity = createAndInsertTestActivity();
 
-            int result = participantDAO.batchUpdateParticipantStatus(Arrays.asList(), activity.getId(), "confirmed", conn);
+            int result = participantDAO.batchUpdateStatus(Arrays.asList(), activity.getId(), "confirmed", conn);
 
             assertThat(result).isZero();
         }
@@ -261,7 +261,7 @@ class ActivityParticipantDAOTransactionTest {
             conn.setAutoCommit(false);
             try {
                 participantDAO.register(activity.getId(), 2, conn);
-                participantDAO.updateStatus(activity.getId(), 2, "approved", conn);
+                participantDAO.updateStatus(activity.getId(), 2, "approved", null, conn);
 
                 conn.commit();
             } catch (RuntimeException e) {
@@ -285,7 +285,7 @@ class ActivityParticipantDAOTransactionTest {
             try {
                 participantDAO.register(activity.getId(), 2, conn);
 
-                participantDAO.updateStatus(activity.getId(), 99999, "approved", conn);
+                participantDAO.updateStatus(activity.getId(), 99999, "approved", null, conn);
 
                 conn.commit();
                 fail("Expected RuntimeException was not thrown");

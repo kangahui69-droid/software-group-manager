@@ -6,12 +6,11 @@ import dao.AIKnowledgeBaseDAO;
 import dao.AIFaqStatisticsDAO;
 import dao.ActivityDAO;
 import dao.ActivityGroupDAO;
-import dao.GroupMemberDAO;
 import dao.ActivityParticipantDAO;
+import dao.GroupMemberDAO;
 import dao.AwardDAO;
 import dao.NewsDAO;
 import dao.ProblemReportDAO;
-import dao.RegistrationDAO;
 import dao.ProjectDAO;
 import dao.UserDAO;
 import dao.UserGroupDAO;
@@ -56,11 +55,10 @@ public class AIService {
     private ActivityDAO activityDAO;
     private ActivityGroupDAO groupDAO;
     private GroupMemberDAO groupMemberDAO;
-    private ActivityParticipantDAO activityParticipantDAO;
     private NewsDAO newsDAO;
     private AwardDAO awardDAO;
     private ProblemReportDAO problemReportDAO;
-    private RegistrationDAO registrationDAO;
+    private ActivityParticipantDAO registrationDAO;
     private ProjectDAO projectDAO;
     private UserDAO userDAO;
     private UserGroupDAO userGroupDAO;
@@ -73,24 +71,22 @@ public class AIService {
         this.activityDAO = new ActivityDAO();
         this.groupDAO = new ActivityGroupDAO();
         this.groupMemberDAO = new GroupMemberDAO();
-        this.activityParticipantDAO = new ActivityParticipantDAO();
         this.newsDAO = new NewsDAO();
         this.awardDAO = new AwardDAO();
         this.problemReportDAO = new ProblemReportDAO();
-        this.registrationDAO = new RegistrationDAO();
+        this.registrationDAO = new ActivityParticipantDAO();
         this.projectDAO = new ProjectDAO();
         this.userDAO = new UserDAO();
         this.userGroupDAO = new UserGroupDAO();
     }
 
     public AIService(AIConversationDAO conversationDAO, AIMessageDAO messageDAO,
-                     ActivityDAO activityDAO, ActivityParticipantDAO activityParticipantDAO,
-                     AwardDAO awardDAO, ProjectDAO projectDAO, RegistrationDAO registrationDAO,
+                     ActivityDAO activityDAO,
+                     AwardDAO awardDAO, ProjectDAO projectDAO, ActivityParticipantDAO registrationDAO,
                      UserDAO userDAO, NewsDAO newsDAO, ProblemReportDAO problemReportDAO) {
         this.conversationDAO = conversationDAO;
         this.messageDAO = messageDAO;
         this.activityDAO = activityDAO;
-        this.activityParticipantDAO = activityParticipantDAO;
         this.awardDAO = awardDAO;
         this.projectDAO = projectDAO;
         this.registrationDAO = registrationDAO;
@@ -245,7 +241,7 @@ public class AIService {
             return "未找到该活动信息";
         }
         
-        int participantCount = activityParticipantDAO.getParticipantIdsByActivityId(activityId).size();
+        int participantCount = registrationDAO.getParticipantIdsByActivityId(activityId).size();
         
         StringBuilder sb = new StringBuilder();
         sb.append(activity.getTitle()).append("\n\n");
@@ -1429,7 +1425,7 @@ public class AIService {
                 result.put("message", "未找到活动 ID " + activityId);
                 return result;
             }
-            int participantCount = activityParticipantDAO.getParticipantIdsByActivityId(activityId).size();
+            int participantCount = registrationDAO.getParticipantIdsByActivityId(activityId).size();
             activity.setCurrentParticipants(participantCount);
             activity.setRegistrationOpen(activity.isInRegistrationPeriod());
             result.put("success", true);
@@ -1662,7 +1658,7 @@ public class AIService {
                 result.put("message", "未找到活动 ID " + activityId);
                 return result;
             }
-            List<Integer> participantIds = activityParticipantDAO.getParticipantIdsByActivityId(activityId);
+            List<Integer> participantIds = registrationDAO.getParticipantIdsByActivityId(activityId);
             List<User> participants = new java.util.ArrayList<>();
             for (Integer userId : participantIds) {
                 User u = userDAO.findById(userId);

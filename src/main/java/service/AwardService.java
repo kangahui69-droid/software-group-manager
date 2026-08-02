@@ -711,8 +711,8 @@ public class AwardService {
      */
     private InputStream getInputStreamFromImage(Object image) {
         try {
-            if (image instanceof javax.servlet.http.Part) {
-                return ((javax.servlet.http.Part) image).getInputStream();
+            if (image instanceof jakarta.servlet.http.Part) {
+                return ((jakarta.servlet.http.Part) image).getInputStream();
             }
             // 尝试通过反射获取
             java.lang.reflect.Method method = image.getClass().getMethod("getInputStream");

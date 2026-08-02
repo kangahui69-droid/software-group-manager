@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  * - ActivityDAO: findInRegistrationPeriod/findAll/findById
  * - AwardDAO: findByUserId/findAll/insert
  * - ProjectDAO: findProjectsByUserId/findAll
- * - RegistrationDAO: findByUserId/register/isRegistered
+ * - ActivityParticipantDAO(原RegistrationDAO): findByUserId/register/isRegistered
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -66,16 +66,13 @@ class AIServiceTest {
     private ActivityDAO activityDAO;
 
     @Mock
-    private ActivityParticipantDAO activityParticipantDAO;
-
-    @Mock
     private AwardDAO awardDAO;
 
     @Mock
     private ProjectDAO projectDAO;
 
     @Mock
-    private RegistrationDAO registrationDAO;
+    private ActivityParticipantDAO registrationDAO;
 
     @Mock
     private UserDAO userDAO;
@@ -542,7 +539,7 @@ class AIServiceTest {
             User admin = createAdminUser();
             Activity activity = createActivity(1, "测试活动");
             when(activityDAO.findById(1)).thenReturn(activity);
-            when(activityParticipantDAO.getParticipantIdsByActivityId(1)).thenReturn(List.of());
+            when(registrationDAO.getParticipantIdsByActivityId(1)).thenReturn(List.of());
 
             Map<String, String> params = createParams("activity_id", "1");
             Map<String, Object> result = aiService.executeAction("view_participants", params, admin);

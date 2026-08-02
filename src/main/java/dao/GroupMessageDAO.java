@@ -77,6 +77,31 @@ public class GroupMessageDAO {
         return findByGroupId(groupId, limit, 0);
     }
 
+    public GroupMessage findById(Integer id) {
+        String sql = "SELECT gm.*, u.username, u.name as sender_name, mp.avatar_file_id as sender_avatar_file_id " +
+                     "FROM group_message gm " +
+                     "LEFT JOIN user u ON gm.sender_id = u.id " +
+                     "LEFT JOIN member_profile mp ON u.id = mp.user_id " +
+                     "WHERE gm.id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, id);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToMessage(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, pstmt, rs);
+        }
+        return null;
+    }
+
     public int countByGroupId(Integer groupId) {
         String sql = "SELECT COUNT(*) FROM group_message WHERE group_id = ?";
         Connection conn = null;

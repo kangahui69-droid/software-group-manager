@@ -7,10 +7,10 @@ import service.FileService;
 import servlet.BaseApiServlet;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -26,7 +26,7 @@ import java.io.IOException;
  * - DELETE /api/files/{id} → 删除
  * - GET /api/files → 文件列表（按category）
  */
-@WebServlet(name = "FileApiServlet", urlPatterns = {"/api/files", "/api/files/*"})
+//@WebServlet(name = "FileApiServlet", urlPatterns = {"/api/files", "/api/files/*"})  // 手动在 web.xml 中注册
 public class FileApiServlet extends BaseApiServlet {
 
     private static final long serialVersionUID = 1L;

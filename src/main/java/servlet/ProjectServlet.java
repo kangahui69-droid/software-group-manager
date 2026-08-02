@@ -12,11 +12,11 @@ import model.User;
 import service.ProjectService;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -53,13 +53,25 @@ public class ProjectServlet extends HttpServlet {
 
         switch (action) {
             case "list":
-                listProjects(request, response, user);
+                listProjects(request, response, user);  // 根据用户角色转发到不同页面
                 break;
             case "detail":
                 getProjectDetail(request, response, user);
                 break;
+            case "edit":
+                editProject(request, response, user);  // 编辑项目表单
+                break;
             case "myProjects":
-                getMyProjects(request, response, user);
+                getMyProjects(request, response, user);  // 用户端"我的项目"（我创建的项目）
+                break;
+            case "myApplications":
+                getMyApplications(request, response, user);  // 我的申请记录（我申请加入的项目）
+                break;
+            case "manage":
+                listProjects(request, response, user);  // 管理端项目管理
+                break;
+            case "createForm":
+                showCreateForm(request, response, user);
                 break;
             default:
                 listProjects(request, response, user);
@@ -135,7 +147,13 @@ public class ProjectServlet extends HttpServlet {
         request.setAttribute("keyword", keyword);
         request.setAttribute("status", status);
         request.setAttribute("year", yearStr);
-        request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
+
+        // 根据用户角色决定转发到哪个页面
+        if (user != null && "ADMIN".equals(user.getRole())) {
+            request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
+        } else {
+            request.getRequestDispatcher("/jsp/member/project/list.jsp").forward(request, response);
+        }
     }
 
     private void getProjectDetail(HttpServletRequest request, HttpServletResponse response, User user)
@@ -150,9 +168,23 @@ public class ProjectServlet extends HttpServlet {
             Integer id = Integer.parseInt(idStr);
             Result result = projectService.getProjectDetail(id, user != null ? user.getId() : null);
             if (result.isSuccess()) {
-                request.setAttribute("project", result.getData());
+                // Service返回的是Map，需要分解为各个属性
+                java.util.Map<String, Object> data = (java.util.Map<String, Object>) result.getData();
+                request.setAttribute("project", data.get("project"));
+                request.setAttribute("members", data.get("members"));
+                request.setAttribute("isMember", data.get("isMember"));
+                request.setAttribute("hasApplication", data.get("hasApplication"));
+                request.setAttribute("labels", data.get("labels"));
+                request.setAttribute("plans", data.get("plans"));
+                request.setAttribute("progress", data.get("progress"));
+                request.setAttribute("history", data.get("history"));
             }
-            request.getRequestDispatcher("/jsp/admin/project/detail.jsp").forward(request, response);
+            // 根据用户角色决定转发到哪个页面
+            if (user != null && "ADMIN".equals(user.getRole())) {
+                request.getRequestDispatcher("/jsp/admin/project/detail.jsp").forward(request, response);
+            } else {
+                request.getRequestDispatcher("/jsp/member/project/detail.jsp").forward(request, response);
+            }
         } catch (NumberFormatException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
@@ -169,7 +201,46 @@ public class ProjectServlet extends HttpServlet {
         if (result.isSuccess()) {
             request.setAttribute("projects", result.getData());
         }
-        request.getRequestDispatcher("/jsp/project/myProjects.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/member/project/list.jsp").forward(request, response);
+    }
+
+    private void editProject(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
+            return;
+        }
+
+        try {
+            Integer id = Integer.parseInt(idStr);
+            Result result = projectService.getProjectDetail(id, user != null ? user.getId() : null);
+            if (result.isSuccess()) {
+                request.setAttribute("project", result.getData());
+            }
+            request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
+        }
+    }
+
+    private void getMyApplications(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+        // TODO: 调用 projectService.getMyApplications(user.getId()) 获取申请记录
+        request.getRequestDispatcher("/jsp/member/project/myApplications.jsp").forward(request, response);
+    }
+
+    private void showCreateForm(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+        request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
     }
 
     private void createProject(HttpServletRequest request, HttpServletResponse response, User user)
@@ -177,13 +248,13 @@ public class ProjectServlet extends HttpServlet {
         String name = request.getParameter("name");
         if (name == null || name.trim().isEmpty()) {
             request.setAttribute("error", "项目名称不能为空");
-            request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
+            request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
             return;
         }
 
         if (name.length() > 100) {
             request.setAttribute("error", "项目名称不能超过100个字符");
-            request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
+            request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
             return;
         }
 
@@ -193,21 +264,23 @@ public class ProjectServlet extends HttpServlet {
 
             Result result = projectService.createProject(dto, user.getId());
             if (result.isSuccess()) {
-                request.setAttribute("success", "项目创建成功");
+                // 创建成功后跳转到"我的项目"页面
+                response.sendRedirect(request.getContextPath() + "/project?action=myApplications");
+                return;
             } else {
                 request.setAttribute("error", result.getMessage());
             }
         } catch (Exception e) {
             request.setAttribute("error", "创建失败: " + e.getMessage());
         }
-        request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
     }
 
     private void updateProject(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
         String idStr = request.getParameter("id");
         if (idStr == null || idStr.isEmpty()) {
-            request.setAttribute("error", "项目ID不能为空");
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
             return;
         }
 
@@ -217,12 +290,15 @@ public class ProjectServlet extends HttpServlet {
 
             Result result = projectService.updateProject(id, dto, user.getId());
             if (result.isSuccess()) {
-                request.setAttribute("success", "项目更新成功");
+                response.sendRedirect(request.getContextPath() + "/project?action=list");
             } else {
                 request.setAttribute("error", result.getMessage());
+                request.setAttribute("project", dto);
+                request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
             }
         } catch (Exception e) {
-            request.setAttribute("error", "更新失败");
+            request.setAttribute("error", "更新失败: " + e.getMessage());
+            request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
         }
     }
 
@@ -235,20 +311,17 @@ public class ProjectServlet extends HttpServlet {
 
         String idStr = request.getParameter("id");
         if (idStr == null || idStr.isEmpty()) {
-            request.setAttribute("error", "项目ID不能为空");
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
             return;
         }
 
         try {
             Integer id = Integer.parseInt(idStr);
             Result result = projectService.deleteProject(id, user.getId());
-            if (result.isSuccess()) {
-                request.setAttribute("success", "项目删除成功");
-            } else {
-                request.setAttribute("error", result.getMessage());
-            }
+            // 删除后直接跳转回列表页，不留在此页面
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
         } catch (Exception e) {
-            request.setAttribute("error", "删除失败");
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
         }
     }
 
@@ -261,20 +334,17 @@ public class ProjectServlet extends HttpServlet {
 
         String idStr = request.getParameter("id");
         if (idStr == null || idStr.isEmpty()) {
-            request.setAttribute("error", "项目ID不能为空");
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
             return;
         }
 
         try {
             Integer id = Integer.parseInt(idStr);
             Result result = projectService.approveProject(id, user.getId());
-            if (result.isSuccess()) {
-                request.setAttribute("success", "项目审批通过");
-            } else {
-                request.setAttribute("error", result.getMessage());
-            }
+            // 审批后跳转回列表页
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
         } catch (Exception e) {
-            request.setAttribute("error", "审批失败");
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
         }
     }
 
@@ -288,20 +358,17 @@ public class ProjectServlet extends HttpServlet {
         String idStr = request.getParameter("id");
         String reason = request.getParameter("reason");
         if (idStr == null || idStr.isEmpty()) {
-            request.setAttribute("error", "项目ID不能为空");
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
             return;
         }
 
         try {
             Integer id = Integer.parseInt(idStr);
             Result result = projectService.rejectProject(id, reason, user.getId());
-            if (result.isSuccess()) {
-                request.setAttribute("success", "项目已驳回");
-            } else {
-                request.setAttribute("error", result.getMessage());
-            }
+            // 驳回后跳转回列表页
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
         } catch (Exception e) {
-            request.setAttribute("error", "驳回失败");
+            response.sendRedirect(request.getContextPath() + "/project?action=list");
         }
     }
 

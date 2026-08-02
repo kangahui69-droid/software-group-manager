@@ -112,20 +112,19 @@ public class AttendanceService {
 
     /**
      * 考勤列表
+     * @param filter 筛选条件，允许为null（返回所有记录）
+     * @param page 页码
      */
     public Result listAttendance(Map<String, Object> filter, int page) {
-        if (filter == null) {
-            return Result.error(400, "筛选条件不能为空");
-        }
         if (!isValidPage(page)) {
             return Result.error(400, "页码必须大于0");
         }
 
         try {
             int offset = calculateOffset(page);
-            Date startDate = parseFilterDate(filter.get("startDate"));
-            Date endDate = parseFilterDate(filter.get("endDate"));
-            Integer userId = parseFilterUserId(filter.get("userId"));
+            Date startDate = filter != null ? parseFilterDate(filter.get("startDate")) : null;
+            Date endDate = filter != null ? parseFilterDate(filter.get("endDate")) : null;
+            Integer userId = filter != null ? parseFilterUserId(filter.get("userId")) : null;
 
             List<Attendance> list = attendanceDAO.getAttendanceList(userId, startDate, endDate, offset, DEFAULT_PAGE_SIZE);
             int total = attendanceDAO.getTotalCount(userId, startDate, endDate);

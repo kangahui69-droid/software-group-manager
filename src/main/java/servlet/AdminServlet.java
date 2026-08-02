@@ -12,12 +12,12 @@ import dao.ActivityParticipantDAO;
 import model.User;
 import model.AdminProfile;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -28,7 +28,7 @@ import util.FileUtil;
 /**
  * 管理员Servlet
  */
-@javax.servlet.annotation.MultipartConfig(maxFileSize = 1024 * 1024 * 5, maxRequestSize = 1024 * 1024 * 10)
+@jakarta.servlet.annotation.MultipartConfig(maxFileSize = 1024 * 1024 * 5, maxRequestSize = 1024 * 1024 * 10)
 public class AdminServlet extends HttpServlet {
     private NewsDAO newsDAO = new NewsDAO();
     private ProjectDAO projectDAO = new ProjectDAO();
@@ -473,7 +473,7 @@ public class AdminServlet extends HttpServlet {
             // System.out.println("[DEBUG][SA] updateProfile - Starting manual part extraction");
             Map<String, String> partsMap = new java.util.HashMap<>();
             if (request.getContentType() != null && request.getContentType().startsWith("multipart/form-data")) {
-                for (javax.servlet.http.Part part : request.getParts()) {
+                for (jakarta.servlet.http.Part part : request.getParts()) {
                     if (part.getContentType() == null && part.getName() != null) {
                         try (java.io.InputStream is = part.getInputStream()) {
                             byte[] bytes = readInputStream(is);
@@ -715,7 +715,7 @@ public class AdminServlet extends HttpServlet {
     }
 
     // 获取上传文件的文件名
-    private String getSubmittedFileName(javax.servlet.http.Part part) {
+    private String getSubmittedFileName(jakarta.servlet.http.Part part) {
         String contentDisposition = part.getHeader("content-disposition");
         for (String token : contentDisposition.split(";")) {
             if (token.trim().startsWith("filename")) {

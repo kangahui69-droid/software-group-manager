@@ -7,9 +7,9 @@ import service.ProblemService;
 import servlet.BaseApiServlet;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 
@@ -100,6 +100,10 @@ public class ProblemApiServlet extends BaseApiServlet {
     // ==================== GET 请求分发 ====================
 
     private void dispatchListGetRequest(String pathInfo, HttpServletRequest req, HttpServletResponse resp, User user) throws IOException {
+        if (pathInfo == null) {
+            handleListProblems(req, resp, user);
+            return;
+        }
         switch (pathInfo) {
             case "/stats":
                 handleGetStatistics(resp);

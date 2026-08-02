@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class ActivityDAO {
 
-    private RegistrationDAO registrationDAO = new RegistrationDAO();
+    private ActivityParticipantDAO registrationDAO = new ActivityParticipantDAO();
 
     /**
      * 查询所有活动

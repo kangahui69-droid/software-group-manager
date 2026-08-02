@@ -6,10 +6,10 @@ import service.AwardService;
 import servlet.BaseApiServlet;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -36,7 +36,7 @@ import java.util.Map;
  * - GET /api/awards/levels → 奖项级别字典
  * - GET /api/awards/competition-levels → 竞赛级别字典
  */
-@WebServlet(name = "AwardApiServlet", urlPatterns = {"/api/awards", "/api/awards/*"})
+//@WebServlet(name = "AwardApiServlet", urlPatterns = {"/api/awards", "/api/awards/*"})  // 手动在 web.xml 中注册
 public class AwardApiServlet extends BaseApiServlet {
 
     private static final long serialVersionUID = 1L;

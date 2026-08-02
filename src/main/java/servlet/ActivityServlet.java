@@ -1,24 +1,28 @@
 package servlet;
 
 import dao.ActivityDAO;
-import dao.RegistrationDAO;
+import dao.ActivityParticipantDAO;
+import dao.DictionaryDAO;
 import dao.UserDAO;
 import dto.ActivityDTO;
 import dto.ActivityFilterDTO;
 import model.Activity;
+import model.Dictionary;
+import model.Registration;
 import model.User;
 import service.ActivityService;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,10 +32,14 @@ import java.util.Map;
 public class ActivityServlet extends HttpServlet {
 
     private ActivityService activityService;
+    private DictionaryDAO dictionaryDAO;
+    private ActivityParticipantDAO registrationDAO;
 
     @Override
     public void init() throws ServletException {
         this.activityService = new ActivityService();
+        this.dictionaryDAO = new DictionaryDAO();
+        this.registrationDAO = new ActivityParticipantDAO();
     }
 
     @Override
@@ -60,6 +68,27 @@ public class ActivityServlet extends HttpServlet {
                 break;
             case "myCreatedActivities":
                 getMyCreatedActivities(request, response, user);
+                break;
+            case "createForm":
+                showCreateForm(request, response, user);
+                break;
+            case "manage":
+                manageActivities(request, response, user);
+                break;
+            case "approveActivity":
+                approveActivity(request, response, user);
+                break;
+            case "rejectActivity":
+                rejectActivity(request, response, user);
+                break;
+            case "participants":
+                getParticipants(request, response, user);
+                break;
+            case "edit":
+                editActivity(request, response, user);
+                break;
+            case "delete":
+                deleteActivityAction(request, response, user);
                 break;
             default:
                 listActivities(request, response, user);
@@ -119,6 +148,8 @@ public class ActivityServlet extends HttpServlet {
         ActivityFilterDTO filter = new ActivityFilterDTO();
         filter.setKeyword(keyword);
         filter.setActivityType(activityType);
+        // 只显示已审核通过的活动
+        filter.setApprovalStatus("approved");
 
         Result result = activityService.listActivities(filter, 1, 20);
         if (result.isSuccess()) {
@@ -175,6 +206,25 @@ public class ActivityServlet extends HttpServlet {
         if (result.isSuccess()) {
             request.setAttribute("createdActivities", result.getData());
         }
+
+        // 传递错误和成功消息
+        String error = request.getParameter("error");
+        String success = request.getParameter("success");
+        if (error != null && !error.isEmpty()) {
+            try {
+                request.setAttribute("error", java.net.URLDecoder.decode(error, "UTF-8"));
+            } catch (Exception e) {
+                request.setAttribute("error", error);
+            }
+        }
+        if (success != null && !success.isEmpty()) {
+            try {
+                request.setAttribute("success", java.net.URLDecoder.decode(success, "UTF-8"));
+            } catch (Exception e) {
+                request.setAttribute("success", success);
+            }
+        }
+
         request.getRequestDispatcher("/jsp/activity/myCreatedActivities.jsp").forward(request, response);
     }
 
@@ -185,12 +235,12 @@ public class ActivityServlet extends HttpServlet {
             Result result = activityService.createActivity(dto, user.getId());
 
             if (result.isSuccess()) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=list&success=" + encode("活动创建成功"));
+                response.sendRedirect(request.getContextPath() + "/activity?action=myCreatedActivities&success=" + encode("活动创建成功"));
             } else {
-                response.sendRedirect(request.getContextPath() + "/activity?action=create&error=" + encode(result.getMessage()));
+                response.sendRedirect(request.getContextPath() + "/activity?action=createForm&error=" + encode(result.getMessage()));
             }
         } catch (Exception e) {
-            response.sendRedirect(request.getContextPath() + "/activity?action=create&error=" + encode(e.getMessage()));
+            response.sendRedirect(request.getContextPath() + "/activity?action=createForm&error=" + encode(e.getMessage()));
         }
     }
 
@@ -198,7 +248,7 @@ public class ActivityServlet extends HttpServlet {
             throws IOException {
         String idStr = request.getParameter("id");
         if (idStr == null || idStr.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/activity?action=list");
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage");
             return;
         }
 
@@ -208,12 +258,12 @@ public class ActivityServlet extends HttpServlet {
             Result result = activityService.updateActivity(id, dto, user.getId());
 
             if (result.isSuccess()) {
-                response.sendRedirect(request.getContextPath() + "/activity?action=list&success=" + encode("活动更新成功"));
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动更新成功"));
             } else {
                 response.sendRedirect(request.getContextPath() + "/activity?action=edit&id=" + id + "&error=" + encode(result.getMessage()));
             }
         } catch (Exception e) {
-            response.sendRedirect(request.getContextPath() + "/activity?action=list&error=" + encode(e.getMessage()));
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode(e.getMessage()));
         }
     }
 
@@ -373,6 +423,224 @@ public class ActivityServlet extends HttpServlet {
             return java.net.URLEncoder.encode(message, "UTF-8");
         } catch (Exception e) {
             return message;
+        }
+    }
+
+    private void manageActivities(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        // 获取所有活动（管理员管理）
+        ActivityFilterDTO filter = new ActivityFilterDTO();
+        String status = request.getParameter("status");
+        if (status != null && !status.isEmpty()) {
+            filter.setStatus(status);
+        }
+
+        Result result = activityService.listActivities(filter, 1, 50);
+        if (result.isSuccess()) {
+            request.setAttribute("activities", result.getData());
+        }
+
+        // 获取活动分类字典
+        List<Dictionary> activityTypes = dictionaryDAO.findByType("activity_type");
+        request.setAttribute("activityTypes", activityTypes);
+
+        // 传递错误和成功消息
+        String error = request.getParameter("error");
+        String success = request.getParameter("success");
+        if (error != null && !error.isEmpty()) {
+            try {
+                request.setAttribute("error", java.net.URLDecoder.decode(error, "UTF-8"));
+            } catch (Exception e) {
+                request.setAttribute("error", error);
+            }
+        }
+        if (success != null && !success.isEmpty()) {
+            try {
+                request.setAttribute("success", java.net.URLDecoder.decode(success, "UTF-8"));
+            } catch (Exception e) {
+                request.setAttribute("success", success);
+            }
+        }
+
+        request.getRequestDispatcher("/jsp/admin/activity/manage.jsp").forward(request, response);
+    }
+
+    private void approveActivity(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("活动ID不能为空"));
+            return;
+        }
+
+        try {
+            Integer activityId = Integer.parseInt(idStr);
+            Result result = activityService.approveActivity(activityId, user.getId());
+
+            if (result.isSuccess()) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动已批准"));
+            } else {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode(result.getMessage()));
+            }
+        } catch (Exception e) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode(e.getMessage()));
+        }
+    }
+
+    private void rejectActivity(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        String reason = request.getParameter("reason");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("活动ID不能为空"));
+            return;
+        }
+
+        try {
+            Integer activityId = Integer.parseInt(idStr);
+            Result result = activityService.rejectActivity(activityId, reason, user.getId());
+
+            if (result.isSuccess()) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动已拒绝"));
+            } else {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode(result.getMessage()));
+            }
+        } catch (Exception e) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode(e.getMessage()));
+        }
+    }
+
+    private void showCreateForm(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        // 获取活动分类字典
+        List<Dictionary> activityTypes = dictionaryDAO.findByType("activity_type");
+        request.setAttribute("activityTypes", activityTypes);
+        request.setAttribute("returnUrl", request.getContextPath() + "/activity?action=myCreatedActivities");
+
+        // 传递错误和成功消息
+        String error = request.getParameter("error");
+        String success = request.getParameter("success");
+        if (error != null && !error.isEmpty()) {
+            try {
+                request.setAttribute("error", java.net.URLDecoder.decode(error, "UTF-8"));
+            } catch (Exception e) {
+                request.setAttribute("error", error);
+            }
+        }
+        if (success != null && !success.isEmpty()) {
+            try {
+                request.setAttribute("success", java.net.URLDecoder.decode(success, "UTF-8"));
+            } catch (Exception e) {
+                request.setAttribute("success", success);
+            }
+        }
+
+        request.getRequestDispatcher("/jsp/admin/activity/edit.jsp").forward(request, response);
+    }
+
+    private void getParticipants(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("活动ID不能为空"));
+            return;
+        }
+
+        try {
+            Integer activityId = Integer.parseInt(idStr);
+            Result activityResult = activityService.getActivityDetail(activityId, user.getId());
+            if (activityResult.isSuccess()) {
+                request.setAttribute("activity", activityResult.getData());
+            }
+
+            List<Registration> participants = registrationDAO.findByActivityId(activityId);
+            request.setAttribute("participants", participants);
+
+            request.getRequestDispatcher("/jsp/admin/activity/participants.jsp").forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("无效的活动ID"));
+        }
+    }
+
+    private void editActivity(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("活动ID不能为空"));
+            return;
+        }
+
+        try {
+            Integer activityId = Integer.parseInt(idStr);
+            Result result = activityService.getActivityDetail(activityId, user.getId());
+            if (result.isSuccess()) {
+                request.setAttribute("activity", result.getData());
+            }
+
+            List<Dictionary> activityTypes = dictionaryDAO.findByType("activity_type");
+            request.setAttribute("activityTypes", activityTypes);
+            request.setAttribute("returnUrl", request.getContextPath() + "/activity?action=manage");
+
+            request.getRequestDispatcher("/jsp/admin/activity/edit.jsp").forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("无效的活动ID"));
+        }
+    }
+
+    private void deleteActivityAction(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode("活动ID不能为空"));
+            return;
+        }
+
+        try {
+            Integer activityId = Integer.parseInt(idStr);
+            Result result = activityService.deleteActivity(activityId, user.getId());
+
+            if (result.isSuccess()) {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&success=" + encode("活动已删除"));
+            } else {
+                response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode(result.getMessage()));
+            }
+        } catch (Exception e) {
+            response.sendRedirect(request.getContextPath() + "/activity?action=manage&error=" + encode(e.getMessage()));
         }
     }
 }

@@ -5,9 +5,9 @@ import service.StudyService;
 import servlet.BaseApiServlet;
 import util.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
@@ -103,6 +103,10 @@ public class StudyApiServlet extends BaseApiServlet {
     // ==================== GET 请求分发 ====================
 
     private void dispatchListGetRequest(String pathInfo, HttpServletRequest req, HttpServletResponse resp, User user) throws IOException {
+        if (pathInfo == null) {
+            handleListSessions(req, resp, user);
+            return;
+        }
         switch (pathInfo) {
             case PATH_TODAY:
                 handleGetTodaySession(req, resp, user);
@@ -160,6 +164,10 @@ public class StudyApiServlet extends BaseApiServlet {
     }
 
     private void handleActionPost(HttpServletRequest req, HttpServletResponse resp, User user, String pathInfo) throws IOException {
+        if (pathInfo == null) {
+            sendNotFound(resp);
+            return;
+        }
         switch (pathInfo) {
             case PATH_START:
                 writeJson(resp, studyService.startSession(user.getId()));
