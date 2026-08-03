@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  # H2数据库初始化脚本
+  sql:
+    init:
+      mode: always
+
+  # Redis mock（测试时禁用）
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+  # JWT 测试配置
+  jwt:
+    secret: test-jwt-secret-key-for-unit-testing-only-very-long
+    expiration-ms: 86400000
+
+  # DES key for testing
+  des:
+    key: "(^&%gasie_%^)"
+
+# 禁用Spring Cloud
+spring.cloud:
+  nacos:
+    discovery:
+      enabled: false
+  sentinel:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.softwaregroup.user: DEBUG
