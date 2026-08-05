@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: hr-service
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST:nacos}:${NACOS_PORT:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      config:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+        file-extension: yml
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
