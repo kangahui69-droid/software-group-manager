@@ -1,0 +1,72 @@
+server:
+  port: ${SERVER_PORT:8086}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_FILE_SIZE:10MB}
+      enabled: true
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:kang2005.}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: monitor-service-pool
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 4
+    timeout: 5000
+    jedis:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 2
+        max-wait: -1ms
+
+alibaba:
+  cloud:
+    nacos:
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+
+spring.cloud.sentinel:
+  enabled: true
+
+spring.cloud:
+  openfeign:
+    client:
+      config:
+        default:
+          loggerLevel: basic
+          connect-timeout: 5000
+          read-timeout: 10000
+
+logging:
+  level:
+    root: INFO
+    com.softwaregroup.monitor: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.springframework.jdbc: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
