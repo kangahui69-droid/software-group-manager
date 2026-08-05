@@ -1,0 +1,49 @@
+server:
+  port: ${SERVER_PORT:8087}
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_FILE_SIZE:10MB}
+      enabled: true
+
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:kang2005.}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: content-service-pool
+
+  # Spring Cloud Nacos Discovery
+  cloud:
+    nacos:
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+    sentinel:
+      enabled: true
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: basic
+            connect-timeout: 5000
+            read-timeout: 10000
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.softwaregroup.content: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.springframework.jdbc: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
