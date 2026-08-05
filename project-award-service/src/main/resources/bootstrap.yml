@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: project-award-service
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST:localhost}:${NACOS_PORT:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      config:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
