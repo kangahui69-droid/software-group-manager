@@ -66,6 +66,12 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
+        <!-- Spring Boot JDBC -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
         <!-- MySQL + HikariCP (AI自身表直连) -->
         <dependency>
             <groupId>com.mysql</groupId>

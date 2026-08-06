@@ -202,7 +202,346 @@ services:
       timeout: 10s
       retries: 5
 
-  # ========== 应用服务（Tomcat + WAR）==========
+  # ========== 微服务（阶段三新增）==========
+  # 对应计划文档：阶段三_微服务拆分实施计划 - 3.3~3.8
+
+  # --- file-service (8081) ---
+  file-service:
+    build:
+      context: .
+      dockerfile: ./file-service/Dockerfile
+    container_name: sg_file_service
+    restart: always
+    ports:
+      - "${FILE_SERVICE_PORT:-8081}:8081"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # MinIO 配置
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_BUCKET: software-group
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # --- user-service (8082) ---
+  user-service:
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
+    container_name: sg_user_service
+    restart: always
+    ports:
+      - "${USER_SERVICE_PORT:-8082}:8082"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # JWT 配置
+      JWT_SECRET: ${JWT_SECRET:-software-group-jwt-secret-key-2024-very-long-and-secure}
+      JWT_EXPIRATION_MS: 86400000
+      # DES 加密密钥（必须与旧系统一致）
+      DES_KEY: ${DES_KEY:-(^&%gasie_%^)}
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # --- activity-service (8084) ---
+  activity-service:
+    build:
+      context: .
+      dockerfile: ./activity-service/Dockerfile
+    container_name: sg_activity_service
+    restart: always
+    ports:
+      - "${ACTIVITY_SERVICE_PORT:-8084}:8084"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # --- project-award-service (8085) ---
+  project-award-service:
+    build:
+      context: .
+      dockerfile: ./project-award-service/Dockerfile
+    container_name: sg_project_award_service
+    restart: always
+    ports:
+      - "${PROJECT_AWARD_SERVICE_PORT:-8085}:8085"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # --- hr-service (8089 外部端口) ---
+  hr-service:
+    build:
+      context: .
+      dockerfile: ./hr-service/Dockerfile
+    container_name: sg_hr_service
+    restart: always
+    ports:
+      - "${HR_SERVICE_PORT:-8089}:8085"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # --- monitor-service (8086) ---
+  monitor-service:
+    build:
+      context: .
+      dockerfile: ./monitor-service/Dockerfile
+    container_name: sg_monitor_service
+    restart: always
+    ports:
+      - "${MONITOR_SERVICE_PORT:-8086}:8086"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # --- content-service (8087) ---
+  content-service:
+    build:
+      context: .
+      dockerfile: ./content-service/Dockerfile
+    container_name: sg_content_service
+    restart: always
+    ports:
+      - "${CONTENT_SERVICE_PORT:-8087}:8087"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # --- ai-service (8094) ---
+  ai-service:
+    build:
+      context: .
+      dockerfile: ./ai-service/Dockerfile
+    container_name: sg_ai_service
+    restart: always
+    ports:
+      - "${AI_SERVICE_PORT:-8094}:8094"
+    environment:
+      # 数据库配置
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: software_group
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # AI 服务配置
+      AI_PROVIDER: ${AI_PROVIDER:-minimax}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_URL: ${AI_API_URL:-}
+      AI_MODEL: ${AI_MODEL:-MiniMax-M2.7}
+      # RabbitMQ 配置
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin123}
+      # Nacos 配置
+      NACOS_HOST: nacos
+      NACOS_PORT: 8848
+      NACOS_NAMESPACE: public
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - software-group-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8094/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ========== 应用服务（Tomcat + WAR）- 旧 WAR 保留 ==========
   app:
     # 从 Dockerfile 构建镜像
     # context: 构建上下文（. 表示当前目录）
@@ -291,9 +630,17 @@ services:
       - ./static/js:/usr/local/nginx/static/js:ro
       - ./static/images:/usr/local/nginx/static/images:ro
 
-    # 依赖 app 服务
+    # 依赖微服务和 app 服务
     depends_on:
       - app
+      - file-service
+      - user-service
+      - activity-service
+      - project-award-service
+      - hr-service
+      - monitor-service
+      - content-service
+      - ai-service
 
     # Docker 网络
     networks:
