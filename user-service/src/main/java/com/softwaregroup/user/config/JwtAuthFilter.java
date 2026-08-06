@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.io.IOException;
  * 从请求头中提取JWT Token，验证并解析用户信息，
  * 将用户ID和角色设置到请求头中，传递给后续处理
  */
-@Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
@@ -29,6 +27,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/api/users/register",
             "/api/users/health"
     };
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // 排除 actuator 端点
+        if (path.startsWith("/actuator")) {
+            return true;
+        }
+        return false;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

@@ -82,6 +82,12 @@
             <artifactId>jedis</artifactId>
         </dependency>
 
+        <!-- Actuator 健康检查 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -27,6 +27,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // 允许 actuator 端点（无需认证）
+                .requestMatchers("/actuator/**").permitAll()
                 // 公开路径
                 .requestMatchers("/api/*/health").permitAll()
                 .requestMatchers("/api/activities/**").permitAll()  // 活动相关公开（列表、详情、报名）

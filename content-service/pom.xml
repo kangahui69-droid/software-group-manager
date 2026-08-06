@@ -66,6 +66,12 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
+        <!-- Spring Boot JDBC -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
         <!-- MySQL + HikariCP -->
         <dependency>
             <groupId>com.mysql</groupId>
