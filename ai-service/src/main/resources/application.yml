@@ -1,0 +1,29 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: ai-service
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST:-localhost}:8848
+      username: nacos
+      password: nacos
+      discovery:
+        namespace: ${NACOS_NAMESPACE:-public}
+        group: DEFAULT_GROUP
+
+server:
+  port: 8094
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.softwaregroup.ai: DEBUG
