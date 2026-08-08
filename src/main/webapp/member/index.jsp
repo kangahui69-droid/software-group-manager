@@ -250,7 +250,7 @@
                             <a href="${pageContext.request.contextPath}/project?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
                                 <i class="bi bi-briefcase me-3 text-blue"></i> 我的项目
                             </a>
-                            <a href="${pageContext.request.contextPath}/award?action=list" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <a href="${pageContext.request.contextPath}/award?action=myAwards" class="list-group-item list-group-item-action d-flex align-items-center">
                                 <i class="bi bi-award me-3 text-yellow"></i> 我的奖项
                             </a>
                             <a href="${pageContext.request.contextPath}/study" class="list-group-item list-group-item-action d-flex align-items-center border-bottom-0">
@@ -297,7 +297,7 @@
                         </a>
                     </div>
                     <div class="col-sm-6 col-lg-4">
-                        <a href="${pageContext.request.contextPath}/award?action=list" class="card card-sm d-block text-decoration-none">
+                        <a href="${pageContext.request.contextPath}/award?action=myAwards" class="card card-sm d-block text-decoration-none">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="icon-wrap bg-yellow-lt">

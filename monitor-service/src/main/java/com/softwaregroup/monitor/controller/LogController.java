@@ -11,7 +11,7 @@ import java.util.Map;
  * 操作日志 Controller
  */
 @RestController
-@RequestMapping("/api/logs")
+@RequestMapping(value = {"/api/logs", "/api/logs/"})
 public class LogController {
 
     @Autowired

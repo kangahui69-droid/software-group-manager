@@ -13,7 +13,7 @@ import java.util.Map;
  * 奖项管理 REST API
  */
 @RestController
-@RequestMapping("/api/awards")
+@RequestMapping(value = {"/api/awards", "/api/awards/"})
 public class AwardController {
 
     @Autowired

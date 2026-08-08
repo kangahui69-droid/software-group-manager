@@ -12,7 +12,7 @@ import java.util.Map;
  * 招新管理 Controller
  */
 @RestController
-@RequestMapping("/api/recruit")
+@RequestMapping(value = {"/api/recruit", "/api/recruit/"})
 public class RecruitController {
 
     @Autowired
@@ -66,5 +66,17 @@ public class RecruitController {
     @GetMapping("/health")
     public Result health() {
         return Result.ok(Map.of("status", "UP", "service", "hr-service"));
+    }
+
+    /**
+     * 获取申请列表（根路径）
+     * GET /api/recruit
+     */
+    @GetMapping
+    public Result listApplicationsRoot(@RequestParam(required = false) Integer year,
+                                       @RequestParam(required = false) String status,
+                                       @RequestParam(required = false) String keyword,
+                                       @RequestParam(required = false) Integer round) {
+        return recruitService.listApplications(year, status, keyword, round);
     }
 }

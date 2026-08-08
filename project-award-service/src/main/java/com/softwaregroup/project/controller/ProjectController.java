@@ -15,7 +15,7 @@ import java.util.Map;
  * 项目管理 REST API
  */
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping(value = {"/api/projects", "/api/projects/"})
 public class ProjectController {
 
     @Autowired

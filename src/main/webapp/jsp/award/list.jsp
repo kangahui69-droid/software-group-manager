@@ -71,4 +71,4 @@
             </div>
         </div>
 
-        <jsp:include page="../common/layout_bottom.jsp" />
+        <jsp:include page="../../common/layout_bottom.jsp" />

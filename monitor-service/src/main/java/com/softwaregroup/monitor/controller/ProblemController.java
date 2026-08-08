@@ -13,7 +13,7 @@ import java.util.Map;
  * 问题反馈 Controller
  */
 @RestController
-@RequestMapping("/api/problems")
+@RequestMapping(value = {"/api/problems", "/api/problems/"})
 public class ProblemController {
 
     @Autowired

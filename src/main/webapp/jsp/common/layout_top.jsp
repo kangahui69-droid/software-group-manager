@@ -397,7 +397,7 @@
                                                     <a class="dropdown-item ${param.active == 'myProjects' ? 'active' : ''}" href="${pageContext.request.contextPath}/project?action=list">
                                                         <i class="bi bi-kanban me-1"></i>项目申请
                                                     </a>
-                                                    <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/award?action=list">
+                                                    <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/award?action=myAwards">
                                                         <i class="bi bi-trophy me-1"></i>奖项申请
                                                     </a>
                                                 </div>

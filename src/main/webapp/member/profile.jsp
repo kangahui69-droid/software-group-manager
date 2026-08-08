@@ -307,7 +307,7 @@
 
         <div class="row g-4 mb-4">
             <div class="col-sm-6 col-lg-4 col-xxl-2">
-                <a href="${pageContext.request.contextPath}/award?action=list" class="text-decoration-none">
+                <a href="${pageContext.request.contextPath}/award?action=myAwards" class="text-decoration-none">
                     <div class="quick-card">
                         <div class="quick-card-body">
                             <div class="quick-card-icon" style="background: rgba(234, 179, 8, 0.1); color: #eab308;">

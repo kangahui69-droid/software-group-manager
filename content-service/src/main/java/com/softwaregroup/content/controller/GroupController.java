@@ -12,7 +12,7 @@ import java.util.Map;
  * 群组管理 REST API
  */
 @RestController
-@RequestMapping("/api/groups")
+@RequestMapping(value = {"/api/groups", "/api/groups/"})
 public class GroupController {
 
     @Autowired

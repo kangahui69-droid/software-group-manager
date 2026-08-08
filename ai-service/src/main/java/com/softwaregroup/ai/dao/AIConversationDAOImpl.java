@@ -16,6 +16,9 @@ public class AIConversationDAOImpl implements AIConversationDAO {
 
     @Override
     public AIConversation findBySessionId(String sessionId) {
+        if (sessionId == null) {
+            return null;
+        }
         return storage.values().stream()
                 .filter(c -> sessionId.equals(c.getSessionId()))
                 .findFirst()

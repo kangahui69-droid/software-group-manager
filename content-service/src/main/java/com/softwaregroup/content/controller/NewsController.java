@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
  * 新闻管理 REST API
  */
 @RestController
-@RequestMapping("/api/news")
+@RequestMapping(value = {"/api/news", "/api/news/"})
 public class NewsController {
 
     @Autowired
