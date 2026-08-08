@@ -14,7 +14,7 @@ import java.util.Map;
  * 活动管理 Controller
  */
 @RestController
-@RequestMapping("/api/activities")
+@RequestMapping(value = {"/api/activities", "/api/activities/"})
 public class ActivityController {
 
     @Autowired

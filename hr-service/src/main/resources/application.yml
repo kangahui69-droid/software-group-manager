@@ -1,16 +1,9 @@
 server:
-  port: ${SERVER_PORT:8085}
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
+  port: ${SERVER_PORT:8089}
 
 spring:
+  mvc:
+    redirect-trailing-slash: false
   servlet:
     multipart:
       max-file-size: ${MAX_FILE_SIZE:10MB}
@@ -18,9 +11,9 @@ spring:
       enabled: true
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
     username: ${DB_USER:root}
-    password: ${DB_PASSWORD:kang2005.}
+    password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -31,9 +24,9 @@ spring:
       pool-name: hr-service-pool
 
   redis:
-    host: ${REDIS_HOST:localhost}
+    host: ${REDIS_HOST:redis}
     port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
+    password: ${REDIS_PASSWORD:-redis123}
     database: 3
     timeout: 5000
     jedis:
@@ -61,6 +54,15 @@ spring.cloud:
           loggerLevel: basic
           connect-timeout: 5000
           read-timeout: 10000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
 
 logging:
   level:

@@ -7,9 +7,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 
 /**
  * JWT认证过滤器
@@ -76,15 +80,29 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String username = JwtUtil.getUsername(token);
             String role = JwtUtil.getRole(token);
 
-            // 将用户信息设置到请求头中，传递给Controller
+            // 将用户信息设置到请求属性中，传递给Controller
             request.setAttribute("userId", userId);
             request.setAttribute("username", username);
             request.setAttribute("role", role);
 
-            // 同时设置到HTTP头，供Nginx或其他服务使用
+            // 设置到请求头中（供 Controller 的 @RequestHeader 读取）
+            HttpServletRequest mutableRequest = (HttpServletRequest) request;
+            mutableRequest = new CustomHttpServletRequest(mutableRequest, userId, username, role);
+            request = mutableRequest;
+
+            // 同时设置到响应头，供Nginx或其他服务使用
             response.setHeader("X-User-Id", String.valueOf(userId));
             response.setHeader("X-Username", username);
             response.setHeader("X-User-Role", role);
+
+            // 设置 Spring Security 上下文（关键修复）
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
             filterChain.doFilter(request, response);
         } catch (Exception e) {

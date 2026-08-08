@@ -16,7 +16,7 @@ import java.util.Map;
  * 简历管理 Controller
  */
 @RestController
-@RequestMapping("/api/resumes")
+@RequestMapping(value = {"/api/resumes", "/api/resumes/"})
 public class ResumeController {
 
     @Autowired
@@ -158,5 +158,17 @@ public class ResumeController {
     @GetMapping("/health")
     public Result health() {
         return Result.ok(Map.of("status", "UP", "service", "hr-service"));
+    }
+
+    /**
+     * 获取简历列表（根路径）
+     * GET /api/resumes
+     */
+    @GetMapping
+    public Result listResumesRoot(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+        if (userId != null) {
+            return resumeService.listResumes(userId, 1);
+        }
+        return resumeService.listResumes(0, 1);
     }
 }

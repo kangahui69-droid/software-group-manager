@@ -415,7 +415,7 @@
                                         <c:choose>
                                             <c:when test="${a.approvalStatus == 'pending'}">
                                                 <a href="${pageContext.request.contextPath}/activity?action=approveActivity&id=${a.id}" class="btn btn-sm btn-success-design" onclick="return confirm('确定要批准此活动吗？')" style="flex-shrink: 0;">批准</a>
-                                                <a href="${pageContext.request.contextPath}/activity?action=rejectActivity&id=${a.id}" class="btn btn-sm btn-danger-design" onclick="return confirm('确定要拒绝此活动吗？')" style="flex-shrink: 0;">拒绝</a>
+                                                <a href="${pageContext.request.contextPath}/activity?action=rejectActivity&id=${a.id}&reason=管理员拒绝" class="btn btn-sm btn-danger-design" onclick="return confirm('确定要拒绝此活动吗？')" style="flex-shrink: 0;">拒绝</a>
                                             </c:when>
                                             <c:otherwise>
                                                 <a href="${pageContext.request.contextPath}/activity?action=participants&id=${a.id}" class="btn btn-sm btn-brand" style="flex-shrink: 0;">报名管理</a>
@@ -438,5 +438,47 @@
         </div>
     </div>
 </div>
+
+<!-- 拒绝原因模态框 -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel">拒绝活动申请</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rejectActivityId" value="">
+                <div class="mb-3">
+                    <label for="rejectReason" class="form-label">拒绝原因</label>
+                    <textarea class="form-control" id="rejectReason" rows="3" placeholder="请输入拒绝原因"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="submitReject()">确认拒绝</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openRejectModal(activityId) {
+    document.getElementById('rejectActivityId').value = activityId;
+    document.getElementById('rejectReason').value = '';
+    var modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    modal.show();
+}
+
+function submitReject() {
+    var activityId = document.getElementById('rejectActivityId').value;
+    var reason = document.getElementById('rejectReason').value;
+    if (!reason || reason.trim() === '') {
+        alert('请输入拒绝原因');
+        return;
+    }
+    window.location.href = '${pageContext.request.contextPath}/activity?action=rejectActivity&id=' + activityId + '&reason=' + encodeURIComponent(reason);
+}
+</script>
 
 <jsp:include page="../../common/layout_bottom.jsp" />

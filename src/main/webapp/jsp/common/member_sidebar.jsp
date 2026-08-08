@@ -39,7 +39,7 @@
                 </a>
             </div>
             <div class="col-6 mb-3">
-                <a href="${pageContext.request.contextPath}/award?action=list" class="card card-link card-body p-3">
+                <a href="${pageContext.request.contextPath}/award?action=myAwards" class="card card-link card-body p-3">
                     <div class="mb-2">
                         <i class="bi bi-trophy h2 text-yellow"></i>
                     </div>
@@ -47,7 +47,7 @@
                 </a>
             </div>
             <div class="col-6 mb-3">
-                <a href="${pageContext.request.contextPath}/project?action=myApplications" class="card card-link card-body p-3">
+                <a href="${pageContext.request.contextPath}/project?action=list" class="card card-link card-body p-3">
                     <div class="mb-2">
                         <i class="bi bi-kanban h2 text-purple"></i>
                     </div>

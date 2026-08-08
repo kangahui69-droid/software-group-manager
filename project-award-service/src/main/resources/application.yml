@@ -2,6 +2,8 @@ server:
   port: ${SERVER_PORT:8085}
 
 spring:
+  mvc:
+    redirect-trailing-slash: false
   servlet:
     multipart:
       max-file-size: ${MAX_FILE_SIZE:10MB}
@@ -10,9 +12,9 @@ spring:
 
   # 数据库配置
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
     username: ${DB_USER:root}
-    password: ${DB_PASSWORD:kang2005.}
+    password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -24,9 +26,9 @@ spring:
 
   # Redis 配置（用于缓存）
   redis:
-    host: ${REDIS_HOST:localhost}
+    host: ${REDIS_HOST:redis}
     port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
+    password: ${REDIS_PASSWORD:-redis123}
     database: 3
     timeout: 5000
     jedis:

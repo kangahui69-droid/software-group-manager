@@ -131,7 +131,7 @@ if [ -z "$SERVICE_FILTER" ] || [ "$SERVICE_FILTER" = "project-award-service" ]; 
     test_health "project-award-service" "8085"
 fi
 if [ -z "$SERVICE_FILTER" ] || [ "$SERVICE_FILTER" = "hr-service" ]; then
-    test_health "hr-service" "8085"
+    test_health "hr-service" "8089"
 fi
 if [ -z "$SERVICE_FILTER" ] || [ "$SERVICE_FILTER" = "monitor-service" ]; then
     test_health "monitor-service" "8086"

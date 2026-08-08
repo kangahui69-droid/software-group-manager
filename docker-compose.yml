@@ -373,7 +373,7 @@ services:
       timeout: 10s
       retries: 5
 
-  # --- hr-service (8089 外部端口) ---
+  # --- hr-service (8089) ---
   hr-service:
     build:
       context: .
@@ -381,7 +381,7 @@ services:
     container_name: sg_hr_service
     restart: always
     ports:
-      - "${HR_SERVICE_PORT:-8089}:8085"
+      - "${HR_SERVICE_PORT:-8089}:8089"
     environment:
       # 数据库配置
       DB_HOST: mysql
@@ -407,7 +407,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8089/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5

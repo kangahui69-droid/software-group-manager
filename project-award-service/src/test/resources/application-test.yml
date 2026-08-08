@@ -1,0 +1,48 @@
+spring:
+  profiles:
+    active: test
+
+  # H2 内存数据库（测试用）
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  # H2 数据库初始化
+  sql:
+    init:
+      mode: never
+
+  # Redis Mock（测试时禁用）
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+# 禁用 Spring Cloud（测试时不连接 Nacos）
+spring.cloud:
+  nacos:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+  sentinel:
+    enabled: false
+  openfeign:
+    client:
+      config:
+        default:
+          connect-timeout: 1000
+          read-timeout: 1000
+
+# 禁用 Sentinel
+alibaba:
+  cloud:
+    sentinel:
+      enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.softwaregroup.project: DEBUG
