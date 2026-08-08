@@ -54,8 +54,8 @@ class ResumeServiceIT {
         dto.setResumeName("我的简历");
         dto.setSummary("个人简介");
 
-        Resume existingResume = null;
-        when(resumeDAO.findByUserId(1)).thenReturn(existingResume);
+        List<Resume> existingResumes = null;
+        when(resumeDAO.findByUserId(1)).thenReturn(existingResumes);
         when(resumeDAO.save(any(Resume.class))).thenReturn(true);
 
         Result result = resumeService.createResume(dto, 1);
