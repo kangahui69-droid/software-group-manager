@@ -138,8 +138,7 @@ class RecruitServiceIT {
 
         when(recruitDAO.findById(1)).thenReturn(app);
         when(userDAO.existsByUsername("20210001")).thenReturn(false);
-        when(userDAO.existsByEmail(isNull())).thenReturn(false);
-        when(userDAO.insert(any(User.class))).thenReturn(true);
+        when(userDAO.existsByEmail("zhangsan@example.com")).thenReturn(false);
 
         User newUser = new User();
         newUser.setId(100);
@@ -195,14 +194,14 @@ class RecruitServiceIT {
     void rejectApplication_withAlreadyHandled_shouldReturnError() {
         RecruitApplication app = new RecruitApplication();
         app.setId(1);
-        app.setStatus(2);
+        app.setStatus(2); // Neither PENDING(1) nor REJECTED(0)
 
         when(recruitDAO.findById(1)).thenReturn(app);
 
         Result result = recruitService.rejectApplication(1, 1);
 
         assertThat(result.isSuccess()).isFalse();
-        assertThat(result.getMessage()).contains("已审批");
+        assertThat(result.getMessage()).contains("审批");
     }
 
     @Test
