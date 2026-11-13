@@ -5,6 +5,8 @@ import com.softwaregroup.project.model.dto.ProjectDTO;
 import com.softwaregroup.project.model.dto.ProjectFilterDTO;
 import com.softwaregroup.project.service.ProjectService;
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProjectControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private ProjectService projectService;
@@ -42,13 +46,15 @@ class ProjectControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(projectController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(projectController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
         objectMapper = new ObjectMapper();
     }
 
     @Test
     void listProjects_shouldReturnProjectList() throws Exception {
-        when(projectService.listProjects(any(ProjectFilterDTO.class), anyInt(), anyInt()))
+        when(projectService.listProjects(any(ProjectFilterDTO.class), anyInt(), anyInt(), isNull()))
             .thenReturn(Result.ok(Arrays.asList(
                 Map.of("id", 1, "name", "测试项目", "status", "ongoing")
             )));
@@ -64,7 +70,7 @@ class ProjectControllerTest {
 
     @Test
     void getProjectDetail_shouldReturnProject() throws Exception {
-        when(projectService.getProjectDetail(eq(1), eq(1)))
+        when(projectService.getProjectDetail(eq(1), isNull(), eq(false)))
             .thenReturn(Result.ok(Map.of("id", 1, "name", "测试项目", "description", "详情")));
 
         mockMvc.perform(get("/api/projects/1")
@@ -170,7 +176,7 @@ class ProjectControllerTest {
         Map<String, Object> body = new HashMap<>();
         body.put("userId", 2);
         body.put("reason", "想加入项目");
-        when(projectService.applyMember(eq(1), eq(2), eq("想加入项目")))
+        when(projectService.applyMember(eq(1), eq(1), eq("想加入项目")))
             .thenReturn(Result.ok(null));
 
         mockMvc.perform(post("/api/projects/1/apply")

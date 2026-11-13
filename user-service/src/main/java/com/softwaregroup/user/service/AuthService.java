@@ -1,6 +1,6 @@
 package com.softwaregroup.user.service;
 
-import com.softwaregroup.common.util.JwtUtil;
+import com.softwaregroup.common.util.JwtService;
 import com.softwaregroup.common.util.Result;
 import com.softwaregroup.user.dao.MemberProfileDAO;
 import com.softwaregroup.user.dao.UserDAO;
@@ -36,6 +36,7 @@ public class AuthService {
     private static final int STATUS_NORMAL = 1;
     private static final int STATUS_DISABLED = 0;
     private static final String ADMIN_ROLE = "ADMIN";
+    private static final String PUBLIC_REGISTRATION_ROLE = "MEMBER";
 
     private static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
     private static final String PHONE_PATTERN = "^1[3-9]\\d{9}$";
@@ -46,14 +47,17 @@ public class AuthService {
     private final UserDAO userDAO;
     private final MemberProfileDAO memberProfileDAO;
     private final DESUtil desUtil;
+    private final JwtService jwtService;
 
     @Value("${spring.jwt.expiration-ms:86400000}")
     private long jwtExpirationMs;
 
-    public AuthService(UserDAO userDAO, MemberProfileDAO memberProfileDAO, DESUtil desUtil) {
+    public AuthService(UserDAO userDAO, MemberProfileDAO memberProfileDAO, DESUtil desUtil,
+                       JwtService jwtService) {
         this.userDAO = userDAO;
         this.memberProfileDAO = memberProfileDAO;
         this.desUtil = desUtil;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -81,7 +85,7 @@ public class AuthService {
         }
 
         // 生成JWT Token
-        String token = JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
+        String token = jwtService.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
 
         return Result.ok(Map.of(
                 "token", token,
@@ -116,7 +120,7 @@ public class AuthService {
         user.setName(request.getName() != null ? request.getName() : request.getUsername());
         user.setEmail(request.getEmail() != null ? request.getEmail() : request.getUsername() + "@default.com");
         user.setPhone(request.getPhone());
-        user.setRole(request.getRole());
+        user.setRole(PUBLIC_REGISTRATION_ROLE);
         user.setStatus(STATUS_NORMAL);
 
         // 保存用户
@@ -127,7 +131,7 @@ public class AuthService {
         user.setId(userId);
 
         // 生成JWT Token
-        String token = JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
+        String token = jwtService.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
 
         return Result.ok(Map.of(
                 "token", token,
@@ -252,12 +256,6 @@ public class AuthService {
         if (isBlank(request.getPassword())) {
             return Result.error(400, "密码不能为空");
         }
-        if (isBlank(request.getRole())) {
-            return Result.error(400, "角色不能为空");
-        }
-        if (!isValidRole(request.getRole())) {
-            return Result.error(400, "无效的角色");
-        }
         if (request.getUsername().length() > 32) {
             return Result.error(400, "用户名不能超过32个字符");
         }
@@ -328,10 +326,6 @@ public class AuthService {
         maybeSetField(dto.getBlog(), profile::setBlog);
 
         return profile;
-    }
-
-    private boolean isValidRole(String role) {
-        return "ADMIN".equals(role) || "MEMBER".equals(role) || "TEACHER".equals(role);
     }
 
     private boolean isBlank(String str) {

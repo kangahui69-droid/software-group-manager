@@ -66,11 +66,15 @@ class ProblemServiceTest {
 
         existingProblem = new ProblemReport();
         existingProblem.setId(problemId);
+        existingProblem.setUserId(operatorId);
         existingProblem.setTitle("无法登录系统");
         existingProblem.setContent("尝试多次登录都失败");
         existingProblem.setCategory(ProblemReport.CATEGORY_UNVERIFIED);
         existingProblem.setStatus(ProblemReport.STATUS_PENDING);
         existingProblem.setReporterType(ProblemReport.REPORTER_TYPE_GUEST);
+        User admin = new User();
+        admin.setRole("ADMIN");
+        lenient().when(userDAO.findById(operatorId)).thenReturn(admin);
     }
 
     // ==================== submitProblem 测试 ====================
@@ -266,7 +270,7 @@ class ProblemServiceTest {
             when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
 
             // When
-            Result result = problemService.getProblemDetail(problemId);
+            Result result = problemService.getProblemDetail(problemId, operatorId);
 
             // Then
             assertTrue(result.isSuccess());
@@ -281,7 +285,7 @@ class ProblemServiceTest {
             when(problemReportDAO.findById(999)).thenReturn(null);
 
             // When
-            Result result = problemService.getProblemDetail(999);
+            Result result = problemService.getProblemDetail(999, operatorId);
 
             // Then
             assertFalse(result.isSuccess());
@@ -293,7 +297,7 @@ class ProblemServiceTest {
         @DisplayName("查询失败 - ID为null")
         void should_fail_when_id_is_null() {
             // When
-            Result result = problemService.getProblemDetail(null);
+            Result result = problemService.getProblemDetail(null, operatorId);
 
             // Then
             assertFalse(result.isSuccess());
@@ -724,6 +728,9 @@ class ProblemServiceTest {
             // Given
             when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
             when(problemReportDAO.updateAdminComment(problemId, "处理中")).thenReturn(true);
+            User admin = new User();
+            admin.setRole("ADMIN");
+            when(userDAO.findById(operatorId)).thenReturn(admin);
 
             // When
             Result result = problemService.addComment(problemId, "处理中", operatorId);
@@ -772,6 +779,9 @@ class ProblemServiceTest {
             // Given
             when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
             when(problemReportDAO.delete(problemId)).thenReturn(true);
+            User admin = new User();
+            admin.setRole("ADMIN");
+            when(userDAO.findById(operatorId)).thenReturn(admin);
 
             // When
             Result result = problemService.deleteProblem(problemId, operatorId);

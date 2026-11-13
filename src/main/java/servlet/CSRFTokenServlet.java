@@ -7,7 +7,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
 /**
@@ -24,9 +23,8 @@ public class CSRFTokenServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         // 获取或创建 CSRF Token
-        HttpSession session = req.getSession();
-        String token = CSRFTokenUtil.generateToken();
-        session.setAttribute(CSRFTokenUtil.CSRF_TOKEN_SESSION_ATTR, token);
+        String token = CSRFTokenUtil.getOrCreateToken(req);
+        resp.setHeader("Cache-Control", "no-store");
 
         // 返回 JSON 格式的 Token
         String jsonResponse = String.format("{\"%s\": \"%s\", \"success\": true}",
@@ -37,7 +35,6 @@ public class CSRFTokenServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // POST 请求也返回新的 Token
-        doGet(req, resp);
+        resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 }

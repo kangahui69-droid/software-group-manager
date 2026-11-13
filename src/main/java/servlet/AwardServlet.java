@@ -101,8 +101,8 @@ public class AwardServlet extends HttpServlet {
                 showEditForm(request, response, user);
                 break;
             case "delete":
-                deleteAward(request, response, user);
-                break;
+                response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+                return;
             default:
                 listAwards(request, response, user);
         }
@@ -136,6 +136,9 @@ public class AwardServlet extends HttpServlet {
                 break;
             case "reject":
                 rejectAward(request, response, user);
+                break;
+            case "delete":
+                deleteAward(request, response, user);
                 break;
             case "addImage":
                 addAwardImage(request, response, user);

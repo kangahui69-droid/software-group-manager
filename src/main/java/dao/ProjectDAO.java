@@ -178,7 +178,9 @@ public class ProjectDAO {
      */
     public List<Project> findProjectsByUserId(Integer userId) {
         List<Project> projects = new ArrayList<>();
-        String sql = "SELECT DISTINCT p.* FROM project p LEFT JOIN project_member pm ON p.id = pm.project_id WHERE p.leader_id = ? OR pm.user_id = ? ORDER BY p.created_at DESC";
+        String sql = "SELECT DISTINCT p.* FROM project p LEFT JOIN project_member pm ON p.id = pm.project_id " +
+                "WHERE (p.leader_id = ? OR p.admin_id = ? OR pm.user_id = ?) " +
+                "AND (p.deleted = 0 OR p.deleted IS NULL) ORDER BY p.created_at DESC";
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -187,6 +189,7 @@ public class ProjectDAO {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, userId);
             pstmt.setInt(2, userId);
+            pstmt.setInt(3, userId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 projects.add(mapResultSetToProject(rs));

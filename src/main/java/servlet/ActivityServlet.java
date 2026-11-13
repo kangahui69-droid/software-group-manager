@@ -14,6 +14,7 @@ import service.ActivityService;
 import util.Result;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +30,7 @@ import java.util.Map;
  * 活动Servlet - 4.7 Servlet改造
  * 调用ActivityService处理业务逻辑
  */
+@MultipartConfig
 public class ActivityServlet extends HttpServlet {
 
     private ActivityService activityService;
@@ -76,11 +78,9 @@ public class ActivityServlet extends HttpServlet {
                 manageActivities(request, response, user);
                 break;
             case "approveActivity":
-                approveActivity(request, response, user);
-                break;
             case "rejectActivity":
-                rejectActivity(request, response, user);
-                break;
+                response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+                return;
             case "participants":
                 getParticipants(request, response, user);
                 break;
@@ -88,8 +88,8 @@ public class ActivityServlet extends HttpServlet {
                 editActivity(request, response, user);
                 break;
             case "delete":
-                deleteActivityAction(request, response, user);
-                break;
+                response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+                return;
             default:
                 listActivities(request, response, user);
         }
@@ -122,6 +122,12 @@ public class ActivityServlet extends HttpServlet {
                 break;
             case "delete":
                 deleteActivity(request, response, user);
+                break;
+            case "approveActivity":
+                approveActivity(request, response, user);
+                break;
+            case "rejectActivity":
+                rejectActivity(request, response, user);
                 break;
             case "register":
                 registerActivity(request, response, user);

@@ -672,7 +672,7 @@ class GroupServiceTest {
             when(groupMessageDAO.findByGroupId(eq(1), anyInt(), anyInt()))
                     .thenReturn(Arrays.asList(testMessage));
 
-            Result result = groupService.getMessages(1, 1);
+            Result result = groupService.getMessages(1, 1, 1);
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData()).isInstanceOf(List.class);
@@ -681,7 +681,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：群组ID为空应返回错误")
         void should_return_error_when_group_id_is_null() {
-            Result result = groupService.getMessages(null, 1);
+            Result result = groupService.getMessages(null, 1, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -691,7 +691,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：页码为空应返回错误")
         void should_return_error_when_page_is_null() {
-            Result result = groupService.getMessages(1, null);
+            Result result = groupService.getMessages(1, null, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -701,7 +701,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：页码为0应返回错误")
         void should_return_error_when_page_is_zero() {
-            Result result = groupService.getMessages(1, 0);
+            Result result = groupService.getMessages(1, 0, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -712,7 +712,7 @@ class GroupServiceTest {
         void should_return_403_when_not_member() {
             when(groupMemberDAO.isMember(1, 1)).thenReturn(false);
 
-            Result result = groupService.getMessages(1, 1);
+            Result result = groupService.getMessages(1, 1, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(403);
@@ -850,7 +850,7 @@ class GroupServiceTest {
             when(activityGroupDAO.muteGroup(eq(1), any(java.sql.Date.class), anyString())).thenReturn(true);
 
             Date until = new Date(System.currentTimeMillis() + 3600000);
-            Result result = groupService.muteMember(1, 2, until, "违规发言");
+            Result result = groupService.muteMember(1, 2, until, "违规发言", 1);
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -858,7 +858,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：群组ID为空应返回错误")
         void should_return_error_when_group_id_is_null() {
-            Result result = groupService.muteMember(null, 2, new Date(), "原因");
+            Result result = groupService.muteMember(null, 2, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -867,7 +867,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：目标用户ID为空应返回错误")
         void should_return_error_when_target_user_id_is_null() {
-            Result result = groupService.muteMember(1, null, new Date(), "原因");
+            Result result = groupService.muteMember(1, null, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -879,7 +879,7 @@ class GroupServiceTest {
             when(activityGroupDAO.findById(1)).thenReturn(testGroup);
             when(groupMemberDAO.isOwner(1, 1)).thenReturn(true);
 
-            Result result = groupService.muteMember(1, 1, new Date(), "原因");
+            Result result = groupService.muteMember(1, 1, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -892,7 +892,7 @@ class GroupServiceTest {
             when(activityGroupDAO.findById(1)).thenReturn(testGroup);
             when(groupMemberDAO.isOwner(1, 2)).thenReturn(false);
 
-            Result result = groupService.muteMember(1, 3, new Date(), "原因");
+            Result result = groupService.muteMember(1, 3, new Date(), "原因", 2);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(403);
@@ -907,7 +907,7 @@ class GroupServiceTest {
 
             String longReason = "a".repeat(501);
 
-            Result result = groupService.muteMember(1, 2, new Date(), longReason);
+            Result result = groupService.muteMember(1, 2, new Date(), longReason, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -919,7 +919,7 @@ class GroupServiceTest {
         void should_return_404_when_group_not_found() {
             when(activityGroupDAO.findById(999)).thenReturn(null);
 
-            Result result = groupService.muteMember(999, 2, new Date(), "原因");
+            Result result = groupService.muteMember(999, 2, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(404);

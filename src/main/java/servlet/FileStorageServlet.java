@@ -56,7 +56,7 @@ public class FileStorageServlet extends HttpServlet {
         } else if ("list".equals(action)) {
             listFiles(request, response);
         } else if ("delete".equals(action)) {
-            deleteFile(request, response);
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
     }
 
@@ -76,6 +76,8 @@ public class FileStorageServlet extends HttpServlet {
 
         if ("upload".equals(action)) {
             uploadFile(request, response);
+        } else if ("delete".equals(action)) {
+            deleteFile(request, response);
         }
     }
 

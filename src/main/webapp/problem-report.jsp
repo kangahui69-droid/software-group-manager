@@ -3,6 +3,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>">
+    <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>问题反馈 - 软件小组管理系统</title>

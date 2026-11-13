@@ -60,16 +60,7 @@ public class StudySessionServlet extends HttpServlet {
             // 获取今日进行中的学习时段
             StudySession activeSession = studyDAO.getTodayActiveSession(currentUser.getId());
 
-            // 检查是否需要自动结束（22:00自动结束，不影响后续签到）
-            Calendar now = Calendar.getInstance();
-            int hour = now.get(Calendar.HOUR_OF_DAY);
-            if (activeSession != null && hour >= 22) {
-                studyDAO.endStudy(activeSession.getId());
-                activeSession = null; // 刷新状态
-            }
-
-            // 重新获取时段（可能刚才被自动结束）
-            activeSession = studyDAO.getTodayActiveSession(currentUser.getId());
+            // 22:00 自动结束由 StudySessionScheduler 执行，GET 只读取状态。
 
             // 获取今日学习时长（只统计已完成的）
             Integer todayDuration = studyDAO.getTodayDuration(currentUser.getId());

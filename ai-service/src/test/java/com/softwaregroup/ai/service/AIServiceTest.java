@@ -249,7 +249,7 @@ class AIServiceTest {
             when(conversationDAO.findBySessionId(SESSION_ID)).thenReturn(existing);
 
             // When
-            AIConversation result = aiService.createOrGetConversation(SESSION_ID, GUEST_USER_ID);
+            AIConversation result = aiService.createOrGetConversation(SESSION_ID, MEMBER_USER_ID);
 
             // Then: 不应再次保存
             verify(conversationDAO, never()).save(any());
@@ -269,7 +269,7 @@ class AIServiceTest {
             when(messageDAO.findByConversationId(CONVERSATION_ID)).thenReturn(messages);
 
             // When
-            List<AIMessage> history = aiService.getConversationHistory(SESSION_ID);
+            List<AIMessage> history = aiService.getConversationHistory(SESSION_ID, MEMBER_USER_ID);
 
             // Then
             assertThat(history).hasSize(2);
@@ -285,7 +285,7 @@ class AIServiceTest {
             when(conversationDAO.findBySessionId(SESSION_ID)).thenReturn(conversation);
 
             // When
-            aiService.clearConversation(SESSION_ID);
+            aiService.clearConversation(SESSION_ID, MEMBER_USER_ID);
 
             // Then
             verify(messageDAO).deleteByConversationId(CONVERSATION_ID);
@@ -299,7 +299,7 @@ class AIServiceTest {
             when(conversationDAO.findBySessionId(SESSION_ID)).thenReturn(null);
 
             // When
-            aiService.clearConversation(SESSION_ID);
+            aiService.clearConversation(SESSION_ID, MEMBER_USER_ID);
 
             // Then: 不应抛出异常
             verify(messageDAO, never()).deleteByConversationId(anyInt());
@@ -914,7 +914,7 @@ class AIServiceTest {
             when(activityFeignClient.getActivities()).thenReturn(successResult(Collections.emptyList()));
 
             // When
-            String response = aiService.chat("你好", SESSION_ID, null);
+            String response = aiService.chat("你好", SESSION_ID, MEMBER_USER_ID);
 
             // Then: 验证响应生成（实际会调用AI客户端）
             assertThat(response).isNotNull();
@@ -930,7 +930,7 @@ class AIServiceTest {
             when(activityFeignClient.getActivities()).thenReturn(successResult(Collections.emptyList()));
 
             // When
-            aiService.chat("你好", SESSION_ID, null);
+            aiService.chat("你好", SESSION_ID, MEMBER_USER_ID);
 
             // Then
             verify(conversationDAO).save(any(AIConversation.class));
@@ -1177,11 +1177,12 @@ class AIServiceTest {
             com.softwaregroup.ai.model.entity.AIMessageStatus status =
                 new com.softwaregroup.ai.model.entity.AIMessageStatus();
             status.setId(1);
+            status.setUserId(MEMBER_USER_ID);
             status.setStatus(STATUS_PENDING);
             when(messageStatusDAO.findById(1)).thenReturn(status);
 
             // When
-            boolean result = aiService.updateMessageStatus(1, STATUS_PROCESSING);
+            boolean result = aiService.updateMessageStatus(1, STATUS_PROCESSING, MEMBER_USER_ID);
 
             // Then
             assertThat(result).isTrue();
@@ -1195,7 +1196,7 @@ class AIServiceTest {
             when(messageStatusDAO.findById(999)).thenReturn(null);
 
             // When
-            boolean result = aiService.updateMessageStatus(999, STATUS_COMPLETED);
+            boolean result = aiService.updateMessageStatus(999, STATUS_COMPLETED, MEMBER_USER_ID);
 
             // Then
             assertThat(result).isFalse();
@@ -1487,7 +1488,7 @@ class AIServiceTest {
                 .thenThrow(new RuntimeException("Database error"));
 
             // When: 不应抛出异常
-            List<AIMessage> result = aiService.getConversationHistory(SESSION_ID);
+            List<AIMessage> result = aiService.getConversationHistory(SESSION_ID, MEMBER_USER_ID);
 
             // Then
             assertThat(result).isNull();

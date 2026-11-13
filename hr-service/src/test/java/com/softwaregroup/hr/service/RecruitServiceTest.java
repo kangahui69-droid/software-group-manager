@@ -74,6 +74,9 @@ class RecruitServiceTest {
         pendingApplication.setEmail("zhangsan@example.com");
         pendingApplication.setReason("对软件开发有浓厚兴趣");
         pendingApplication.setStatus(RecruitApplication.STATUS_PENDING);
+        User admin = new User();
+        admin.setRole("ADMIN");
+        lenient().when(userDAO.findById(anyInt())).thenReturn(admin);
     }
 
     // ==================== submitApplication 测试 ====================
@@ -559,7 +562,7 @@ class RecruitServiceTest {
             when(recruitDAO.delete(1)).thenReturn(true);
 
             // When
-            Result result = recruitService.deleteApplication(1);
+            Result result = recruitService.deleteApplication(1, 1);
 
             // Then
             assertTrue(result.isSuccess());
@@ -573,7 +576,7 @@ class RecruitServiceTest {
             when(recruitDAO.delete(999)).thenReturn(false);
 
             // When
-            Result result = recruitService.deleteApplication(999);
+            Result result = recruitService.deleteApplication(999, 1);
 
             // Then
             assertFalse(result.isSuccess());
@@ -585,7 +588,7 @@ class RecruitServiceTest {
         @DisplayName("删除失败 - ID为null")
         void should_fail_when_id_is_null() {
             // When
-            Result result = recruitService.deleteApplication(null);
+            Result result = recruitService.deleteApplication(null, 1);
 
             // Then
             assertFalse(result.isSuccess());

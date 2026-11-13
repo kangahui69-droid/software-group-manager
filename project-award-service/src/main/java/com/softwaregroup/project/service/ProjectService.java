@@ -362,6 +362,11 @@ public class ProjectService {
             return Result.error(404, "项目不存在");
         }
 
+        if (operatorId == null || (!operatorId.equals(project.getLeaderId())
+                && !operatorId.equals(project.getAdminId()))) {
+            return Result.error(403, "无权审批此项目的成员申请");
+        }
+
         boolean approved = projectDAO.approveMemberApplication(applicationId, operatorId, null);
         if (!approved) {
             return Result.error(500, "审批失败");
@@ -383,6 +388,11 @@ public class ProjectService {
         Project project = projectDAO.findById(app.getProjectId());
         if (project == null) {
             return Result.error(404, "项目不存在");
+        }
+
+        if (operatorId == null || (!operatorId.equals(project.getLeaderId())
+                && !operatorId.equals(project.getAdminId()))) {
+            return Result.error(403, "无权审批此项目的成员申请");
         }
 
         boolean rejected = projectDAO.rejectMemberApplication(applicationId, operatorId, reason, null);
@@ -454,16 +464,25 @@ public class ProjectService {
         return Result.ok();
     }
 
-    public Result listProjects(ProjectFilterDTO filter, int page, int pageSize) {
+    public Result listProjects(ProjectFilterDTO filter, int page, int pageSize,
+                               com.softwaregroup.common.security.CurrentUser user) {
         String keyword = filter != null ? filter.getKeyword() : null;
         String status = filter != null ? filter.getStatus() : null;
         Integer year = filter != null ? filter.getYear() : null;
 
-        List<Project> projects = projectDAO.findByConditions(keyword, status, year);
+        boolean isAdmin = user != null && "ADMIN".equals(user.role());
+        List<Project> projects = projectDAO.findByConditions(keyword, isAdmin ? status : null, year);
+        if (!isAdmin) {
+            projects = projects.stream().filter(project ->
+                    (STATUS_APPROVED.equals(project.getStatus())
+                            || STATUS_IN_PROGRESS.equals(project.getStatus())
+                            || STATUS_COMPLETED.equals(project.getStatus()))
+                            && (status == null || status.equals(project.getStatus()))).toList();
+        }
         return Result.ok(projects);
     }
 
-    public Result getProjectDetail(Integer projectId, Integer userId) {
+    public Result getProjectDetail(Integer projectId, Integer userId, boolean isAdmin) {
         if (projectId == null || projectId <= 0) {
             return Result.error(400, "项目ID不能为空");
         }
@@ -473,7 +492,10 @@ public class ProjectService {
             return Result.error(404, "项目不存在");
         }
 
-        if (!STATUS_APPROVED.equals(project.getStatus()) && !project.getLeaderId().equals(userId)) {
+        if (!isAdmin && !STATUS_APPROVED.equals(project.getStatus()) && !STATUS_IN_PROGRESS.equals(project.getStatus())
+                && !STATUS_COMPLETED.equals(project.getStatus())
+                && !java.util.Objects.equals(project.getLeaderId(), userId)
+                && !java.util.Objects.equals(project.getAdminId(), userId)) {
             return Result.error(403, "无权限");
         }
 

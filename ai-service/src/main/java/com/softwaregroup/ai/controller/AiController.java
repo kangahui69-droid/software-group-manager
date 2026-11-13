@@ -4,6 +4,9 @@ package com.softwaregroup.ai.controller;
 import com.softwaregroup.ai.model.dto.*;
 import com.softwaregroup.ai.model.entity.*;
 import com.softwaregroup.ai.service.AIService;
+import com.softwaregroup.common.security.AuthenticatedUser;
+import com.softwaregroup.common.security.CurrentUser;
+import com.softwaregroup.common.security.RequireRole;
 import com.softwaregroup.common.util.Result;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,25 +29,25 @@ public class AiController {
     // ==================== 对话管理 ====================
 
     @PostMapping("/chat")
-    public Result chat(@RequestBody Map<String, Object> request) {
+    public Result chat(@RequestBody Map<String, Object> request,
+                       @AuthenticatedUser Integer userId) {
         String message = (String) request.get("message");
         String sessionId = (String) request.get("sessionId");
-        Integer userId = request.get("userId") != null
-                ? Integer.valueOf(request.get("userId").toString()) : null;
-
         String response = aiService.chat(message, sessionId, userId);
         return Result.ok(response);
     }
 
     @GetMapping("/history")
-    public Result getHistory(@RequestParam String sessionId) {
-        List<AIMessage> history = aiService.getConversationHistory(sessionId);
+    public Result getHistory(@RequestParam String sessionId,
+                             @AuthenticatedUser Integer userId) {
+        List<AIMessage> history = aiService.getConversationHistory(sessionId, userId);
         return Result.ok(history);
     }
 
     @DeleteMapping("/clear")
-    public Result clearConversation(@RequestParam String sessionId) {
-        aiService.clearConversation(sessionId);
+    public Result clearConversation(@RequestParam String sessionId,
+                                    @AuthenticatedUser Integer userId) {
+        aiService.clearConversation(sessionId, userId);
         return Result.ok(null);
     }
 
@@ -79,23 +82,16 @@ public class AiController {
     // ==================== ACTION执行 ====================
 
     @PostMapping("/execute")
-    public Result executeAction(@RequestBody Map<String, Object> request) {
+    public Result executeAction(@RequestBody Map<String, Object> request,
+                                @AuthenticatedUser CurrentUser currentUser) {
         String actionType = (String) request.get("actionType");
         @SuppressWarnings("unchecked")
         Map<String, String> params = (Map<String, String>) request.get("params");
 
-        Object userObj = request.get("user");
-        UserDTO user = null;
-        if (userObj instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> userMap = (Map<String, Object>) userObj;
-            user = new UserDTO();
-            if (userMap.get("id") != null) {
-                user.setId(Integer.valueOf(userMap.get("id").toString()));
-            }
-            user.setUsername((String) userMap.get("username"));
-            user.setRole((String) userMap.get("role"));
-        }
+        UserDTO user = new UserDTO();
+        user.setId(currentUser.id());
+        user.setUsername(currentUser.username());
+        user.setRole(currentUser.role());
 
         Map<String, Object> result = aiService.executeAction(actionType, params, user);
         return Result.ok(result);
@@ -112,10 +108,9 @@ public class AiController {
     // ==================== 消息状态 ====================
 
     @PostMapping("/status")
-    public Result createStatus(@RequestBody Map<String, Object> request) {
+    public Result createStatus(@RequestBody Map<String, Object> request,
+                               @AuthenticatedUser Integer userId) {
         String sessionId = (String) request.get("sessionId");
-        Integer userId = request.get("userId") != null
-                ? Integer.valueOf(request.get("userId").toString()) : null;
         String userMessage = (String) request.get("userMessage");
 
         Integer statusId = aiService.createMessageStatus(sessionId, userId, userMessage);
@@ -124,9 +119,10 @@ public class AiController {
 
     @PutMapping("/status/{statusId}")
     public Result updateStatus(@PathVariable Integer statusId,
-                                @RequestBody Map<String, String> request) {
+                                @RequestBody Map<String, String> request,
+                                @AuthenticatedUser Integer userId) {
         String newStatus = request.get("newStatus");
-        boolean success = aiService.updateMessageStatus(statusId, newStatus);
+        boolean success = aiService.updateMessageStatus(statusId, newStatus, userId);
         return Result.ok(success);
     }
 
@@ -142,7 +138,11 @@ public class AiController {
     // ==================== 业务数据查询（Feign调用） ====================
 
     @GetMapping("/user/{userId}")
-    public Result getUserInfo(@PathVariable Integer userId) {
+    public Result getUserInfo(@PathVariable Integer userId,
+                              @AuthenticatedUser CurrentUser currentUser) {
+        if (!"ADMIN".equals(currentUser.role())) {
+            CurrentUser.requireSameId(userId, currentUser.id());
+        }
         UserDTO user = aiService.getUserInfo(userId);
         return Result.ok(user);
     }
@@ -178,13 +178,16 @@ public class AiController {
     }
 
     @GetMapping("/awards/pending")
+    @RequireRole("ADMIN")
     public Result getPendingAwards() {
         List<AwardDTO> list = aiService.getPendingAwards();
         return Result.ok(list);
     }
 
     @GetMapping("/groups/{userId}")
-    public Result getUserGroups(@PathVariable Integer userId) {
+    public Result getUserGroups(@PathVariable Integer userId,
+                                @AuthenticatedUser Integer currentUserId) {
+        CurrentUser.requireSameId(userId, currentUserId);
         List<GroupDTO> list = aiService.getUserGroups(userId);
         return Result.ok(list);
     }

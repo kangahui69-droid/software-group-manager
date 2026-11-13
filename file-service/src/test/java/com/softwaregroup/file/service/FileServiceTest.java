@@ -105,13 +105,13 @@ class FileServiceTest {
 
     @Test
     void deleteFile_withInvalidId_shouldReturnError() {
-        Result result = fileService.deleteFile(null, 1);
+        Result result = fileService.deleteFile(null, 1, false);
         assertThat(result.getCode()).isEqualTo(400);
     }
 
     @Test
     void deleteFile_withNullUserId_shouldReturnError() {
-        Result result = fileService.deleteFile(1, null);
+        Result result = fileService.deleteFile(1, null, false);
         assertThat(result.getCode()).isEqualTo(400);
     }
 
@@ -119,7 +119,7 @@ class FileServiceTest {
     void deleteFile_withNonExistentFile_shouldReturnNotFound() {
         when(fileStorageDAO.findById(999)).thenReturn(null);
 
-        Result result = fileService.deleteFile(999, 1);
+        Result result = fileService.deleteFile(999, 1, false);
         assertThat(result.getCode()).isEqualTo(404);
     }
 

@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 /**
  * 监控服务启动类
  */
-@SpringBootApplication(scanBasePackages = "com.softwaregroup.monitor")
+@SpringBootApplication(scanBasePackages = {"com.softwaregroup.monitor", "com.softwaregroup.common"})
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "com.softwaregroup.monitor.feign")
 public class MonitorServiceApplication {

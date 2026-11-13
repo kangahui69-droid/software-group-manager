@@ -46,7 +46,7 @@ public class ResumeSkillServlet extends HttpServlet {
         } else if ("edit".equals(action)) {
             showEditForm(req, resp, user.getId());
         } else if ("delete".equals(action)) {
-            deleteSkill(req, resp, user.getId());
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         } else {
             listSkills(req, resp, user.getId());
         }
@@ -68,6 +68,8 @@ public class ResumeSkillServlet extends HttpServlet {
             createSkill(req, resp, user.getId());
         } else if ("update".equals(action)) {
             updateSkill(req, resp, user.getId());
+        } else if ("delete".equals(action)) {
+            deleteSkill(req, resp, user.getId());
         } else {
             resp.sendRedirect(req.getContextPath() + "/resume/skill?action=list");
         }

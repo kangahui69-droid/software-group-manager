@@ -13,6 +13,7 @@ import service.ProjectService;
 import util.Result;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,6 +28,7 @@ import java.util.Map;
  * 项目Servlet - 4.7 Servlet改造
  * 调用ProjectService处理业务逻辑
  */
+@MultipartConfig
 public class ProjectServlet extends HttpServlet {
 
     private ProjectService projectService;
@@ -68,6 +70,10 @@ public class ProjectServlet extends HttpServlet {
                 getMyApplications(request, response, user);  // 我的申请记录（我申请加入的项目）
                 break;
             case "manage":
+                if (user == null || !"ADMIN".equals(user.getRole())) {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    return;
+                }
                 listProjects(request, response, user);  // 管理端项目管理
                 break;
             case "createForm":
@@ -129,6 +135,12 @@ public class ProjectServlet extends HttpServlet {
 
     private void listProjects(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
+        if (user == null) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
+        boolean isAdmin = "ADMIN".equals(user.getRole());
         String keyword = request.getParameter("keyword");
         String status = request.getParameter("status");
         String yearStr = request.getParameter("year");
@@ -140,7 +152,10 @@ public class ProjectServlet extends HttpServlet {
             filter.setYear(Integer.parseInt(yearStr));
         }
 
-        Result result = projectService.listProjects(filter, 1, 20);
+        // 数据范围由服务端角色决定；普通成员不能通过更换入口查看其他人的项目。
+        Result result = isAdmin
+                ? projectService.listProjects(filter, 1, 20)
+                : projectService.getMyProjects(user.getId(), 1, 20);
         if (result.isSuccess()) {
             request.setAttribute("projects", result.getData());
         }
@@ -149,7 +164,7 @@ public class ProjectServlet extends HttpServlet {
         request.setAttribute("year", yearStr);
 
         // 根据用户角色决定转发到哪个页面
-        if (user != null && "ADMIN".equals(user.getRole())) {
+        if (isAdmin) {
             request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
         } else {
             request.getRequestDispatcher("/jsp/member/project/list.jsp").forward(request, response);

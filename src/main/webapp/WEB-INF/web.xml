@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
-         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
-         version="4.0">
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+         https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
 
     <display-name>高校软件小组管理系统</display-name>
 
@@ -58,14 +58,10 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- 安全过滤器（XSS和CSRF防护） -->
+    <!-- 安全过滤器（XSS 和 CSRF 防护） -->
     <filter>
         <filter-name>SecurityFilter</filter-name>
         <filter-class>filter.SecurityFilter</filter-class>
-        <init-param>
-            <param-name>excludeUrls</param-name>
-            <param-value>/login,/logout,/csrf-token,/problem-report.jsp,/problem,/member/problem</param-value>
-        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>SecurityFilter</filter-name>
@@ -359,6 +355,11 @@
     <!-- 会话超时设置（30分钟） -->
     <session-config>
         <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>true</secure>
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
     </session-config>
 
     <!-- 学习会话定时任务监听器 -->

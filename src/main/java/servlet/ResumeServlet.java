@@ -53,18 +53,13 @@ public class ResumeServlet extends HttpServlet {
             showCreateForm(req, resp);
         } else if ("edit".equals(action)) {
             showEditForm(req, resp, user.getId());
-        } else if ("delete".equals(action)) {
-            deleteResume(req, resp, user.getId());
-        } else if ("setDefault".equals(action)) {
-            setDefaultResume(req, resp, user.getId());
+        } else if ("delete".equals(action) || "setDefault".equals(action)
+                || "restore".equals(action) || "hardDelete".equals(action)) {
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         } else if ("preview".equals(action)) {
             previewResume(req, resp, user.getId());
         } else if ("recycleBin".equals(action)) {
             showRecycleBin(req, resp, user.getId());
-        } else if ("restore".equals(action)) {
-            restoreResume(req, resp, user.getId());
-        } else if ("hardDelete".equals(action)) {
-            hardDeleteResume(req, resp, user.getId());
         } else {
             listResumes(req, resp, user.getId());
         }
@@ -89,6 +84,14 @@ public class ResumeServlet extends HttpServlet {
             createResume(req, resp, user.getId());
         } else if ("update".equals(action)) {
             updateResume(req, resp, user.getId());
+        } else if ("delete".equals(action)) {
+            deleteResume(req, resp, user.getId());
+        } else if ("setDefault".equals(action)) {
+            setDefaultResume(req, resp, user.getId());
+        } else if ("restore".equals(action)) {
+            restoreResume(req, resp, user.getId());
+        } else if ("hardDelete".equals(action)) {
+            hardDeleteResume(req, resp, user.getId());
         } else {
             resp.sendRedirect(req.getContextPath() + "/resume?action=list");
         }

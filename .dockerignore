@@ -2,8 +2,9 @@
 .git
 .gitignore
 
-# Maven 构建产物（排除 target/ 但保留 WAR 文件）
-target/
+# Maven 构建产物（排除 target/ 内容但保留 WAR 文件）
+# 注意：不能整体排除 target/，否则 !target/*.war 无法把子项重新纳入构建上下文
+target/*
 !target/*.war
 pom.xml.tag
 pom.xml.releaseBackup

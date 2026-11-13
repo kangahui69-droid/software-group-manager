@@ -182,8 +182,14 @@ public class AwardService {
         return null;
     }
 
-    public Result listAwards(String status, Integer page) {
-        if (status == null || status.trim().isEmpty()) {
+    public Result listAwards(String status, Integer page, com.softwaregroup.common.security.CurrentUser user) {
+        if (user == null || !"ADMIN".equals(user.role())) {
+            if (status != null && !status.isBlank() && !STATUS_APPROVED.equals(status)) {
+                return Result.ok(List.of());
+            }
+            return Result.ok(awardDAO.findByStatus(STATUS_APPROVED));
+        }
+        if (status == null || status.isBlank()) {
             return Result.ok(awardDAO.findAll());
         }
         return Result.ok(awardDAO.findByStatus(status));
@@ -207,7 +213,7 @@ public class AwardService {
         return Result.ok(awards);
     }
 
-    public Result getAwardDetail(Integer awardId) {
+    public Result getAwardDetail(Integer awardId, com.softwaregroup.common.security.CurrentUser user) {
         if (awardId == null) {
             return Result.error(400, "奖项ID不能为空");
         }
@@ -217,16 +223,30 @@ public class AwardService {
             return Result.error(404, "奖项不存在");
         }
 
+        if (!canViewAward(award, user)) {
+            return Result.error(404, "奖项不存在");
+        }
+
         return Result.ok(award);
     }
 
-    public Result getAwardImages(Integer awardId) {
+    public Result getAwardImages(Integer awardId, com.softwaregroup.common.security.CurrentUser user) {
         if (awardId == null) {
             return Result.error(400, "奖项ID不能为空");
         }
 
+        Award award = awardDAO.findById(awardId);
+        if (award == null || !canViewAward(award, user)) {
+            return Result.error(404, "奖项不存在");
+        }
         List<AwardImage> images = awardImageDAO.findByAwardId(awardId);
         return Result.ok(images);
+    }
+
+    private boolean canViewAward(Award award, com.softwaregroup.common.security.CurrentUser user) {
+        return STATUS_APPROVED.equals(award.getAwardStatus())
+                || (user != null && ("ADMIN".equals(user.role())
+                || java.util.Objects.equals(user.id(), award.getCreatedBy())));
     }
 
     public Result deleteAward(Integer awardId, Integer userId) {

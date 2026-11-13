@@ -225,6 +225,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # MinIO 配置
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
@@ -272,7 +274,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
       # JWT 配置
-      JWT_SECRET: ${JWT_SECRET:-software-group-jwt-secret-key-2024-very-long-and-secure}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       JWT_EXPIRATION_MS: 86400000
       # DES 加密密钥（必须与旧系统一致）
       DES_KEY: ${DES_KEY:-(^&%gasie_%^)}
@@ -315,6 +318,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # Nacos 配置
       NACOS_HOST: nacos
       NACOS_PORT: 8848
@@ -344,6 +349,8 @@ services:
     ports:
       - "${PROJECT_AWARD_SERVICE_PORT:-8085}:8085"
     environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -383,6 +390,8 @@ services:
     ports:
       - "${HR_SERVICE_PORT:-8089}:8089"
     environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -422,6 +431,8 @@ services:
     ports:
       - "${MONITOR_SERVICE_PORT:-8086}:8086"
     environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -461,6 +472,8 @@ services:
     ports:
       - "${CONTENT_SERVICE_PORT:-8087}:8087"
     environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -500,6 +513,8 @@ services:
     ports:
       - "${AI_SERVICE_PORT:-8094}:8094"
     environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -549,29 +564,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.tomcat
-      # 构建时参数（传递给 Dockerfile，用于 envsubst 替换）
-      args:
-        DB_HOST: mysql
-        DB_PORT: "3306"
-        DB_NAME: ${MYSQL_DATABASE:-software_group}
-        DB_USER: root
-        DB_PASSWORD: ${MYSQL_PASSWORD:-root123}
-        AI_PROVIDER: ${AI_PROVIDER:-minimax}
-        AI_API_KEY: ${AI_API_KEY:-}
-        AI_API_URL: ${AI_API_URL:-}
-        AI_MODEL: ${AI_MODEL:-MiniMax-M2.7}
-        DES_KEY: ${DES_KEY:-(^&%gasie_%^)}
-        REDIS_HOST: redis
-        REDIS_PORT: "6379"
-        REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-        RABBITMQ_HOST: rabbitmq
-        RABBITMQ_PORT: "5672"
-        RABBITMQ_USER: ${RABBITMQ_USER:-admin}
-        RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin123}
-        HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-10}
-        HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-5}
-        SESSION_TIMEOUT: ${SESSION_TIMEOUT:-30}
-        UPLOAD_BASE_DIR: /usr/local/tomcat/webapps/localstorage
 
     container_name: sg_app
     restart: always
@@ -589,12 +581,36 @@ services:
       rabbitmq:
         condition: service_healthy
 
-    # 环境变量（运行时注入，但 config.local.properties 已在构建时替换）
+    # 运行期环境变量：config.Config 会据此展开 config.local.properties 里的 ${VAR:-default} 占位符
+    # 变量名必须与 src/main/resources/config.local.properties 中的占位符名一致
     environment:
-      # AI 服务配置（运行时可能需要）
+      # 数据库（用户名 root，密码与 mysql 服务的 MYSQL_ROOT_PASSWORD 同源）
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: ${MYSQL_DATABASE:-software_group}
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      # 连接池 / 会话 / 加密 / 上传目录
+      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-10}
+      HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-5}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-30}
+      DES_KEY: ${DES_KEY:-(^&%gasie_%^)}
+      UPLOAD_BASE_DIR: /usr/local/tomcat/webapps/localstorage
+      # Redis（SessionRedisFilter 挂在 /* 上，密码错了所有页面都过不去）
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin123}
+      # AI 服务
       AI_PROVIDER: ${AI_PROVIDER:-minimax}
       AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_SECRET: ${AI_API_SECRET:-}
       AI_API_URL: ${AI_API_URL:-}
+      AI_MODEL: ${AI_MODEL:-MiniMax-M2.7}
 
     # 数据卷挂载（文件上传目录持久化）
     # 解决：容器内文件上传后，删除容器文件丢失的问题

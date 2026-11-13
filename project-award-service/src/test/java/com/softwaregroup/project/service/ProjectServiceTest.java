@@ -916,7 +916,7 @@ class ProjectServiceTest {
             when(projectDAO.findByConditions(any(), any(), any()))
                     .thenReturn(Arrays.asList(testProject));
 
-            Result result = projectService.listProjects(null, 1, 20);
+            Result result = projectService.listProjects(null, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData()).isInstanceOf(List.class);
@@ -931,7 +931,7 @@ class ProjectServiceTest {
             ProjectFilterDTO filter = new ProjectFilterDTO();
             filter.setKeyword("测试");
 
-            Result result = projectService.listProjects(filter, 1, 20);
+            Result result = projectService.listProjects(filter, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -945,7 +945,7 @@ class ProjectServiceTest {
             ProjectFilterDTO filter = new ProjectFilterDTO();
             filter.setStatus("pending");
 
-            Result result = projectService.listProjects(filter, 1, 20);
+            Result result = projectService.listProjects(filter, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -959,7 +959,7 @@ class ProjectServiceTest {
             ProjectFilterDTO filter = new ProjectFilterDTO();
             filter.setYear(2026);
 
-            Result result = projectService.listProjects(filter, 1, 20);
+            Result result = projectService.listProjects(filter, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -970,7 +970,7 @@ class ProjectServiceTest {
             when(projectDAO.findByConditions(any(), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            Result result = projectService.listProjects(null, 1, 20);
+            Result result = projectService.listProjects(null, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -990,7 +990,7 @@ class ProjectServiceTest {
             when(projectDAO.getProgressList(1)).thenReturn(Collections.emptyList());
             when(projectDAO.getHistory(1)).thenReturn(Collections.emptyList());
 
-            Result result = projectService.getProjectDetail(1, 2);
+            Result result = projectService.getProjectDetail(1, 2, false);
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -998,7 +998,7 @@ class ProjectServiceTest {
         @Test
         @DisplayName("异常场景：项目ID无效应返回错误")
         void should_return_error_when_id_invalid() {
-            Result result = projectService.getProjectDetail(0, 2);
+            Result result = projectService.getProjectDetail(0, 2, false);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -1009,7 +1009,7 @@ class ProjectServiceTest {
         void should_return_404_when_project_not_found() {
             when(projectDAO.findById(999)).thenReturn(null);
 
-            Result result = projectService.getProjectDetail(999, 2);
+            Result result = projectService.getProjectDetail(999, 2, false);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(404);
@@ -1021,7 +1021,7 @@ class ProjectServiceTest {
             testProject.setStatus("pending");
             when(projectDAO.findById(1)).thenReturn(testProject);
 
-            Result result = projectService.getProjectDetail(1, 3);
+            Result result = projectService.getProjectDetail(1, 3, false);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(403);

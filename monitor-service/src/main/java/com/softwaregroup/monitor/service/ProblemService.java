@@ -93,7 +93,7 @@ public class ProblemService {
         return Result.error(CODE_INTERNAL_ERROR, "提交问题失败");
     }
 
-    public Result getProblemDetail(Integer problemId) {
+    public Result getProblemDetail(Integer problemId, Integer userId) {
         if (problemId == null) {
             return Result.error(CODE_BAD_REQUEST, "问题ID不能为空");
         }
@@ -101,6 +101,9 @@ public class ProblemService {
         ProblemReport problem = problemReportDAO.findById(problemId);
         if (problem == null) {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
+        }
+        if (!canAccessOwnProblem(problem, userId)) {
+            return Result.error(403, "无权查看此问题");
         }
         return Result.ok(problem);
     }
@@ -149,6 +152,9 @@ public class ProblemService {
         if (existing == null) {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
+        if (!canAccessOwnProblem(existing, operatorId)) {
+            return Result.error(403, "无权修改此问题");
+        }
 
         if (dto.getTitle() != null && dto.getTitle().trim().isEmpty()) {
             return Result.error(CODE_BAD_REQUEST, "标题不能为空");
@@ -168,6 +174,10 @@ public class ProblemService {
         ProblemReport problem = problemReportDAO.findById(problemId);
         if (problem == null) {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
+        }
+
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
         }
 
         if (!ProblemReport.CATEGORY_VERIFIED.equals(problem.getCategory())) {
@@ -196,6 +206,10 @@ public class ProblemService {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
 
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
+        }
+
         if (category == null || !VALID_CATEGORIES.contains(category)) {
             return Result.error(CODE_BAD_REQUEST, "无效的分类值");
         }
@@ -218,6 +232,10 @@ public class ProblemService {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
 
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
+        }
+
         boolean updated = problemReportDAO.updateAdminComment(problemId, comment);
         if (updated) {
             return Result.ok();
@@ -238,11 +256,27 @@ public class ProblemService {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
 
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
+        }
+
         boolean deleted = problemReportDAO.delete(problemId);
         if (deleted) {
             return Result.ok();
         }
         return Result.error(CODE_INTERNAL_ERROR, "删除问题失败");
+    }
+
+    private boolean canAccessOwnProblem(ProblemReport problem, Integer userId) {
+        return userId != null && (userId.equals(problem.getUserId()) || isAdmin(userId));
+    }
+
+    private boolean isAdmin(Integer userId) {
+        if (userId == null) {
+            return false;
+        }
+        User user = userDAO.findById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
     }
 
     public Result getStatistics() {

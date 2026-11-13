@@ -60,7 +60,7 @@ public class NewsService {
             return validationResult;
         }
 
-        List<News> news = newsDAO.findByType(type);
+        List<News> news = newsDAO.findByConditions(null, type, 1);
         return Result.ok(news);
     }
 

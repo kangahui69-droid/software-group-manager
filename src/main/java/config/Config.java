@@ -109,11 +109,12 @@ public class Config {
     // ==================== 通用属性读取 ====================
 
     public static String getProperty(String key, String defaultValue) {
-        return properties.getProperty(key, defaultValue);
+        String value = properties.getProperty(key, defaultValue);
+        return value == null ? null : resolve(value);
     }
 
     public static String getProperty(String key) {
-        return properties.getProperty(key);
+        return getProperty(key, null);
     }
 
     public static int getIntProperty(String key, int defaultValue) {
@@ -234,6 +235,66 @@ public class Config {
             return defaultValue;
         }
         return trimmed;
+    }
+
+    // ==================== 运行期占位符解析 ====================
+
+    /**
+     * 展开配置值里的 ${NAME:-default} 占位符。
+     *
+     * 环境变量非空则用环境变量值，否则用默认值；默认值本身可含嵌套占位符，递归展开。
+     * 按花括号配对定位，避免 {@code ${A:-${B}/x}} 这种嵌套默认值被截断
+     * （upload.baseDir 的默认值就是嵌套形式）。
+     *
+     * 不含 ":-" 的形式（如 ${user.dir}）原样保留，交由 getFileStorageBaseDir() 处理。
+     */
+    private static String resolve(String value) {
+        if (value.indexOf("${") < 0) {
+            return value;
+        }
+        StringBuilder result = new StringBuilder();
+        int cursor = 0;
+        while (true) {
+            int start = value.indexOf("${", cursor);
+            if (start < 0) {
+                result.append(value, cursor, value.length());
+                return result.toString();
+            }
+            int end = findClosingBrace(value, start + 2);
+            if (end < 0) {
+                result.append(value, cursor, value.length());
+                return result.toString();
+            }
+            result.append(value, cursor, start);
+            result.append(expand(value.substring(start + 2, end)));
+            cursor = end + 1;
+        }
+    }
+
+    private static int findClosingBrace(String value, int from) {
+        int depth = 1;
+        for (int i = from; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '{') {
+                depth++;
+            } else if (c == '}' && --depth == 0) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String expand(String placeholder) {
+        int separator = placeholder.indexOf(":-");
+        if (separator < 0) {
+            return "${" + placeholder + "}";
+        }
+        String name = placeholder.substring(0, separator).trim();
+        String envValue = System.getenv(name);
+        if (envValue != null && !envValue.trim().isEmpty()) {
+            return envValue;
+        }
+        return resolve(placeholder.substring(separator + 2));
     }
 
     private static void setFallbackDesKey() {

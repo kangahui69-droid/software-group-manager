@@ -4,6 +4,8 @@ import com.softwaregroup.monitor.model.dto.ProblemDTO;
 import com.softwaregroup.monitor.model.dto.ProblemFilterDTO;
 import com.softwaregroup.monitor.service.ProblemService;
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProblemControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private ProblemService problemService;
@@ -37,7 +41,9 @@ class ProblemControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(problemController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(problemController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
     }
 
     @Test
@@ -46,7 +52,7 @@ class ProblemControllerTest {
         dto.setTitle("测试问题");
         dto.setContent("测试内容");
 
-        when(problemService.submitProblem(any(ProblemDTO.class), isNull())).thenReturn(Result.ok(Map.of("id", 1)));
+        when(problemService.submitProblem(any(ProblemDTO.class), eq(1))).thenReturn(Result.ok(Map.of("id", 1)));
 
         mockMvc.perform(post("/api/problems")
                         .contentType("application/json")
@@ -72,7 +78,7 @@ class ProblemControllerTest {
 
     @Test
     void submitProblem_withInvalidData_shouldReturn400() throws Exception {
-        when(problemService.submitProblem(any(ProblemDTO.class), isNull())).thenReturn(Result.error(400, "标题不能为空"));
+        when(problemService.submitProblem(any(ProblemDTO.class), eq(1))).thenReturn(Result.error(400, "标题不能为空"));
 
         mockMvc.perform(post("/api/problems")
                         .contentType("application/json")
@@ -86,7 +92,7 @@ class ProblemControllerTest {
         ProblemDTO dto = new ProblemDTO();
         dto.setTitle("测试问题");
 
-        when(problemService.getProblemDetail(eq(1))).thenReturn(Result.ok(dto));
+        when(problemService.getProblemDetail(eq(1), eq(1))).thenReturn(Result.ok(dto));
 
         mockMvc.perform(get("/api/problems/1"))
                 .andExpect(status().isOk())
@@ -96,7 +102,7 @@ class ProblemControllerTest {
 
     @Test
     void getProblemDetail_withInvalidId_shouldReturn404() throws Exception {
-        when(problemService.getProblemDetail(eq(999))).thenReturn(Result.error(404, "问题不存在"));
+        when(problemService.getProblemDetail(eq(999), eq(1))).thenReturn(Result.error(404, "问题不存在"));
 
         mockMvc.perform(get("/api/problems/999"))
                 .andExpect(status().isOk())
@@ -127,7 +133,7 @@ class ProblemControllerTest {
 
     @Test
     void getMyProblems_shouldReturnList() throws Exception {
-        when(problemService.getMyProblems(isNull(), eq(1), eq(20))).thenReturn(Result.ok(List.of()));
+        when(problemService.getMyProblems(eq(1), eq(1), eq(20))).thenReturn(Result.ok(List.of()));
 
         mockMvc.perform(get("/api/problems/my"))
                 .andExpect(status().isOk())
@@ -149,7 +155,7 @@ class ProblemControllerTest {
         ProblemDTO dto = new ProblemDTO();
         dto.setTitle("更新后的问题");
 
-        when(problemService.updateProblem(eq(1), any(ProblemDTO.class), isNull())).thenReturn(Result.ok(dto));
+        when(problemService.updateProblem(eq(1), any(ProblemDTO.class), eq(1))).thenReturn(Result.ok(dto));
 
         mockMvc.perform(put("/api/problems/1")
                         .contentType("application/json")
@@ -160,7 +166,7 @@ class ProblemControllerTest {
 
     @Test
     void updateProblem_withNotFound_shouldReturn404() throws Exception {
-        when(problemService.updateProblem(eq(999), any(ProblemDTO.class), isNull())).thenReturn(Result.error(404, "问题不存在"));
+        when(problemService.updateProblem(eq(999), any(ProblemDTO.class), eq(1))).thenReturn(Result.error(404, "问题不存在"));
 
         mockMvc.perform(put("/api/problems/999")
                         .contentType("application/json")
@@ -171,7 +177,7 @@ class ProblemControllerTest {
 
     @Test
     void updateStatus_shouldReturnSuccess() throws Exception {
-        when(problemService.updateStatus(eq(1), eq("RESOLVED"), isNull(), isNull())).thenReturn(Result.ok(null));
+        when(problemService.updateStatus(eq(1), eq("RESOLVED"), isNull(), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(put("/api/problems/1/status")
                         .contentType("application/json")
@@ -182,7 +188,7 @@ class ProblemControllerTest {
 
     @Test
     void updateStatus_withComment_shouldPassComment() throws Exception {
-        when(problemService.updateStatus(eq(1), eq("RESOLVED"), eq("已修复"), isNull())).thenReturn(Result.ok(null));
+        when(problemService.updateStatus(eq(1), eq("RESOLVED"), eq("已修复"), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(put("/api/problems/1/status")
                         .contentType("application/json")
@@ -193,7 +199,7 @@ class ProblemControllerTest {
 
     @Test
     void updateCategory_shouldReturnSuccess() throws Exception {
-        when(problemService.updateCategory(eq(1), eq("功能建议"), isNull())).thenReturn(Result.ok(null));
+        when(problemService.updateCategory(eq(1), eq("功能建议"), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(put("/api/problems/1/category")
                         .contentType("application/json")
@@ -204,7 +210,7 @@ class ProblemControllerTest {
 
     @Test
     void addComment_shouldReturnSuccess() throws Exception {
-        when(problemService.addComment(eq(1), eq("这是评论"), isNull())).thenReturn(Result.ok(null));
+        when(problemService.addComment(eq(1), eq("这是评论"), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(post("/api/problems/1/comment")
                         .contentType("application/json")
@@ -215,7 +221,7 @@ class ProblemControllerTest {
 
     @Test
     void deleteProblem_shouldReturnSuccess() throws Exception {
-        when(problemService.deleteProblem(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(problemService.deleteProblem(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/problems/1"))
                 .andExpect(status().isOk())
@@ -224,7 +230,7 @@ class ProblemControllerTest {
 
     @Test
     void deleteProblem_withNotFound_shouldReturn404() throws Exception {
-        when(problemService.deleteProblem(eq(999), isNull())).thenReturn(Result.error(404, "问题不存在"));
+        when(problemService.deleteProblem(eq(999), eq(1))).thenReturn(Result.error(404, "问题不存在"));
 
         mockMvc.perform(delete("/api/problems/999"))
                 .andExpect(status().isOk())

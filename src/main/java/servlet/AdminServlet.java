@@ -154,10 +154,8 @@ public class AdminServlet extends HttpServlet {
 
         if (action == null || action.isEmpty()) {
             showUserList(request, response);
-        } else if ("disable".equals(action) && idParam != null) {
-            disableUser(request, response, Integer.parseInt(idParam));
-        } else if ("enable".equals(action) && idParam != null) {
-            enableUser(request, response, Integer.parseInt(idParam));
+        } else if ("disable".equals(action) || "enable".equals(action)) {
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -267,6 +265,8 @@ public class AdminServlet extends HttpServlet {
                     // t.printStackTrace();
                     // 在 AJAX 模式下，直接打印错误
                 }
+            } else if (apiPath.equals("user")) {
+                handleUserStatusPost(request, response);
             } else if (apiPath.startsWith("user/")) {
                 // System.out.println("[AdminServlet] Handling user POST request: " + apiPath);
                 String action = apiPath.substring("user/".length());
@@ -278,9 +278,36 @@ public class AdminServlet extends HttpServlet {
             return;
         }
 
+        if (relativeUri.equals("/admin/user")) {
+            handleUserStatusPost(request, response);
+            return;
+        }
+
         // 默认返回404
         // System.out.println("[AdminServlet] 404 Not Found for: " + relativeUri);
         response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    private void handleUserStatusPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String action = request.getParameter("action");
+        String id = request.getParameter("id");
+        if (id == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        try {
+            int userId = Integer.parseInt(id);
+            if ("disable".equals(action)) {
+                disableUser(request, response, userId);
+            } else if ("enable".equals(action)) {
+                enableUser(request, response, userId);
+            } else {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
     }
 
     private void handleUserPostRequest(HttpServletRequest request, HttpServletResponse response, String action)

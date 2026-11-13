@@ -243,7 +243,7 @@ public class FileService {
     /**
      * 删除文件（软删除 + 从MinIO删除）
      */
-    public Result deleteFile(Integer fileId, Integer userId) {
+    public Result deleteFile(Integer fileId, Integer userId, boolean isAdmin) {
         if (fileId == null) {
             return Result.error(400, "文件ID不能为空");
         }
@@ -259,6 +259,10 @@ public class FileService {
 
         if (file.getStatus() != null && file.getStatus() == STATUS_DELETED) {
             return Result.error(404, "文件不存在");
+        }
+
+        if (!isAdmin && !userId.equals(file.getCreateBy())) {
+            return Result.error(403, "无权删除此文件");
         }
 
         try {

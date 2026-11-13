@@ -1,17 +1,26 @@
 package com.softwaregroup.user.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.softwaregroup.common.util.JwtService;
 import com.softwaregroup.common.util.Result;
 import com.softwaregroup.user.dao.MemberProfileDAO;
 import com.softwaregroup.user.dao.UserDAO;
 import com.softwaregroup.user.model.dto.LoginRequest;
 import com.softwaregroup.user.model.dto.RegisterRequest;
+import com.softwaregroup.user.model.dto.UserDTO;
 import com.softwaregroup.user.model.entity.User;
 import com.softwaregroup.user.util.DESUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -32,11 +41,15 @@ class AuthServiceTest {
     private AuthService authService;
 
     private DESUtil desUtil;
+    private JwtService jwtService;
 
     @BeforeEach
     void setUp() {
         desUtil = new DESUtil("(^&%gasie_%^)"); // 测试用DES key
-        authService = new AuthService(userDAO, memberProfileDAO, desUtil);
+        jwtService = new JwtService("test-only-user-service-secret-32-bytes-or-longer",
+                "key-2", "software-group", "software-group-api");
+        authService = new AuthService(userDAO, memberProfileDAO, desUtil, jwtService);
+        ReflectionTestUtils.setField(authService, "jwtExpirationMs", 86400000L);
     }
 
     @Test
@@ -136,7 +149,6 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("newuser");
         request.setPassword("password123");
-        request.setRole("MEMBER");
         request.setEmail("newuser@example.com");
 
         when(userDAO.existsByUsername("newuser")).thenReturn(false);
@@ -146,7 +158,12 @@ class AuthServiceTest {
         Result result = authService.register(request);
 
         assertTrue(result.isSuccess());
-        verify(userDAO).insert(any(User.class));
+        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+        verify(userDAO).insert(savedUser.capture());
+        assertEquals("MEMBER", savedUser.getValue().getRole());
+        Map<?, ?> data = (Map<?, ?>) result.getData();
+        assertEquals("MEMBER", ((UserDTO) data.get("user")).getRole());
+        assertEquals("MEMBER", jwtService.getRole((String) data.get("token")));
     }
 
     @Test
@@ -154,7 +171,6 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("existinguser");
         request.setPassword("password123");
-        request.setRole("MEMBER");
 
         when(userDAO.existsByUsername("existinguser")).thenReturn(true);
 
@@ -165,17 +181,23 @@ class AuthServiceTest {
         assertTrue(result.getMessage().contains("用户名已存在"));
     }
 
-    @Test
-    void register_withInvalidRole_shouldReturnError() {
-        RegisterRequest request = new RegisterRequest();
-        request.setUsername("newuser");
-        request.setPassword("password123");
-        request.setRole("INVALID_ROLE");
+    @ParameterizedTest
+    @ValueSource(strings = {"ADMIN", "TEACHER", "INVALID_ROLE"})
+    void register_ignoresClientSuppliedRole(String suppliedRole) throws Exception {
+        String json = "{\"username\":\"newuser\",\"password\":\"password123\",\"role\":\""
+                + suppliedRole + "\"}";
+        RegisterRequest request = new ObjectMapper().readValue(json, RegisterRequest.class);
+        when(userDAO.insert(any(User.class))).thenReturn(100);
 
         Result result = authService.register(request);
 
-        assertFalse(result.isSuccess());
-        assertEquals(400, result.getCode());
+        assertTrue(result.isSuccess());
+        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+        verify(userDAO).insert(savedUser.capture());
+        assertEquals("MEMBER", savedUser.getValue().getRole());
+        Map<?, ?> data = (Map<?, ?>) result.getData();
+        assertEquals("MEMBER", ((UserDTO) data.get("user")).getRole());
+        assertEquals("MEMBER", jwtService.getRole((String) data.get("token")));
     }
 
     @Test

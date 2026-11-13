@@ -3,6 +3,7 @@ package com.softwaregroup.activity;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
@@ -18,7 +19,7 @@ import org.springframework.context.annotation.ComponentScan;
  *
  * 端口：8084
  */
-@SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
+@SpringBootApplication(exclude = {SecurityAutoConfiguration.class, ManagementWebSecurityAutoConfiguration.class})
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "com.softwaregroup.activity.feign")
 @ComponentScan(basePackages = {"com.softwaregroup.activity", "com.softwaregroup.common"})

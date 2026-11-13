@@ -38,7 +38,6 @@ spring:
 
   # JWT 配置
   jwt:
-    secret: ${JWT_SECRET:software-group-jwt-secret-key-2024-very-long-and-secure}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
   # DES 加密配置（必须与旧系统一致）

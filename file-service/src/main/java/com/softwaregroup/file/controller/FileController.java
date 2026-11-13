@@ -1,5 +1,6 @@
 package com.softwaregroup.file.controller;
 
+import com.softwaregroup.common.security.AuthenticatedUser;
 import com.softwaregroup.common.util.Result;
 import com.softwaregroup.file.model.entity.FileStorage;
 import com.softwaregroup.file.service.FileService;
@@ -48,7 +49,7 @@ public class FileController {
     @PostMapping("/upload")
     public Result upload(@RequestParam("file") MultipartFile file,
                          @RequestParam(value = "category", defaultValue = "general") String category,
-                         @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+                         @AuthenticatedUser Integer userId) {
         // 如果没有传userId，返回错误
         if (userId == null) {
             return Result.error(401, "用户未登录");
@@ -159,8 +160,8 @@ public class FileController {
      */
     @DeleteMapping("/{id}")
     public Result deleteFile(@PathVariable("id") Integer id,
-                              @RequestParam("userId") Integer userId) {
-        return fileService.deleteFile(id, userId);
+                              @AuthenticatedUser com.softwaregroup.common.security.CurrentUser currentUser) {
+        return fileService.deleteFile(id, currentUser.id(), "ADMIN".equals(currentUser.role()));
     }
 
     /**
@@ -169,7 +170,7 @@ public class FileController {
      */
     @GetMapping
     public Result listFiles(@RequestParam(value = "category", required = false) String category,
-                            @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+                            @AuthenticatedUser Integer userId) {
         if (userId == null) {
             return Result.error(401, "用户未登录");
         }

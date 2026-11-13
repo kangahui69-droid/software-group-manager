@@ -81,7 +81,7 @@ public class StudyService {
     /**
      * 获取学习记录详情
      */
-    public Result getSessionDetail(Integer id) {
+    public Result getSessionDetail(Integer id, Integer userId) {
         if (id == null) {
             return Result.error(400, "学习记录ID不能为空");
         }
@@ -90,6 +90,9 @@ public class StudyService {
             StudySession session = studySessionDAO.findById(id);
             if (session == null) {
                 return Result.error(404, "学习记录不存在");
+            }
+            if (userId == null || !userId.equals(session.getUserId())) {
+                return Result.error(403, "无权查看此学习记录");
             }
             return Result.ok(session);
         } catch (Exception e) {
@@ -100,7 +103,10 @@ public class StudyService {
     /**
      * 获取学习记录列表(分页)
      */
-    public Result listSessions(Map<String, Object> filter, int page, int pageSize) {
+    public Result listSessions(Map<String, Object> filter, int page, int pageSize, Integer userId) {
+        if (userId == null) {
+            return Result.error(401, "用户未登录");
+        }
         if (!isValidPage(page)) {
             return Result.error(400, "页码必须大于0");
         }
@@ -109,7 +115,6 @@ public class StudyService {
         }
 
         try {
-            Integer userId = extractFilterValue(filter, "userId", Integer.class);
             Date startDate = extractFilterDate(filter, "startDate");
             Date endDate = extractFilterDate(filter, "endDate");
 

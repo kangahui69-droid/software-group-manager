@@ -5,7 +5,9 @@ import com.softwaregroup.ai.feign.*;
 import com.softwaregroup.ai.model.dto.*;
 import com.softwaregroup.ai.model.entity.*;
 import com.softwaregroup.common.util.Result;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -63,8 +65,12 @@ public class AIService {
 
     // ==================== 对话管理（AI自身数据直连DB） ====================
 
-    public AIConversation createOrGetConversation(String sessionId, Integer userId) {
+    public synchronized AIConversation createOrGetConversation(String sessionId, Integer userId) {
+        if (userId == null || sessionId == null || sessionId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的会话或用户");
+        }
         AIConversation conversation = conversationDAO.findBySessionId(sessionId);
+        requireConversationOwner(conversation, userId);
         if (conversation == null) {
             conversation = new AIConversation(userId, sessionId);
             Integer id = conversationDAO.save(conversation);
@@ -73,23 +79,32 @@ public class AIService {
         return conversation;
     }
 
-    public List<AIMessage> getConversationHistory(String sessionId) {
+    public List<AIMessage> getConversationHistory(String sessionId, Integer userId) {
+        AIConversation conversation;
         try {
-            AIConversation conversation = conversationDAO.findBySessionId(sessionId);
-            if (conversation == null) {
-                return null;
-            }
-            return messageDAO.findByConversationId(conversation.getId());
+            conversation = conversationDAO.findBySessionId(sessionId);
         } catch (Exception e) {
             return null;
         }
+        if (conversation == null) {
+            return null;
+        }
+        requireConversationOwner(conversation, userId);
+        return messageDAO.findByConversationId(conversation.getId());
     }
 
-    public void clearConversation(String sessionId) {
+    public void clearConversation(String sessionId, Integer userId) {
         AIConversation conversation = conversationDAO.findBySessionId(sessionId);
         if (conversation != null) {
+            requireConversationOwner(conversation, userId);
             messageDAO.deleteByConversationId(conversation.getId());
             conversationDAO.delete(conversation.getId());
+        }
+    }
+
+    private void requireConversationOwner(AIConversation conversation, Integer userId) {
+        if (conversation != null && (userId == null || !userId.equals(conversation.getUserId()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权访问此对话");
         }
     }
 
@@ -371,7 +386,7 @@ public class AIService {
     // ==================== AI对话生成 ====================
 
     public String chat(String userMessage, String sessionId, Integer userId) {
-        createOrGetConversation(sessionId, userId);
+        AIConversation conversation = createOrGetConversation(sessionId, userId);
         if (userId != null && userId > 0) {
             try {
                 userFeignClient.getUserById(userId);
@@ -379,14 +394,9 @@ public class AIService {
                 // Feign调用失败不影响对话流程
             }
         }
-        saveMessage(getConversationId(sessionId), "user", userMessage);
+        saveMessage(conversation.getId(), "user", userMessage);
         recordQuestionStatistics(userMessage);
         return "AI回复: " + userMessage;
-    }
-
-    private Integer getConversationId(String sessionId) {
-        AIConversation conversation = conversationDAO.findBySessionId(sessionId);
-        return conversation != null ? conversation.getId() : null;
     }
 
     // ==================== 系统提示词构建 ====================
@@ -541,6 +551,10 @@ public class AIService {
     // ==================== 消息状态 ====================
 
     public Integer createMessageStatus(String sessionId, Integer userId, String userMessage) {
+        if (userId == null || sessionId == null || sessionId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的会话或用户");
+        }
+        requireConversationOwner(conversationDAO.findBySessionId(sessionId), userId);
         AIMessageStatus status = new AIMessageStatus();
         status.setSessionId(sessionId);
         status.setUserId(userId);
@@ -549,10 +563,13 @@ public class AIService {
         return messageStatusDAO.save(status);
     }
 
-    public boolean updateMessageStatus(Integer statusId, String newStatus) {
+    public boolean updateMessageStatus(Integer statusId, String newStatus, Integer userId) {
         AIMessageStatus status = messageStatusDAO.findById(statusId);
         if (status == null) {
             return false;
+        }
+        if (userId == null || !userId.equals(status.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权更新此消息状态");
         }
         status.setStatus(newStatus);
         messageStatusDAO.update(status);

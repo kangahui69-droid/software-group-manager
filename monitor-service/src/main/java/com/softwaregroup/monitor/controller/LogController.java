@@ -1,5 +1,7 @@
 package com.softwaregroup.monitor.controller;
 
+import com.softwaregroup.common.security.RequireRole;
+
 import com.softwaregroup.monitor.service.LogService;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ public class LogController {
     private LogService logService;
 
     @GetMapping
+    @RequireRole("ADMIN")
     public Result listLogs(@RequestParam(required = false) Map<String, Object> filter,
                             @RequestParam(required = false, defaultValue = "1") Integer page,
                             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
@@ -25,6 +28,7 @@ public class LogController {
     }
 
     @GetMapping("/{id}")
+    @RequireRole("ADMIN")
     public Result getLogDetail(@PathVariable Integer id) {
         return logService.getLogDetail(id);
     }

@@ -1,6 +1,8 @@
 package com.softwaregroup.activity.controller;
 
 import com.softwaregroup.activity.service.StudyService;
+import com.softwaregroup.common.security.AuthenticatedUser;
+import com.softwaregroup.common.security.RequireRole;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +23,7 @@ public class StudyController {
      * 开始学习
      */
     @PostMapping("/start")
-    public Result startSession(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result startSession(@AuthenticatedUser Integer userId) {
         return studyService.startSession(userId);
     }
 
@@ -29,7 +31,7 @@ public class StudyController {
      * 结束学习
      */
     @PostMapping("/end")
-    public Result endSession(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result endSession(@AuthenticatedUser Integer userId) {
         return studyService.endSession(userId);
     }
 
@@ -37,6 +39,7 @@ public class StudyController {
      * 自动结束所有超时会话
      */
     @PostMapping("/auto-end")
+    @RequireRole("ADMIN")
     public Result autoEndSession() {
         return studyService.autoEndSession();
     }
@@ -45,8 +48,9 @@ public class StudyController {
      * 获取学习记录详情
      */
     @GetMapping("/{id}")
-    public Result getSessionDetail(@PathVariable Integer id) {
-        return studyService.getSessionDetail(id);
+    public Result getSessionDetail(@PathVariable Integer id,
+                                   @AuthenticatedUser Integer userId) {
+        return studyService.getSessionDetail(id, userId);
     }
 
     /**
@@ -55,15 +59,21 @@ public class StudyController {
     @GetMapping
     public Result listSessions(@RequestParam(required = false) Map<String, Object> filter,
                                 @RequestParam(defaultValue = "1") int page,
-                                @RequestParam(defaultValue = "20") int pageSize) {
-        return studyService.listSessions(filter, page, pageSize);
+                                @RequestParam(defaultValue = "20") int pageSize,
+                                @AuthenticatedUser Integer userId) {
+        Map<String, Object> ownFilter = new java.util.HashMap<>();
+        if (filter != null) {
+            ownFilter.putAll(filter);
+        }
+        ownFilter.put("userId", userId);
+        return studyService.listSessions(ownFilter, page, pageSize, userId);
     }
 
     /**
      * 获取我的学习记录
      */
     @GetMapping("/my")
-    public Result getMySessions(@RequestHeader(value = "X-User-Id", required = false) Integer userId,
+    public Result getMySessions(@AuthenticatedUser Integer userId,
                                  @RequestParam(defaultValue = "1") int page,
                                  @RequestParam(defaultValue = "20") int pageSize) {
         return studyService.getMySessions(userId, page, pageSize);
@@ -73,7 +83,7 @@ public class StudyController {
      * 获取今日进行中会话
      */
     @GetMapping("/today")
-    public Result getTodaySession(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getTodaySession(@AuthenticatedUser Integer userId) {
         return studyService.getTodaySession(userId);
     }
 
@@ -81,7 +91,7 @@ public class StudyController {
      * 获取学习统计
      */
     @GetMapping("/stats")
-    public Result getStatistics(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getStatistics(@AuthenticatedUser Integer userId) {
         return studyService.getStatistics(userId);
     }
 
@@ -89,7 +99,7 @@ public class StudyController {
      * 获取本周学习统计
      */
     @GetMapping("/week-stats")
-    public Result getWeekStatistics(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getWeekStatistics(@AuthenticatedUser Integer userId) {
         return studyService.getWeekStatistics(userId);
     }
 
@@ -97,7 +107,7 @@ public class StudyController {
      * 获取连续学习天数
      */
     @GetMapping("/consecutive-days")
-    public Result getConsecutiveDays(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getConsecutiveDays(@AuthenticatedUser Integer userId) {
         return studyService.getConsecutiveDays(userId);
     }
 

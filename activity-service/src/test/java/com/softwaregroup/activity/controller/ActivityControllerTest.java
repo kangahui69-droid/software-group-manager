@@ -5,6 +5,8 @@ import com.softwaregroup.activity.model.dto.ActivityDTO;
 import com.softwaregroup.activity.model.dto.ActivityFilterDTO;
 import com.softwaregroup.activity.service.ActivityService;
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ActivityControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private ActivityService activityService;
@@ -44,14 +48,16 @@ class ActivityControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(activityController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(activityController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
         objectMapper = new ObjectMapper();
     }
 
     @Test
     void listActivities_shouldReturnActivityList() throws Exception {
         Map<String, Object> mockData = Map.of("id", 1, "title", "测试活动", "status", "upcoming");
-        when(activityService.listActivities(any(ActivityFilterDTO.class)))
+        when(activityService.listActivities(any(ActivityFilterDTO.class), isNull()))
             .thenReturn(Result.ok(mockData));
 
         mockMvc.perform(get("/api/activities")
@@ -64,7 +70,7 @@ class ActivityControllerTest {
     @Test
     void getActivityDetail_shouldReturnActivity() throws Exception {
         Map<String, Object> mockData = Map.of("id", 1, "title", "测试活动", "description", "详情");
-        when(activityService.getActivityDetail(eq(1), any()))
+        when(activityService.getActivityDetail(eq(1), isNull(), eq(false)))
             .thenReturn(Result.ok(mockData));
 
         mockMvc.perform(get("/api/activities/1")
@@ -196,7 +202,7 @@ class ActivityControllerTest {
 
     @Test
     void getActivityParticipants_shouldReturnList() throws Exception {
-        when(activityService.getActivityParticipants(eq(1)))
+        when(activityService.getActivityParticipants(eq(1), eq(1)))
             .thenReturn(Result.ok(Arrays.asList(
                 Map.of("userId", 1, "name", "张三"),
                 Map.of("userId", 2, "name", "李四")

@@ -31,7 +31,6 @@ public class GroupService {
     private static final int MAX_GROUP_NAME_LENGTH = 255;
     private static final int MAX_CONTENT_LENGTH = 5000;
     private static final int MAX_REASON_LENGTH = 500;
-    private static final int DEFAULT_OWNER_USER_ID = 1;
 
     @Autowired
     private ActivityGroupDAO activityGroupDAO;
@@ -204,7 +203,7 @@ public class GroupService {
                 return Result.error(404, "用户不存在");
             }
 
-            boolean isOperatorOwner = groupMemberDAO.isOwner(groupId, operatorId);
+            boolean isOperatorOwner = groupMemberDAO.isOwner(groupId, operatorId) || isSystemAdmin(operatorId);
             if (!isOperatorOwner) {
                 throw new UnauthorizedException("只有群主才能移除成员");
             }
@@ -229,16 +228,21 @@ public class GroupService {
         }
     }
 
-    public Result getMessages(Integer groupId, Integer page) {
+    public Result getMessages(Integer groupId, Integer page, Integer userId) {
         if (groupId == null) {
             return Result.error(400, "群组ID不能为空");
         }
         if (page == null || page <= 0) {
             return Result.error(400, "页码必须大于0");
         }
+        if (userId == null) {
+            return Result.error(401, "用户未登录");
+        }
 
         try {
-            checkIsMemberOrFail(groupId, DEFAULT_OWNER_USER_ID);
+            if (!isGroupMemberOrOwner(groupId, userId)) {
+                throw new UnauthorizedException("非成员不能查看消息");
+            }
 
             int offset = (page - 1) * DEFAULT_MESSAGE_PAGE_SIZE;
             List<GroupMessage> messages = groupMessageDAO.findByGroupId(groupId, DEFAULT_MESSAGE_PAGE_SIZE, offset);
@@ -272,12 +276,15 @@ public class GroupService {
         }
     }
 
-    public Result muteMember(Integer groupId, Integer targetUserId, Date until, String reason) {
+    public Result muteMember(Integer groupId, Integer targetUserId, Date until, String reason, Integer operatorId) {
         if (groupId == null) {
             return Result.error(400, "群组ID不能为空");
         }
         if (targetUserId == null) {
             return Result.error(400, "目标用户ID不能为空");
+        }
+        if (operatorId == null) {
+            return Result.error(401, "用户未登录");
         }
         if (until == null && (reason == null || reason.trim().isEmpty())) {
             return Result.error(400, "禁言原因不能为空");
@@ -285,7 +292,7 @@ public class GroupService {
 
         try {
             ActivityGroup group = findGroupOrFail(groupId);
-            checkIsOwnerOrFail(groupId, DEFAULT_OWNER_USER_ID, "只有群主才能禁言");
+            checkIsOwnerOrFail(groupId, operatorId, "只有群主才能禁言");
             checkNotMutingSelf(groupId, targetUserId, group);
 
             if (reason != null && reason.length() > MAX_REASON_LENGTH) {
@@ -489,13 +496,21 @@ public class GroupService {
     private boolean isGroupMemberOrOwner(Integer groupId, Integer userId) {
         boolean isMember = groupMemberDAO.isMember(groupId, userId);
         boolean isOwner = groupMemberDAO.isOwner(groupId, userId);
-        return isMember || isOwner;
+        return isMember || isOwner || isSystemAdmin(userId);
     }
 
     private void checkIsOwnerOrFail(Integer groupId, Integer userId, String errorMessage) {
-        if (!groupMemberDAO.isOwner(groupId, userId)) {
+        if (!groupMemberDAO.isOwner(groupId, userId) && !isSystemAdmin(userId)) {
             throw new UnauthorizedException(errorMessage);
         }
+    }
+
+    private boolean isSystemAdmin(Integer userId) {
+        if (userId == null) {
+            return false;
+        }
+        User user = userDAO.findById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
     }
 
     private void checkNotAlreadyMember(Integer groupId, Integer userId) {
@@ -505,7 +520,7 @@ public class GroupService {
     }
 
     private void checkIsMemberOrFail(Integer groupId, Integer userId) {
-        if (!groupMemberDAO.isMember(groupId, userId)) {
+        if (!groupMemberDAO.isMember(groupId, userId) && !groupMemberDAO.isOwner(groupId, userId)) {
             throw new UnauthorizedException("非成员不能执行此操作");
         }
     }

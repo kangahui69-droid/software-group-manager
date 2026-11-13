@@ -157,7 +157,7 @@ class ProblemServiceIT {
 
         when(problemReportDAO.findById(1)).thenReturn(problem);
 
-        Result result = problemService.getProblemDetail(1);
+        Result result = problemService.getProblemDetail(1, 1);
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getData()).isEqualTo(problem);
@@ -167,7 +167,7 @@ class ProblemServiceIT {
     void getProblemDetail_withInvalidId_shouldReturnNotFound() {
         when(problemReportDAO.findById(9999)).thenReturn(null);
 
-        Result result = problemService.getProblemDetail(9999);
+        Result result = problemService.getProblemDetail(9999, 1);
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getCode()).isEqualTo(404);
@@ -175,7 +175,7 @@ class ProblemServiceIT {
 
     @Test
     void getProblemDetail_withNullId_shouldReturnBadRequest() {
-        Result result = problemService.getProblemDetail(null);
+        Result result = problemService.getProblemDetail(null, 1);
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getCode()).isEqualTo(400);

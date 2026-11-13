@@ -172,7 +172,7 @@ class NewsServiceTest {
         @Test
         @DisplayName("正常路径：返回指定类型的新闻列表")
         void should_return_news_by_type() {
-            when(newsDAO.findByType("NOTICE")).thenReturn(Arrays.asList(testNews));
+            when(newsDAO.findByConditions(null, "NOTICE", 1)).thenReturn(Arrays.asList(testNews));
 
             Result result = newsService.getNewsByType("NOTICE", 1, 20);
 
