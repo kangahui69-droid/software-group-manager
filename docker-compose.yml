@@ -21,7 +21,7 @@ services:
     # 环境变量（MySQL 镜像会自动使用这些配置初始化数据库）
     environment:
       # root 密码（生产环境必须修改！）
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # 自动创建的数据库名
       MYSQL_DATABASE: ${MYSQL_DATABASE:-software_group}
       # 字符集配置（必须 utf8mb4 支持中文）
@@ -77,13 +77,14 @@ services:
     networks:
       - software-group-net
 
-    # Redis 配置
-    # appendonly yes: 开启 AOF 持久化，数据更安全
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    # Redis 配置；避免在 Compose 命令中展开密码
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$${REDIS_PASSWORD}\""]
 
     # 健康检查
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$${REDIS_PASSWORD}\" redis-cli ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -108,8 +109,8 @@ services:
 
     # 环境变量（设置默认用户和密码）
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin123}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
 
     # 数据卷挂载（持久化 RabbitMQ 数据和配置）
     volumes:
@@ -183,8 +184,8 @@ services:
     restart: always
     environment:
       # Root 用户凭证（生产环境必须修改！）
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
     ports:
       # API 端口
       - "${MINIO_PORT:-9000}:9000"
@@ -220,17 +221,17 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # MinIO 配置
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
       MINIO_BUCKET: software-group
       # Nacos 配置
       NACOS_HOST: nacos
@@ -268,17 +269,17 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # JWT 配置
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       JWT_EXPIRATION_MS: 86400000
       # DES 加密密钥（必须与旧系统一致）
-      DES_KEY: ${DES_KEY:-(^&%gasie_%^)}
+      DES_KEY: ${DES_KEY:?DES_KEY is required during legacy password migration}
       # Nacos 配置
       NACOS_HOST: nacos
       NACOS_PORT: 8848
@@ -313,11 +314,11 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # Nacos 配置
@@ -356,11 +357,11 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
       NACOS_PORT: 8848
@@ -397,11 +398,11 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
       NACOS_PORT: 8848
@@ -438,11 +439,11 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
       NACOS_PORT: 8848
@@ -479,11 +480,11 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
       NACOS_PORT: 8848
@@ -520,21 +521,21 @@ services:
       DB_PORT: 3306
       DB_NAME: software_group
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # AI 服务配置
       AI_PROVIDER: ${AI_PROVIDER:-minimax}
-      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_KEY: ${AI_API_KEY:?AI_API_KEY is required for AI services}
       AI_API_URL: ${AI_API_URL:-}
       AI_MODEL: ${AI_MODEL:-MiniMax-M2.7}
       # RabbitMQ 配置
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin123}
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
       NACOS_PORT: 8848
@@ -581,33 +582,33 @@ services:
       rabbitmq:
         condition: service_healthy
 
-    # 运行期环境变量：config.Config 会据此展开 config.local.properties 里的 ${VAR:-default} 占位符
-    # 变量名必须与 src/main/resources/config.local.properties 中的占位符名一致
+    # 运行期环境变量由 config.Config 读取；敏感值必须在私有 .env 或外部环境中提供
     environment:
+      APP_ENV: production
       # 数据库（用户名 root，密码与 mysql 服务的 MYSQL_ROOT_PASSWORD 同源）
       DB_HOST: mysql
       DB_PORT: "3306"
       DB_NAME: ${MYSQL_DATABASE:-software_group}
       DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # 连接池 / 会话 / 加密 / 上传目录
       HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-10}
       HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-5}
       SESSION_TIMEOUT: ${SESSION_TIMEOUT:-30}
-      DES_KEY: ${DES_KEY:-(^&%gasie_%^)}
+      DES_KEY: ${DES_KEY:?DES_KEY is required during legacy password migration}
       UPLOAD_BASE_DIR: /usr/local/tomcat/webapps/localstorage
       # Redis（SessionRedisFilter 挂在 /* 上，密码错了所有页面都过不去）
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # RabbitMQ
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: "5672"
-      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin123}
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
       # AI 服务
       AI_PROVIDER: ${AI_PROVIDER:-minimax}
-      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_KEY: ${AI_API_KEY:?AI_API_KEY is required for AI services}
       AI_API_SECRET: ${AI_API_SECRET:-}
       AI_API_URL: ${AI_API_URL:-}
       AI_MODEL: ${AI_MODEL:-MiniMax-M2.7}

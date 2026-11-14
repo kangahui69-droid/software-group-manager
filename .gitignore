@@ -58,6 +58,15 @@ hs_err_pid*
 *.swp
 
 # Configuration files (DO NOT COMMIT FILES WITH REAL PASSWORDS!)
+# Docker Compose private environment files (root and nested directories)
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+config/*.env
+config/*.env.*
 # 本地环境配置文件（包含真实密码，绝对不能提交到Git！）
 config/config.local.properties
 config/config.test.properties

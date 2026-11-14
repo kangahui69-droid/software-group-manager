@@ -158,8 +158,7 @@ fi
 # 用户服务路由
 if [ -z "$SERVICE_FILTER" ] || [ "$SERVICE_FILTER" = "user-service" ]; then
     echo "--- user-service 路由 ---"
-    test_route "/api/users/login" "user-service" "POST" '{"username":"admin","password":"admin123"}' "用户登录"
-    test_route "/api/users/register" "user-service" "POST" '{"username":"test","password":"test123"}' "用户注册"
+    test_route "/api/users/login" "user-service" "POST" '{"username":"route-check","password":"invalid-route-check"}' "用户登录路由"
     test_route "/api/users/profile" "user-service" "GET" "" "用户信息"
     test_route "/api/members" "user-service" "GET" "" "成员列表"
     echo ""

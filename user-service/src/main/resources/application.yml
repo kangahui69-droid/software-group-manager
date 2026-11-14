@@ -12,7 +12,7 @@ spring:
   datasource:
     url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
     username: ${DB_USER:root}
-    password: ${DB_PASSWORD:root}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -26,7 +26,7 @@ spring:
   redis:
     host: ${REDIS_HOST:redis}
     port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:-redis123}
+    password: ${REDIS_PASSWORD}
     database: 1
     timeout: 5000
     jedis:
@@ -42,7 +42,7 @@ spring:
 
   # DES 加密配置（必须与旧系统一致）
   des:
-    key: ${DES_KEY:(^&%gasie_%^}
+    key: ${DES_KEY}
 
 # Spring Cloud Alibaba Nacos Discovery
 alibaba:

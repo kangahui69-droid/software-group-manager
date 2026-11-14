@@ -14,8 +14,6 @@ public class RabbitMQUtil {
 
     private static final String DEFAULT_HOST = "localhost";
     private static final int DEFAULT_PORT = 5672;
-    private static final String DEFAULT_USERNAME = "admin";
-    private static final String DEFAULT_PASSWORD = "admin123";
     private static final String DEFAULT_VHOST = "/";
 
     private static ConnectionFactory connectionFactory;
@@ -28,8 +26,8 @@ public class RabbitMQUtil {
         connectionFactory = new ConnectionFactory();
         connectionFactory.setHost(Config.getProperty("rabbitmq.host", DEFAULT_HOST));
         connectionFactory.setPort(Config.getIntProperty("rabbitmq.port", DEFAULT_PORT));
-        connectionFactory.setUsername(Config.getProperty("rabbitmq.username", DEFAULT_USERNAME));
-        connectionFactory.setPassword(Config.getProperty("rabbitmq.password", DEFAULT_PASSWORD));
+        connectionFactory.setUsername(Config.getProperty("rabbitmq.username", ""));
+        connectionFactory.setPassword(Config.getProperty("rabbitmq.password", ""));
         connectionFactory.setVirtualHost(Config.getProperty("rabbitmq.virtualHost", DEFAULT_VHOST));
 
         // 连接池配置

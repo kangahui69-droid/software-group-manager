@@ -97,15 +97,8 @@ echo "========================================"
 echo "3. 检查 MinIO 存储桶"
 echo "========================================"
 
-# 检查 MinIO 存储桶是否存在，不存在则创建
-echo -n "检查 software-group 存储桶 ... "
-buckets=$(curl -s -u minioadmin:minioadmin123 "http://localhost:9000/api/v1/buckets" 2>/dev/null || echo "[]")
-if echo "$buckets" | grep -q "software-group"; then
-    echo -e "${GREEN}✓ 已存在${NC}"
-    ((PASSED++))
-else
-    echo -e "${YELLOW}⚠ 不存在（将在首次上传时自动创建）${NC}"
-fi
+# 存储桶通过应用的上传测试验证；本脚本不读取或显示 MinIO 凭据
+echo -e "${YELLOW}⚠ 存储桶检查请通过上传测试完成${NC}"
 
 echo ""
 echo "========================================"
@@ -165,11 +158,12 @@ echo "========================================"
 echo "7. 数据库用户权限验证"
 echo "========================================"
 
-echo "执行 sql/db_users.sql 创建微服务专用用户..."
-echo -e "${YELLOW}请手动执行以下命令验证数据库用户权限：${NC}"
+echo "微服务专用用户必须先由 DBA 使用独立随机密码创建。"
+echo -e "${YELLOW}随后可手动执行权限脚本并验证：${NC}"
 echo ""
-echo "  docker exec -it sg_mysql mysql -uroot -proot123 software_group"
-echo "  SOURCE /docker-entrypoint-initdb.d/db_users.sql;"
+echo "  docker cp migrations/20261114_db_user_grants.sql sg_mysql:/tmp/db_user_grants.sql"
+echo "  docker exec -it sg_mysql mysql -uroot -p software_group"
+echo "  SOURCE /tmp/db_user_grants.sql;"
 echo "  SELECT user, host FROM mysql.user WHERE user LIKE '%_svc%';"
 echo "  SHOW GRANTS FOR 'file_svc'@'%';"
 echo ""
@@ -186,7 +180,7 @@ if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}✓ 所有检查通过！基础设施搭建成功！${NC}"
     echo ""
     echo "下一步："
-    echo "  1. 执行 sql/db_users.sql 创建微服务数据库用户"
+    echo "  1. 受控创建微服务数据库用户后执行 migrations/20261114_db_user_grants.sql"
     echo "  2. 继续 3.2 父 POM 和基础框架搭建"
     exit 0
 else
@@ -194,7 +188,7 @@ else
     echo ""
     echo "常见问题排查："
     echo "  1. Nacos 启动慢 - 等待 90 秒后再试"
-    echo "  2. MinIO 连接失败 - 检查 minioadmin 凭证"
+    echo "  2. MinIO 连接失败 - 检查私有环境文件中的凭据"
     echo "  3. 容器未运行 - docker-compose ps 查看状态"
     exit 1
 fi

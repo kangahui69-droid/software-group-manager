@@ -23,9 +23,6 @@ public class Config {
     private static final String LOCAL_CONFIG_FILE = "config.local.properties";
     private static final String DEFAULT_CONFIG_FILE = "config.properties";
 
-    // ==================== DES加密默认值 ====================
-    private static final String DEFAULT_DES_KEY = "(^&%gasie_%^";
-
     // ==================== 文件上传默认值 ====================
     private static final long DEFAULT_MAX_FILE_SIZE = 10485760L;
     private static final long DEFAULT_MAX_REQUEST_SIZE = 20971520L;
@@ -76,7 +73,6 @@ public class Config {
         Properties defaultProps = loadPropertiesFromResource(DEFAULT_CONFIG_FILE);
         if (defaultProps == null) {
             System.err.println("[Config] 警告: 无法找到配置文件 " + DEFAULT_CONFIG_FILE);
-            setFallbackDesKey();
             return;
         }
         for (String key : defaultProps.stringPropertyNames()) {
@@ -109,6 +105,26 @@ public class Config {
     // ==================== 通用属性读取 ====================
 
     public static String getProperty(String key, String defaultValue) {
+        String envName;
+        switch (key) {
+            case "db.password": envName = "DB_PASSWORD"; break;
+            case "redis.password": envName = "REDIS_PASSWORD"; break;
+            case "rabbitmq.username": envName = "RABBITMQ_USER"; break;
+            case "rabbitmq.password": envName = "RABBITMQ_PASSWORD"; break;
+            case "des.key": envName = "DES_KEY"; break;
+            case "ai.api.key": envName = "AI_API_KEY"; break;
+            case "ai.api.secret": envName = "AI_API_SECRET"; break;
+            default: envName = null;
+        }
+        if (envName != null && "production".equalsIgnoreCase(System.getenv("APP_ENV"))) {
+            String envValue = System.getenv(envName);
+            if (envValue != null && !envValue.trim().isEmpty()) {
+                return envValue;
+            }
+            if (!key.startsWith("ai.")) {
+                throw new IllegalStateException(envName + " is required in production");
+            }
+        }
         String value = properties.getProperty(key, defaultValue);
         return value == null ? null : resolve(value);
     }
@@ -128,7 +144,11 @@ public class Config {
     // ==================== DES加密配置 ====================
 
     public static String getDesKey() {
-        return parseString(getProperty("des.key"), DEFAULT_DES_KEY);
+        String key = getProperty("des.key");
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalStateException("DES_KEY is required while legacy passwords remain");
+        }
+        return key;
     }
 
     // ==================== 文件上传配置 ====================
@@ -297,7 +317,4 @@ public class Config {
         return resolve(placeholder.substring(separator + 2));
     }
 
-    private static void setFallbackDesKey() {
-        properties.setProperty("des.key", DEFAULT_DES_KEY);
-    }
 }

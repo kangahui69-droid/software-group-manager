@@ -1,44 +1,28 @@
 -- ============================================================
 -- 微服务数据库用户及权限配置
 -- 对应计划文档：阶段三_微服务拆分实施计划 - 5.2 数据库策略
--- 使用方式：在 MySQL 中执行此脚本
+-- 使用方式：先由管理员通过受控方式创建服务账号，再手动执行本文件；不放入自动初始化目录
 -- ============================================================
 
 -- ============================================================
--- 第一步：创建微服务专用用户
+-- 前置条件：使用独立的随机密码创建以下服务用户（本文件不包含密码）
 -- ============================================================
 
 -- file-service：只访问文件相关表
-CREATE USER IF NOT EXISTS 'file_svc'@'%' IDENTIFIED BY 'file_svc_pass';
-CREATE USER IF NOT EXISTS 'file_svc'@'localhost' IDENTIFIED BY 'file_svc_pass';
 
 -- user-service：访问用户、成员档案、管理员档案相关表
-CREATE USER IF NOT EXISTS 'user_svc'@'%' IDENTIFIED BY 'user_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'user_svc'@'localhost' IDENTIFIED BY 'user_svc_pass_2024';
 
 -- activity-service：访问活动、考勤、学习相关表
-CREATE USER IF NOT EXISTS 'activity_svc'@'%' IDENTIFIED BY 'activity_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'activity_svc'@'localhost' IDENTIFIED BY 'activity_svc_pass_2024';
 
 -- project-award-service：访问项目、奖项相关表
-CREATE USER IF NOT EXISTS 'project_award_svc'@'%' IDENTIFIED BY 'project_award_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'project_award_svc'@'localhost' IDENTIFIED BY 'project_award_svc_pass_2024';
 
 -- content-service：访问群组、新闻相关表
-CREATE USER IF NOT EXISTS 'content_svc'@'%' IDENTIFIED BY 'content_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'content_svc'@'localhost' IDENTIFIED BY 'content_svc_pass_2024';
 
 -- hr-service：访问招聘、简历相关表
-CREATE USER IF NOT EXISTS 'hr_svc'@'%' IDENTIFIED BY 'hr_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'hr_svc'@'localhost' IDENTIFIED BY 'hr_svc_pass_2024';
 
 -- monitor-service：访问问题反馈、操作日志相关表
-CREATE USER IF NOT EXISTS 'monitor_svc'@'%' IDENTIFIED BY 'monitor_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'monitor_svc'@'localhost' IDENTIFIED BY 'monitor_svc_pass_2024';
 
 -- ai-service：访问 AI 相关表
-CREATE USER IF NOT EXISTS 'ai_svc'@'%' IDENTIFIED BY 'ai_svc_pass_2024';
-CREATE USER IF NOT EXISTS 'ai_svc'@'localhost' IDENTIFIED BY 'ai_svc_pass_2024';
 
 -- ============================================================
 -- 第二步：file-service 权限（只访问文件存储表）
@@ -141,16 +125,16 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.file_storage TO 'content_
 -- ============================================================
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.recruit_application TO 'hr_svc'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.recruit_application TO 'hr_svc'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume TO 'hr_svc'@'%';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume TO 'hr_svc'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_education TO 'hr_svc'@'%';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_education TO 'hr_svc'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_skill TO 'hr_svc'@'%';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_skill TO 'hr_svc'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_project TO 'hr_svc'@'%';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_project TO 'hr_svc'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_award TO 'hr_svc'@'%';
-GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_award TO 'hr_svc'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resumes TO 'hr_svc'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resumes TO 'hr_svc'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_educations TO 'hr_svc'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_educations TO 'hr_svc'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_skills TO 'hr_svc'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_skills TO 'hr_svc'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_projects TO 'hr_svc'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_projects TO 'hr_svc'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_awards TO 'hr_svc'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.resume_awards TO 'hr_svc'@'localhost';
 -- hr-service 需要查询成员档案（只读）
 GRANT SELECT ON software_group.member_profile TO 'hr_svc'@'%';
 GRANT SELECT ON software_group.member_profile TO 'hr_svc'@'localhost';

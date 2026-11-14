@@ -86,14 +86,21 @@ echo "========================================"
 echo "2. 用户认证流程"
 echo "========================================"
 
-# 测试登录
-TOKEN=$(get_token "admin" "admin123")
+# 测试登录：使用专用测试账号，凭据由受控环境提供
+if [ -n "${E2E_USERNAME:-}" ] && [ -n "${E2E_PASSWORD:-}" ]; then
+    TOKEN=$(get_token "$E2E_USERNAME" "$E2E_PASSWORD")
+else
+    TOKEN=""
+    echo -e "${YELLOW}⚠ 未提供 E2E_USERNAME/E2E_PASSWORD，跳过登录测试${NC}"
+fi
 if [ -n "$TOKEN" ]; then
-    echo -e "${GREEN}✓ 登录成功${NC} (Token: ${TOKEN:0:30}...)"
+    echo -e "${GREEN}✓ 登录成功${NC}"
     PASSED=$((PASSED + 1))
 else
-    echo -e "${RED}✗ 登录失败${NC}"
-    FAILED=$((FAILED + 1))
+    if [ -n "${E2E_USERNAME:-}" ] && [ -n "${E2E_PASSWORD:-}" ]; then
+        echo -e "${RED}✗ 登录失败${NC}"
+        FAILED=$((FAILED + 1))
+    fi
     TOKEN=""
 fi
 

@@ -135,9 +135,7 @@ $TOMCAT_HOME/bin/startup.sh
 - 地址：`http://localhost:8080/software-group/`
 - 登录页：`http://localhost:8080/software-group/login.jsp`
 
-**默认账号：**
-- 管理员：`admin` / `admin123`
-- 成员：`member1` / `member123`
+生产库不附带默认账号或密码。需要本地演示数据时，在隔离环境使用 `samples/demo_seed.sql`。
 
 ## 文档索引
 

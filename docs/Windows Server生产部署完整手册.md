@@ -207,90 +207,17 @@ mkdir -p static/css static/js static/images
 
 ### 5.1 创建 .env 文件
 
-```powershell
-cd D:\software-group
-notepad .env
+在 Ubuntu VM 的 `/opt/software-group` 中创建私有配置。已有 `.env` 时直接编辑，**不要**用模板覆盖现有值。
+
+```bash
+cd /opt/software-group
+test -e .env || cp .env.example .env
+chmod 600 .env
+${EDITOR:-vi} .env
+bash scripts/check-deployment-secrets.sh
 ```
 
-粘贴以下内容（根据实际情况修改密码）：
-
-```env
-# 数据库
-MYSQL_ROOT_PASSWORD=YourSecurePassword123
-MYSQL_DATABASE=software_group
-MYSQL_PORT=3307
-
-# Redis
-REDIS_PASSWORD=YourRedisPassword123
-REDIS_PORT=6379
-
-# RabbitMQ
-RABBITMQ_USER=admin
-RABBITMQ_PASSWORD=YourRabbitMQPassword123
-RABBITMQ_PORT=5672
-RABBITMQ_MANAGE_PORT=15672
-
-# Nacos
-NACOS_PORT=8848
-NACOS_GRPC_PORT=9848
-
-# Sentinel
-SENTINEL_PORT=8858
-
-# MinIO
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=YourMinioPassword123
-MINIO_PORT=9000
-MINIO_CONSOLE_PORT=9001
-
-# 微服务端口
-FILE_SERVICE_PORT=8081
-USER_SERVICE_PORT=8082
-ACTIVITY_SERVICE_PORT=8084
-PROJECT_AWARD_SERVICE_PORT=8085
-HR_SERVICE_PORT=8089
-MONITOR_SERVICE_PORT=8086
-CONTENT_SERVICE_PORT=8087
-AI_SERVICE_PORT=8094
-
-# 旧WAR (Tomcat)
-APP_PORT=8080
-
-# Nginx
-NGINX_PORT=80
-
-# JWT (至少32字符)
-JWT_SECRET=YourVeryLongAndSecureJWTSecretKey2024ForProduction
-
-# DES加密 (与旧系统一致，不要修改)
-DES_KEY=(^&%gasie_%^)
-
-# AI配置
-AI_PROVIDER=minimax
-AI_API_KEY=your-api-key-here
-AI_API_URL=
-AI_MODEL=MiniMax-M2.7
-
-# HikariCP连接池
-HIKARI_MAX_POOL_SIZE=10
-HIKARI_MIN_IDLE=5
-SESSION_TIMEOUT=30
-
-# Grafana 密码
-GRAFANA_PASSWORD=admin123
-
-# Prometheus 端口
-PROMETHEUS_PORT=9090
-
-# Loki 端口
-LOKI_PORT=3100
-
-# Portainer 端口
-PORTAINER_PORT=9443
-PORTAINER_AGENT_PORT=9001
-```
-
-保存文件。
+模板只列变量名，不包含密码。所有必需变量须填入唯一的随机值；运行检查脚本不会打印值。`DES_KEY` 在 DATA-02 的旧 DES 账户全部迁移前必须保持与历史数据一致，不能提前轮换。不要运行会打印解析后密码的 `docker compose config`；只使用 `config --quiet`。
 
 ---
 
@@ -392,17 +319,17 @@ docker compose ps
 | 服务 | 地址 | 说明 |
 |------|------|------|
 | **主应用** | http://服务器IP/ | 登录页面 |
-| **Nacos** | http://服务器IP:8848/nacos | 用户名/密码: nacos/nacos |
-| **MinIO** | http://服务器IP:9001 | 用户名: minioadmin，密码: 见 .env |
-| **RabbitMQ** | http://服务器IP:15672 | 用户名/密码: admin/见.env |
+| **Nacos** | http://服务器IP:8848/nacos | 当前认证配置见 OPS-02，生产启用认证后使用受控凭据 |
+| **MinIO** | http://服务器IP:9001 | 使用受控凭据 |
+| **RabbitMQ** | http://服务器IP:15672 | 使用受控凭据 |
 | **Sentinel** | http://服务器IP:8858 | 无默认账号 |
 
 ### 8.3 默认登录账号
 
 | 账号 | 用户名 | 密码 |
 |------|--------|------|
-| 管理员 | admin | admin123 |
-| 成员 | member1 | member123 |
+| 管理员 | 由运维受控创建 | 不提供仓库内默认密码 |
+| 成员 | 由业务流程创建 | 不提供仓库内默认密码 |
 
 ---
 
@@ -587,7 +514,7 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD is required}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
@@ -723,7 +650,7 @@ docker compose -f docker-compose.ops.yml ps
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| **Grafana** | http://服务器IP:3000 | 用户名: admin，密码: admin123 |
+| **Grafana** | http://服务器IP:3000 | 使用私有环境文件中的受控凭据 |
 | **Prometheus** | http://服务器IP:9090 | 指标查询 |
 | **Portainer** | https://服务器IP:9443 | Docker Web管理界面 |
 
@@ -874,15 +801,19 @@ cd D:\software-group
 mkdir backup
 
 # 备份 MySQL
-docker compose exec mysql mysqldump -uroot -pYourPassword software_group > backup\backup_$(Get-Date -Format "yyyyMMdd_HHmmss").sql
+docker exec -it sg_mysql mysqldump -uroot -p --result-file=/tmp/software_group.sql software_group
+docker cp sg_mysql:/tmp/software_group.sql backup\backup.sql
 ```
 
 ### 12.2 恢复数据库
 
 ```powershell
 cd D:\software-group
-docker compose exec -i mysql mysql -uroot -pYourPassword software_group < backup\backup.sql
+docker cp backup\backup.sql sg_mysql:/tmp/restore.sql
+docker exec -it sg_mysql mysql -uroot -p software_group
 ```
+
+进入 MySQL 后执行 `SOURCE /tmp/restore.sql;`。交互输入密码，不写入命令参数或终端历史。
 
 ### 12.3 备份数据卷
 
