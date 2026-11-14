@@ -26,25 +26,15 @@ public class PasswordServlet extends HttpServlet {
         }
 
         User currentUser = (User) session.getAttribute("user");
-        boolean mustChangePassword = Boolean.TRUE.equals(currentUser.getMustChangePassword());
-
         String oldPassword = request.getParameter("oldPassword");
         String newPassword = request.getParameter("newPassword");
         String confirmPassword = request.getParameter("confirmPassword");
 
-        // 如果不是必须修改密码，则验证原密码
-        if (!mustChangePassword) {
-            if (oldPassword == null || oldPassword.isEmpty()) {
-                request.setAttribute("error", "请输入原密码");
-                request.getRequestDispatcher("/member/password-change.jsp").forward(request, response);
-                return;
-            }
-
-            if (!userDAO.verifyPassword(currentUser.getId(), oldPassword)) {
-                request.setAttribute("error", "原密码错误");
-                request.getRequestDispatcher("/member/password-change.jsp").forward(request, response);
-                return;
-            }
+        if (oldPassword == null || oldPassword.isEmpty()
+                || !userDAO.verifyPassword(currentUser.getId(), oldPassword)) {
+            request.setAttribute("error", "原密码错误");
+            request.getRequestDispatcher("/member/password-change.jsp").forward(request, response);
+            return;
         }
 
         if (newPassword == null || newPassword.length() < 6) {

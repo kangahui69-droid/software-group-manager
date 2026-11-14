@@ -10,7 +10,7 @@ import com.softwaregroup.user.model.dto.RegisterRequest;
 import com.softwaregroup.user.model.dto.UserDTO;
 import com.softwaregroup.user.model.entity.MemberProfile;
 import com.softwaregroup.user.model.entity.User;
-import com.softwaregroup.user.util.DESUtil;
+import com.softwaregroup.user.util.PasswordHasher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,17 +46,17 @@ public class AuthService {
 
     private final UserDAO userDAO;
     private final MemberProfileDAO memberProfileDAO;
-    private final DESUtil desUtil;
+    private final PasswordHasher passwordHasher;
     private final JwtService jwtService;
 
     @Value("${spring.jwt.expiration-ms:86400000}")
     private long jwtExpirationMs;
 
-    public AuthService(UserDAO userDAO, MemberProfileDAO memberProfileDAO, DESUtil desUtil,
+    public AuthService(UserDAO userDAO, MemberProfileDAO memberProfileDAO, PasswordHasher passwordHasher,
                        JwtService jwtService) {
         this.userDAO = userDAO;
         this.memberProfileDAO = memberProfileDAO;
-        this.desUtil = desUtil;
+        this.passwordHasher = passwordHasher;
         this.jwtService = jwtService;
     }
 
@@ -73,9 +73,7 @@ public class AuthService {
             return Result.error(404, "用户名或密码错误");
         }
 
-        // 密码加密后比对
-        String encryptedPassword = desUtil.encrypt(request.getPassword());
-        User user = userDAO.findByUsernameAndPassword(request.getUsername(), encryptedPassword);
+        User user = userDAO.findByUsernameAndPassword(request.getUsername(), request.getPassword());
         if (user == null) {
             return Result.error(400, "密码错误");
         }
@@ -116,7 +114,7 @@ public class AuthService {
         // 构建用户
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(desUtil.encrypt(request.getPassword()));
+        user.setPassword(request.getPassword());
         user.setName(request.getName() != null ? request.getName() : request.getUsername());
         user.setEmail(request.getEmail() != null ? request.getEmail() : request.getUsername() + "@default.com");
         user.setPhone(request.getPhone());
@@ -168,14 +166,12 @@ public class AuthService {
         }
 
         // 验证旧密码
-        String oldEncrypted = desUtil.encrypt(oldPwd);
-        if (!oldEncrypted.equals(user.getPassword())) {
+        if (!passwordHasher.matches(oldPwd, user.getPassword())) {
             return Result.error(400, "旧密码错误");
         }
 
         // 更新密码
-        String newEncrypted = desUtil.encrypt(newPwd);
-        boolean updated = userDAO.updatePassword(userId, newEncrypted);
+        boolean updated = userDAO.updatePassword(userId, newPwd);
         if (!updated) {
             return Result.error(500, "密码修改失败");
         }

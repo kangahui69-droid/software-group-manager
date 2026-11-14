@@ -1,6 +1,7 @@
 package com.softwaregroup.user.dao;
 
 import com.softwaregroup.user.model.entity.User;
+import com.softwaregroup.user.util.PasswordHasher;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
@@ -23,9 +24,11 @@ import java.util.List;
 public class UserDAO {
 
     private final JdbcTemplate jdbcTemplate;
+    private final PasswordHasher passwordHasher;
 
-    public UserDAO(JdbcTemplate jdbcTemplate) {
+    public UserDAO(JdbcTemplate jdbcTemplate, PasswordHasher passwordHasher) {
         this.jdbcTemplate = jdbcTemplate;
+        this.passwordHasher = passwordHasher;
     }
 
     private static final RowMapper<User> USER_ROW_MAPPER = BeanPropertyRowMapper.newInstance(User.class);
@@ -33,18 +36,25 @@ public class UserDAO {
     /**
      * 根据用户名和密码查询用户（用于登录）
      */
-    public User findByUsernameAndPassword(String username, String encryptedPassword) {
+    public User findByUsernameAndPassword(String username, String rawPassword) {
         String sql = "SELECT * FROM user WHERE username = ? AND status = 1";
         List<User> users = jdbcTemplate.query(sql, USER_ROW_MAPPER, username);
         if (users.isEmpty()) {
             return null;
         }
         User user = users.get(0);
-        // 密码对比（数据库中存储的是DES加密后的密码）
-        if (encryptedPassword.equals(user.getPassword())) {
-            return user;
+        String storedPassword = user.getPassword();
+        if (!passwordHasher.matches(rawPassword, storedPassword)) {
+            return null;
         }
-        return null;
+        if (passwordHasher.needsUpgrade(storedPassword)) {
+            String upgraded = passwordHasher.hash(rawPassword);
+            if (!updatePasswordIfCurrent(user.getId(), storedPassword, upgraded)) {
+                return null;
+            }
+            user.setPassword(upgraded);
+        }
+        return user;
     }
 
     /**
@@ -110,7 +120,7 @@ public class UserDAO {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             ps.setString(1, user.getUsername());
-            ps.setString(2, user.getPassword());
+            ps.setString(2, passwordHasher.hash(user.getPassword()));
             ps.setString(3, user.getName());
             ps.setString(4, user.getEmail());
             ps.setString(5, user.getPhone());
@@ -150,17 +160,23 @@ public class UserDAO {
     /**
      * 更新用户密码
      */
-    public boolean updatePassword(Integer userId, String encryptedPassword) {
-        String sql = "UPDATE user SET password = ? WHERE id = ?";
-        return jdbcTemplate.update(sql, encryptedPassword, userId) > 0;
+    public boolean updatePassword(Integer userId, String rawPassword) {
+        String sql = "UPDATE user SET password = ?, must_change_password = 0 WHERE id = ?";
+        return jdbcTemplate.update(sql, passwordHasher.hash(rawPassword), userId) > 0;
+    }
+
+    /** Upgrade a legacy DES value only when it has not changed concurrently. */
+    public boolean updatePasswordIfCurrent(Integer userId, String currentStoredPassword, String newHash) {
+        String sql = "UPDATE user SET password = ? WHERE id = ? AND password = ?";
+        return jdbcTemplate.update(sql, newHash, userId, currentStoredPassword) > 0;
     }
 
     /**
      * 重置密码
      */
-    public boolean resetPassword(Integer userId, String encryptedPassword) {
+    public boolean resetPassword(Integer userId, String rawPassword) {
         String sql = "UPDATE user SET password = ?, must_change_password = 1 WHERE id = ?";
-        return jdbcTemplate.update(sql, encryptedPassword, userId) > 0;
+        return jdbcTemplate.update(sql, passwordHasher.hash(rawPassword), userId) > 0;
     }
 
     /**

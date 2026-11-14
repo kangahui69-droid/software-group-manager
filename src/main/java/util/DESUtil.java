@@ -71,7 +71,6 @@ public class DESUtil {
     private static SecretKey generateKey() throws Exception {
         // 使用配置文件中的密钥
         String desKey = Config.getDesKey();
-        System.out.println("[DESUtil] 使用DES密钥: " + desKey);
         DESKeySpec keySpec = new DESKeySpec(desKey.getBytes(CHARSET));
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
         return keyFactory.generateSecret(keySpec);

@@ -606,7 +606,7 @@ CREATE TABLE IF NOT EXISTS study_session (
 CREATE TABLE IF NOT EXISTS user (
     id INT NOT NULL AUTO_INCREMENT,
     username varchar(50) NOT NULL,
-    password varchar(100) NOT NULL,
+    password varchar(255) NOT NULL,
     name varchar(50) NOT NULL DEFAULT 'Unknown',
     email varchar(100) NOT NULL,
     phone varchar(20) DEFAULT NULL,

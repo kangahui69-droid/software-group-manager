@@ -94,6 +94,10 @@ public class UserService {
             return Result.error(404, "用户不存在");
         }
 
+        if (!userDAO.verifyPassword(userId, oldPwd)) {
+            return Result.error(400, "旧密码错误");
+        }
+
         boolean updated = userDAO.updatePassword(userId, newPwd);
         if (!updated) {
             return Result.error(500, "密码修改失败");

@@ -10,6 +10,7 @@ import com.softwaregroup.user.model.dto.RegisterRequest;
 import com.softwaregroup.user.model.dto.UserDTO;
 import com.softwaregroup.user.model.entity.User;
 import com.softwaregroup.user.util.DESUtil;
+import com.softwaregroup.user.util.PasswordHasher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,14 +42,16 @@ class AuthServiceTest {
     private AuthService authService;
 
     private DESUtil desUtil;
+    private PasswordHasher passwordHasher;
     private JwtService jwtService;
 
     @BeforeEach
     void setUp() {
         desUtil = new DESUtil("(^&%gasie_%^)"); // 测试用DES key
+        passwordHasher = new PasswordHasher(desUtil);
         jwtService = new JwtService("test-only-user-service-secret-32-bytes-or-longer",
                 "key-2", "software-group", "software-group-api");
-        authService = new AuthService(userDAO, memberProfileDAO, desUtil, jwtService);
+        authService = new AuthService(userDAO, memberProfileDAO, passwordHasher, jwtService);
         ReflectionTestUtils.setField(authService, "jwtExpirationMs", 86400000L);
     }
 
@@ -67,7 +70,7 @@ class AuthServiceTest {
         mockUser.setStatus(1);
 
         when(userDAO.findByUsername(username)).thenReturn(mockUser);
-        when(userDAO.findByUsernameAndPassword(username, encryptedPassword)).thenReturn(mockUser);
+        when(userDAO.findByUsernameAndPassword(username, password)).thenReturn(mockUser);
 
         // 执行测试
         LoginRequest request = new LoginRequest(username, password);
@@ -122,7 +125,7 @@ class AuthServiceTest {
         mockUser.setStatus(0); // 禁用状态
 
         when(userDAO.findByUsername(username)).thenReturn(mockUser);
-        when(userDAO.findByUsernameAndPassword(username, desUtil.encrypt(password))).thenReturn(mockUser);
+        when(userDAO.findByUsernameAndPassword(username, password)).thenReturn(mockUser);
 
         LoginRequest request = new LoginRequest(username, password);
         Result result = authService.login(request);

@@ -237,6 +237,7 @@ class UserServiceTest {
         void should_change_password_successfully() {
             User user = createUser(MEMBER_USER_ID, "member1", "encryptedOld", ROLE_MEMBER, STATUS_ACTIVE);
             when(userDAO.findById(MEMBER_USER_ID)).thenReturn(user);
+            when(userDAO.verifyPassword(MEMBER_USER_ID, "oldpwd")).thenReturn(true);
             when(userDAO.updatePassword(eq(MEMBER_USER_ID), anyString())).thenReturn(true);
 
             Result result = userService.changePassword(MEMBER_USER_ID, "oldpwd", "newpwd123");
@@ -308,12 +309,27 @@ class UserServiceTest {
         void should_return_error_when_database_update_fails() {
             User user = createUser(MEMBER_USER_ID, "member1", "encryptedOld", ROLE_MEMBER, STATUS_ACTIVE);
             when(userDAO.findById(MEMBER_USER_ID)).thenReturn(user);
+            when(userDAO.verifyPassword(MEMBER_USER_ID, "oldpwd")).thenReturn(true);
             when(userDAO.updatePassword(eq(MEMBER_USER_ID), anyString())).thenReturn(false);
 
             Result result = userService.changePassword(MEMBER_USER_ID, "oldpwd", "newpwd123");
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(500);
+        }
+
+        @FastTest
+        @DisplayName("旧密码错误时不更新密码")
+        void should_reject_wrong_old_password() {
+            User user = createUser(MEMBER_USER_ID, "member1", "encryptedOld", ROLE_MEMBER, STATUS_ACTIVE);
+            when(userDAO.findById(MEMBER_USER_ID)).thenReturn(user);
+            when(userDAO.verifyPassword(MEMBER_USER_ID, "wrongpwd")).thenReturn(false);
+
+            Result result = userService.changePassword(MEMBER_USER_ID, "wrongpwd", "newpwd123");
+
+            assertThat(result.isSuccess()).isFalse();
+            assertThat(result.getCode()).isEqualTo(400);
+            verify(userDAO, never()).updatePassword(anyInt(), anyString());
         }
 
         @FastTest
