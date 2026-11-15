@@ -242,6 +242,39 @@ class GroupControllerTest {
     }
 
     @Test
+    void muteMember_shouldPassExpiryToService() throws Exception {
+        java.util.Date until = java.util.Date.from(java.time.Instant.parse("2030-01-01T10:00:00Z"));
+        when(groupService.muteMember(eq(1), eq(2), eq(until), eq("违规发言"), eq(1)))
+                .thenReturn(Result.ok(null));
+
+        mockMvc.perform(post("/api/groups/1/mute")
+                        .contentType("application/json")
+                        .content("{\"targetUserId\":2,\"reason\":\"违规发言\",\"mutedUntil\":\"2030-01-01T10:00:00Z\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+    }
+
+    @Test
+    void muteSpecificMember_shouldUseTargetInPath() throws Exception {
+        when(groupService.muteMember(eq(1), eq(2), isNull(), eq("spam"), eq(1)))
+                .thenReturn(Result.ok(null));
+
+        mockMvc.perform(post("/api/groups/1/members/2/mute")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"spam\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+    }
+
+    @Test
+    void unmuteSpecificMember_shouldUseTargetId() throws Exception {
+        when(groupService.unmuteMember(1, 2, 1)).thenReturn(Result.ok(null));
+        mockMvc.perform(delete("/api/groups/1/members/2/mute"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+    }
+
+    @Test
     void unmuteMember_shouldReturnSuccess() throws Exception {
         when(groupService.unmuteMember(eq(1), eq(1))).thenReturn(Result.ok(null));
 

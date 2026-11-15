@@ -26,6 +26,7 @@ import support.FastTest;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -501,7 +502,10 @@ class AIServiceTest {
             aiService.recordQuestionStatistics("新问题");
 
             // Then: 创建新统计记录
-            verify(faqStatsDAO).save(any(AIFaqStatistics.class));
+            org.mockito.ArgumentCaptor<AIFaqStatistics> captured =
+                    org.mockito.ArgumentCaptor.forClass(AIFaqStatistics.class);
+            verify(faqStatsDAO).save(captured.capture());
+            assertThat(captured.getValue().getQuestionHash()).matches("[0-9a-f]{64}");
         }
 
         @FastTest
@@ -610,16 +614,12 @@ class AIServiceTest {
         @FastTest
         @DisplayName("Redis缓存命中应直接返回不调用Feign")
         void should_return_from_cache_when_hit() {
-            // Given: 缓存中有用户数据（通过Redis mock验证）
             UserDTO cachedUser = createMemberUser();
-            // 假设Redis缓存命中，userFeignClient不应被调用
-
-            // When
+            when(userFeignClient.getUserById(MEMBER_USER_ID)).thenReturn(successResult(cachedUser));
+            assertThat(aiService.getUserInfoCached(MEMBER_USER_ID)).isNotNull();
             UserDTO result = aiService.getUserInfoCached(MEMBER_USER_ID);
-
-            // Then: 由于是缓存调用，验证缓存行为
-            // 注意：实际测试应验证缓存逻辑
-            assertThat(result).isNotNull();
+            assertThat(result).isSameAs(cachedUser);
+            verify(userFeignClient, times(1)).getUserById(MEMBER_USER_ID);
         }
     }
 
@@ -1481,17 +1481,15 @@ class AIServiceTest {
         }
 
         @FastTest
-        @DisplayName("数据库查询异常应捕获不抛异常")
-        void should_catch_database_exception() {
+        @DisplayName("数据库查询异常应向上报告")
+        void should_propagate_database_exception() {
             // Given
             when(conversationDAO.findBySessionId(SESSION_ID))
                 .thenThrow(new RuntimeException("Database error"));
 
-            // When: 不应抛出异常
-            List<AIMessage> result = aiService.getConversationHistory(SESSION_ID, MEMBER_USER_ID);
-
-            // Then
-            assertThat(result).isNull();
+            assertThatThrownBy(() -> aiService.getConversationHistory(SESSION_ID, MEMBER_USER_ID))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Database error");
         }
 
         @FastTest

@@ -214,7 +214,7 @@ services:
     container_name: sg_file_service
     restart: always
     ports:
-      - "${FILE_SERVICE_PORT:-8081}:8081"
+      - "127.0.0.1:${FILE_SERVICE_PORT:-8081}:8081"
     environment:
       # 数据库配置
       DB_HOST: mysql
@@ -262,7 +262,7 @@ services:
     container_name: sg_user_service
     restart: always
     ports:
-      - "${USER_SERVICE_PORT:-8082}:8082"
+      - "127.0.0.1:${USER_SERVICE_PORT:-8082}:8082"
     environment:
       # 数据库配置
       DB_HOST: mysql
@@ -307,7 +307,7 @@ services:
     container_name: sg_activity_service
     restart: always
     ports:
-      - "${ACTIVITY_SERVICE_PORT:-8084}:8084"
+      - "127.0.0.1:${ACTIVITY_SERVICE_PORT:-8084}:8084"
     environment:
       # 数据库配置
       DB_HOST: mysql
@@ -348,7 +348,7 @@ services:
     container_name: sg_project_award_service
     restart: always
     ports:
-      - "${PROJECT_AWARD_SERVICE_PORT:-8085}:8085"
+      - "127.0.0.1:${PROJECT_AWARD_SERVICE_PORT:-8085}:8085"
     environment:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
@@ -389,7 +389,7 @@ services:
     container_name: sg_hr_service
     restart: always
     ports:
-      - "${HR_SERVICE_PORT:-8089}:8089"
+      - "127.0.0.1:${HR_SERVICE_PORT:-8089}:8089"
     environment:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
@@ -430,7 +430,7 @@ services:
     container_name: sg_monitor_service
     restart: always
     ports:
-      - "${MONITOR_SERVICE_PORT:-8086}:8086"
+      - "127.0.0.1:${MONITOR_SERVICE_PORT:-8086}:8086"
     environment:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
@@ -463,16 +463,32 @@ services:
       timeout: 10s
       retries: 5
 
+  # Prepare only the shared news directories for content-service's UID 1001.
+  content-storage-init:
+    image: software-group-content-service
+    user: "0:0"
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mkdir -p /storage/news/award /storage/news/activity /storage/news/notice &&
+        chown 1001:1001 /storage/news /storage/news/award /storage/news/activity /storage/news/notice &&
+        chmod 755 /storage/news /storage/news/award /storage/news/activity /storage/news/notice
+    volumes:
+      - app_data:/storage
+
   # --- content-service (8087) ---
   content-service:
     build:
       context: .
       dockerfile: ./content-service/Dockerfile
+    image: software-group-content-service
     container_name: sg_content_service
     restart: always
     ports:
-      - "${CONTENT_SERVICE_PORT:-8087}:8087"
+      - "127.0.0.1:${CONTENT_SERVICE_PORT:-8087}:8087"
     environment:
+      NEWS_CONTENT_ROOT: /usr/local/tomcat/webapps/localstorage
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
@@ -489,7 +505,11 @@ services:
       NACOS_HOST: nacos
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
+    volumes:
+      - app_data:/usr/local/tomcat/webapps/localstorage
     depends_on:
+      content-storage-init:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -512,7 +532,7 @@ services:
     container_name: sg_ai_service
     restart: always
     ports:
-      - "${AI_SERVICE_PORT:-8094}:8094"
+      - "127.0.0.1:${AI_SERVICE_PORT:-8094}:8094"
     environment:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}

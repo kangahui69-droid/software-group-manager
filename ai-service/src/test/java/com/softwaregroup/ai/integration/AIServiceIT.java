@@ -257,7 +257,7 @@ class AIServiceIT {
     @Test
     void recordQuestionStatistics_withNewQuestion_shouldCreateStats() {
         String question = "如何加入小组？";
-        when(faqStatsDAO.findByHash(question.toLowerCase())).thenReturn(null);
+        when(faqStatsDAO.findByHash(anyString())).thenReturn(null);
         when(faqStatsDAO.save(any(AIFaqStatistics.class))).thenReturn(1);
 
         aiService.recordQuestionStatistics(question);
@@ -272,7 +272,7 @@ class AIServiceIT {
         existing.setQueryCount(5);
         existing.setNormalizedQuestion("如何加入小组？");
 
-        when(faqStatsDAO.findByHash(question.toLowerCase())).thenReturn(existing);
+        when(faqStatsDAO.findByHash(anyString())).thenReturn(existing);
         doNothing().when(faqStatsDAO).update(any(AIFaqStatistics.class));
 
         aiService.recordQuestionStatistics(question);

@@ -10,9 +10,12 @@ import com.softwaregroup.project.model.dto.AwardDTO;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 /**
  * 奖项服务层
@@ -44,6 +47,7 @@ public class AwardService {
         this.userDAO = userDAO;
     }
 
+    @Transactional
     public Result submitAward(AwardDTO dto, Integer userId, List<Integer> imageIds) {
         Result validationResult = validateAwardSubmission(dto, userId);
         if (validationResult != null) {
@@ -62,6 +66,24 @@ public class AwardService {
             return Result.error(500, "提交失败");
         }
 
+        if (dto.getMemberIds() != null) {
+            for (Integer memberId : new java.util.LinkedHashSet<>(dto.getMemberIds())) {
+                if (memberId == null || !awardDAO.addMember(award.getId(), memberId)) {
+                    throw new IllegalStateException("保存奖项成员失败");
+                }
+            }
+        }
+        if (imageIds != null) {
+            for (Integer fileId : new java.util.LinkedHashSet<>(imageIds)) {
+                AwardImage image = new AwardImage();
+                image.setAwardId(award.getId());
+                image.setFileId(fileId);
+                if (fileId == null || !awardImageDAO.insert(image)) {
+                    throw new IllegalStateException("保存奖项图片失败");
+                }
+            }
+        }
+
         return Result.ok(award);
     }
 
@@ -75,8 +97,18 @@ public class AwardService {
         if (dto.getCompetition() == null || dto.getCompetition().trim().isEmpty()) {
             return Result.error(400, "竞赛名称不能为空");
         }
+        if (dto.getCompetition().length() > 100) {
+            return Result.error(400, "竞赛名称不能超过100字符");
+        }
         if (dto.getCompetitionTime() != null && !dto.getCompetitionTime().matches("\\d{4}-\\d{2}-\\d{2}")) {
             return Result.error(400, "比赛时间格式错误");
+        }
+        if (dto.getCompetitionTime() != null) {
+            try {
+                LocalDate.parse(dto.getCompetitionTime());
+            } catch (DateTimeParseException ex) {
+                return Result.error(400, "比赛时间格式错误");
+            }
         }
         return null;
     }
@@ -293,6 +325,10 @@ public class AwardService {
         if (userId == null) {
             return Result.error(400, "用户ID不能为空");
         }
+        Result validationResult = validateAwardSubmission(dto, userId);
+        if (validationResult != null) {
+            return validationResult;
+        }
 
         Award award = awardDAO.findById(awardId);
         if (award == null) {
@@ -306,6 +342,9 @@ public class AwardService {
             return Result.error(403, "无权限");
         }
 
+        if (award.getName() == null || award.getName().equals(award.getCompetition())) {
+            award.setName(dto.getCompetition());
+        }
         award.setCompetition(dto.getCompetition());
         award.setCompetitionTime(dto.getCompetitionTime());
         award.setAwardLevel(dto.getAwardLevel());

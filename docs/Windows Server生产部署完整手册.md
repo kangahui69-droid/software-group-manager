@@ -997,3 +997,7 @@ D:\software-group\
 ---
 
 **部署过程中如有疑问，请联系开发者。**
+
+## 4.3 候选版本验证补充（2026-11-15）
+
+`scripts/verify-routes.sh` 与 `scripts/e2e-smoke-test.sh` 当前只验证网关安全回退、页面可达及明确禁用的接口，不能证明微服务业务已切流。完成数据库迁移并部署 4.3 候选版本后，在 VM 上执行 `bash scripts/verify-mig43-production-readiness.sh`，再做登录、项目、奖项、新闻与群组的实际读写验收。旧 WAR 的 8080 直连入口暂保留。详细状态见 [4.3 剩余问题修复与本地验证报告](4.3剩余问题修复与本地验证报告.md)。

@@ -41,6 +41,9 @@ class NewsServiceTest {
     @Mock
     private com.softwaregroup.content.dao.FileStorageDAO fileStorageDAO;
 
+    @Mock
+    private NewsContentStorage contentStorage;
+
     @InjectMocks
     private NewsService newsService;
 
@@ -64,6 +67,8 @@ class NewsServiceTest {
         testNewsDTO.setTitle("新新闻标题");
         testNewsDTO.setType("NOTICE");
         testNewsDTO.setSummary("新新闻摘要");
+        testNewsDTO.setContentPath("localstorage/news/notice/new.html");
+        lenient().when(contentStorage.exists(anyString())).thenReturn(true);
 
         testUser = new User();
         testUser.setId(1);
@@ -293,7 +298,20 @@ class NewsServiceTest {
             Result result = newsService.createNews(testNewsDTO, 1);
 
             assertThat(result.isSuccess()).isTrue();
-            verify(newsDAO, times(1)).insert(any(News.class));
+            verify(newsDAO, times(1)).insert(argThat(news -> news.getStatus() == News.STATUS_PUBLISHED));
+        }
+
+        @Test
+        void should_store_inline_body_and_delete_it_if_database_insert_fails() throws Exception {
+            testNewsDTO.setContentPath(null);
+            testNewsDTO.setContent("<p>Safe body</p>");
+            when(userDAO.findById(1)).thenReturn(testUser);
+            when(contentStorage.save(eq("NOTICE"), eq("<p>Safe body</p>")))
+                    .thenReturn("localstorage/news/notice/generated.html");
+            when(newsDAO.insert(any(News.class))).thenReturn(false);
+
+            assertThat(newsService.createNews(testNewsDTO, 1).getCode()).isEqualTo(500);
+            verify(contentStorage).delete("localstorage/news/notice/generated.html");
         }
 
         @Test
@@ -340,21 +358,21 @@ class NewsServiceTest {
         }
 
         @Test
-        @DisplayName("边界情况：标题超过256字符应返回错误")
+        @DisplayName("边界情况：标题超过200字符应返回错误")
         void should_return_error_when_title_too_long() {
-            testNewsDTO.setTitle("a".repeat(257));
+            testNewsDTO.setTitle("a".repeat(201));
 
             Result result = newsService.createNews(testNewsDTO, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("256");
+            assertThat(result.getMessage()).contains("200");
         }
 
         @Test
-        @DisplayName("边界情况：标题为256字符应正常创建")
-        void should_create_when_title_is_256_chars() {
-            testNewsDTO.setTitle("a".repeat(256));
+        @DisplayName("边界情况：标题为200字符应正常创建")
+        void should_create_when_title_is_200_chars() {
+            testNewsDTO.setTitle("a".repeat(200));
             when(userDAO.findById(1)).thenReturn(testUser);
             when(newsDAO.insert(any(News.class))).thenReturn(true);
 

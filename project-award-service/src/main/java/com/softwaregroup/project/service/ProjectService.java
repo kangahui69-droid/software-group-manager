@@ -12,11 +12,14 @@ import com.softwaregroup.project.model.dto.ProgressDTO;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -30,7 +33,7 @@ public class ProjectService {
     public static final String STATUS_IN_PROGRESS = "in_progress";
     public static final String STATUS_COMPLETED = "completed";
 
-    private static final int MAX_NAME_LENGTH = 200;
+    private static final int MAX_NAME_LENGTH = 100;
     private static final int MAX_DESCRIPTION_LENGTH = 5000;
     private static final int MAX_REASON_LENGTH = 500;
     private static final int MAX_YEARLY_PROJECTS = 3;
@@ -54,6 +57,7 @@ public class ProjectService {
     public String getStatusInProgress() { return STATUS_IN_PROGRESS; }
     public String getStatusCompleted() { return STATUS_COMPLETED; }
 
+    @Transactional
     public Result createProject(ProjectDTO dto, Integer userId) {
         Result validationResult = validateCreateProjectInput(dto, userId);
         if (validationResult != null) {
@@ -78,7 +82,7 @@ public class ProjectService {
         }
 
         if (project.getId() == null) {
-            project.setId(1);
+            return Result.error(500, "创建项目未返回ID");
         }
         projectDAO.addMember(project.getId(), userId, "LEADER", userId);
         projectDAO.addHistory(project.getId(), "CREATE", userId, "创建项目", "", null, null);
@@ -104,6 +108,9 @@ public class ProjectService {
         }
         if (dto.getCategory() == null || dto.getCategory().trim().isEmpty()) {
             return Result.error(400, "项目分类不能为空");
+        }
+        if (dto.getCategory().length() > 50) {
+            return Result.error(400, "项目分类不能超过50字符");
         }
         if (dto.getExpectedStartDate() != null && dto.getExpectedEndDate() != null
                 && dto.getExpectedStartDate().after(dto.getExpectedEndDate())) {
@@ -181,7 +188,7 @@ public class ProjectService {
         if (userId == null) {
             return Result.error(400, "用户ID不能为空");
         }
-        return null;
+        return validateCreateProjectInput(dto, userId);
     }
 
     private void applyDTOToProject(Project project, ProjectDTO dto) {
@@ -410,6 +417,9 @@ public class ProjectService {
         if (dto.getTitle() == null || dto.getTitle().trim().isEmpty()) {
             return Result.error(400, "计划标题不能为空");
         }
+        if (dto.getStartDate() == null || dto.getEndDate() == null) {
+            return Result.error(400, "计划开始和结束时间不能为空");
+        }
         if (dto.getStartDate() != null && dto.getEndDate() != null
                 && dto.getStartDate().after(dto.getEndDate())) {
             return Result.error(400, "计划开始时间不能晚于结束时间");
@@ -456,7 +466,7 @@ public class ProjectService {
             return Result.error(403, "无权限");
         }
 
-        boolean added = projectDAO.addProgress(projectId, dto);
+        boolean added = projectDAO.addProgress(projectId, dto, userId);
         if (!added) {
             return Result.error(500, "添加进度失败");
         }
@@ -499,13 +509,21 @@ public class ProjectService {
             return Result.error(403, "无权限");
         }
 
-        projectDAO.getProjectMembers(projectId);
-        projectDAO.getLabels(projectId);
-        projectDAO.getPlans(projectId);
-        projectDAO.getProgressList(projectId);
-        projectDAO.getHistory(projectId);
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("project", project);
+        detail.put("members", projectDAO.getProjectMembers(projectId));
+        detail.put("labels", projectDAO.getLabels(projectId));
+        detail.put("plans", projectDAO.getPlans(projectId));
+        detail.put("progress", projectDAO.getProgressList(projectId));
+        detail.put("history", projectDAO.getHistory(projectId));
+        if (userId != null) {
+            boolean member = projectDAO.isMember(projectId, userId);
+            detail.put("isMember", member);
+            detail.put("currentUserRole", isAdmin || java.util.Objects.equals(project.getLeaderId(), userId)
+                    || java.util.Objects.equals(project.getAdminId(), userId) ? "ADMIN" : member ? "MEMBER" : null);
+        }
 
-        return Result.ok(project);
+        return Result.ok(detail);
     }
 
     public Result getMyProjects(Integer userId, int page, int pageSize) {

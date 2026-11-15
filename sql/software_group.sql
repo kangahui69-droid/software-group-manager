@@ -142,6 +142,7 @@ CREATE TABLE `ai_conversation` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ai_conversation_session_id` (`session_id`),
   KEY `idx_session_id` (`session_id`),
   KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI瀵硅瘽璁板綍琛';
@@ -515,6 +516,7 @@ CREATE TABLE `group_member` (
   `joined_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `muted` tinyint(1) DEFAULT '0' COMMENT '鏄?惁琚??瑷?0-鍚?1-鏄',
   `muted_until` datetime DEFAULT NULL COMMENT '绂佽█鎴??鏃堕棿',
+  `mute_reason` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `last_read_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_group_user` (`group_id`,`user_id`),

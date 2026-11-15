@@ -12,6 +12,7 @@ public class AIMessageStatus {
     public static final String STATUS_FAILED = "failed";
 
     private Integer id;
+    private String messageId;
     private String sessionId;
     private Integer userId;
     private String status;
@@ -35,6 +36,9 @@ public class AIMessageStatus {
     public void setId(Integer id) {
         this.id = id;
     }
+
+    public String getMessageId() { return messageId; }
+    public void setMessageId(String messageId) { this.messageId = messageId; }
 
     public String getSessionId() {
         return sessionId;

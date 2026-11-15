@@ -16,6 +16,7 @@ import com.softwaregroup.content.model.dto.GroupDTO;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -28,9 +29,9 @@ public class GroupService {
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final int DEFAULT_MESSAGE_PAGE_SIZE = 20;
-    private static final int MAX_GROUP_NAME_LENGTH = 255;
+    private static final int MAX_GROUP_NAME_LENGTH = 100;
     private static final int MAX_CONTENT_LENGTH = 5000;
-    private static final int MAX_REASON_LENGTH = 500;
+    private static final int MAX_REASON_LENGTH = 255;
 
     @Autowired
     private ActivityGroupDAO activityGroupDAO;
@@ -96,6 +97,7 @@ public class GroupService {
         }
     }
 
+    @Transactional
     public Result createGroup(GroupDTO dto, Integer userId) {
         Result validation = validateCreateGroupParams(dto, userId);
         if (validation != null) {
@@ -131,7 +133,9 @@ public class GroupService {
 
             existingGroup.setGroupName(dto.getGroupName());
             existingGroup.setUpdatedAt(new Date());
-
+            if (!activityGroupDAO.update(existingGroup)) {
+                return Result.error(500, "更新群组失败");
+            }
             return Result.ok(existingGroup);
         } catch (GroupNotFoundException e) {
             return Result.error(404, e.getMessage());
@@ -140,6 +144,7 @@ public class GroupService {
         }
     }
 
+    @Transactional
     public Result deleteGroup(Integer groupId, Integer userId) {
         Result validation = validateGroupIdAndUserId(groupId, userId);
         if (validation != null) {
@@ -159,6 +164,7 @@ public class GroupService {
         }
     }
 
+    @Transactional
     public Result addMember(Integer groupId, Integer userId, Integer operatorId) {
         Result validation = validateMemberOperationParams(groupId, userId, operatorId);
         if (validation != null) {
@@ -176,7 +182,9 @@ public class GroupService {
                 return Result.error(500, "添加成员失败");
             }
 
-            userGroupDAO.insertUserToGroup(userId, groupId);
+            if (!userGroupDAO.insertUserToGroup(userId, groupId)) {
+                throw new IllegalStateException("保存用户群组关系失败");
+            }
             return Result.ok();
         } catch (GroupNotFoundException e) {
             return Result.error(404, e.getMessage());
@@ -189,6 +197,7 @@ public class GroupService {
         }
     }
 
+    @Transactional
     public Result removeMember(Integer groupId, Integer userId, Integer operatorId) {
         Result validation = validateMemberOperationParams(groupId, userId, operatorId);
         if (validation != null) {
@@ -215,8 +224,9 @@ public class GroupService {
                 return Result.error(403, "非成员不能执行此操作");
             }
 
-            groupMemberDAO.delete(groupId, userId);
-            userGroupDAO.delete(userId, groupId);
+            if (!groupMemberDAO.delete(groupId, userId) || !userGroupDAO.delete(userId, groupId)) {
+                throw new IllegalStateException("移除群成员失败");
+            }
 
             return Result.ok();
         } catch (GroupNotFoundException e) {
@@ -262,6 +272,9 @@ public class GroupService {
         try {
             checkIsMemberOrFail(groupId, userId);
             checkGroupNotMuted(groupId);
+            if (groupMemberDAO.isMuted(groupId, userId)) {
+                throw new UnauthorizedException("当前成员已被禁言");
+            }
 
             GroupMessage message = buildMessage(groupId, userId, content);
             int messageId = groupMessageDAO.insert(message);
@@ -298,8 +311,14 @@ public class GroupService {
             if (reason != null && reason.length() > MAX_REASON_LENGTH) {
                 return Result.error(400, "禁言原因不能超过" + MAX_REASON_LENGTH + "字符");
             }
+            if (until != null && !until.after(new Date())) {
+                return Result.error(400, "禁言截止时间必须晚于当前时间");
+            }
 
-            boolean muted = activityGroupDAO.muteGroup(groupId, toSqlDate(until), reason);
+            if (!groupMemberDAO.isMember(groupId, targetUserId)) {
+                return Result.error(404, "目标用户不是群成员");
+            }
+            boolean muted = groupMemberDAO.muteMember(groupId, targetUserId, until, reason);
             if (!muted) {
                 return Result.error(500, "禁言失败");
             }
@@ -330,6 +349,31 @@ public class GroupService {
             }
 
             return Result.ok();
+        } catch (GroupNotFoundException e) {
+            return Result.error(404, e.getMessage());
+        } catch (UnauthorizedException e) {
+            return Result.error(403, e.getMessage());
+        }
+    }
+
+    public Result unmuteMember(Integer groupId, Integer targetUserId, Integer operatorId) {
+        if (groupId == null || targetUserId == null) {
+            return Result.error(400, "群组ID和目标用户ID不能为空");
+        }
+        if (operatorId == null) {
+            return Result.error(401, "用户未登录");
+        }
+        try {
+            findGroupOrFail(groupId);
+            checkIsOwnerOrFail(groupId, operatorId, "只有群主才能取消禁言");
+            if (!groupMemberDAO.isMember(groupId, targetUserId)) {
+                return Result.error(404, "目标用户不是群成员");
+            }
+            if (groupMemberDAO.isOwner(groupId, targetUserId)) {
+                return Result.error(400, "不能对群主执行成员取消禁言");
+            }
+            return groupMemberDAO.unmuteMember(groupId, targetUserId)
+                    ? Result.ok() : Result.error(500, "取消禁言失败");
         } catch (GroupNotFoundException e) {
             return Result.error(404, e.getMessage());
         } catch (UnauthorizedException e) {
@@ -409,7 +453,7 @@ public class GroupService {
             return Result.error(400, "群组名称不能为空");
         }
         if (dto.getGroupName().length() > MAX_GROUP_NAME_LENGTH) {
-            return Result.error(400, "群组名称不能超过255个字符");
+            return Result.error(400, "群组名称不能超过100个字符");
         }
         return null;
     }
@@ -426,6 +470,9 @@ public class GroupService {
         }
         if (dto.getGroupName() == null || dto.getGroupName().trim().isEmpty()) {
             return Result.error(400, "群组名称不能为空");
+        }
+        if (dto.getGroupName().length() > MAX_GROUP_NAME_LENGTH) {
+            return Result.error(400, "群组名称不能超过100个字符");
         }
         return null;
     }
@@ -486,11 +533,11 @@ public class GroupService {
     }
 
     private GroupMessage findMessageOrFail(Integer messageId) {
-        List<GroupMessage> messages = groupMessageDAO.findByGroupId(messageId, 1, 0);
-        if (messages == null || messages.isEmpty()) {
+        GroupMessage message = groupMessageDAO.findById(messageId);
+        if (message == null) {
             throw new MessageNotFoundException("消息不存在");
         }
-        return messages.get(0);
+        return message;
     }
 
     private boolean isGroupMemberOrOwner(Integer groupId, Integer userId) {
@@ -577,19 +624,19 @@ public class GroupService {
     }
 
     private void addGroupOwner(Integer groupId, Integer userId) {
-        groupMemberDAO.insertOwner(groupId, userId);
-        userGroupDAO.insertUserToGroup(userId, groupId);
+        if (!groupMemberDAO.insertOwner(groupId, userId)
+                || !userGroupDAO.insertUserToGroup(userId, groupId)) {
+            throw new IllegalStateException("保存群主关系失败");
+        }
     }
 
     private void cascadeDeleteGroup(Integer groupId) {
         groupMessageDAO.deleteByGroupId(groupId);
         groupMemberDAO.deleteByGroupId(groupId);
         userGroupDAO.deleteByGroupId(groupId);
-        activityGroupDAO.delete(groupId);
-    }
-
-    private java.sql.Date toSqlDate(Date date) {
-        return date != null ? new java.sql.Date(date.getTime()) : null;
+        if (!activityGroupDAO.delete(groupId)) {
+            throw new IllegalStateException("删除群组失败");
+        }
     }
 
     private static class GroupNotFoundException extends RuntimeException {

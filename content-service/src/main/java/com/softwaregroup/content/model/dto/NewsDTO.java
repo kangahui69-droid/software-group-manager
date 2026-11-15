@@ -9,6 +9,7 @@ public class NewsDTO {
     private String type;
     private String summary;
     private String content;
+    private String contentPath;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -24,4 +25,6 @@ public class NewsDTO {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+    public String getContentPath() { return contentPath; }
+    public void setContentPath(String contentPath) { this.contentPath = contentPath; }
 }

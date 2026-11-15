@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -99,7 +100,10 @@ class ProjectServiceTest {
         void should_create_project_when_member() {
             when(userDAO.findById(2)).thenReturn(testUser);
             when(projectDAO.countProjectsByMemberAndYear(2, 2026)).thenReturn(0);
-            when(projectDAO.insert(any(Project.class))).thenReturn(true);
+            when(projectDAO.insert(any(Project.class))).thenAnswer(call -> {
+                ((Project) call.getArgument(0)).setId(7);
+                return true;
+            });
             doNothing().when(projectDAO).addMember(anyInt(), anyInt(), anyString(), any());
             doNothing().when(projectDAO).addHistory(anyInt(), anyString(), anyInt(), anyString(), anyString(), any(), any());
 
@@ -153,15 +157,15 @@ class ProjectServiceTest {
         }
 
         @Test
-        @DisplayName("边界情况：项目名称超过200字符应返回错误")
+        @DisplayName("边界情况：项目名称超过数据库100字符限制应返回错误")
         void should_return_error_when_name_too_long() {
-            testProjectDTO.setName("a".repeat(201));
+            testProjectDTO.setName("a".repeat(101));
 
             Result result = projectService.createProject(testProjectDTO, 2);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("200");
+            assertThat(result.getMessage()).contains("100");
         }
 
         @Test
@@ -256,7 +260,10 @@ class ProjectServiceTest {
             testProjectDTO.setRepoUrl(null);
             when(userDAO.findById(2)).thenReturn(testUser);
             when(projectDAO.countProjectsByMemberAndYear(2, 2026)).thenReturn(0);
-            when(projectDAO.insert(any(Project.class))).thenReturn(true);
+            when(projectDAO.insert(any(Project.class))).thenAnswer(call -> {
+                ((Project) call.getArgument(0)).setId(7);
+                return true;
+            });
 
             Result result = projectService.createProject(testProjectDTO, 2);
 
@@ -355,9 +362,6 @@ class ProjectServiceTest {
         @Test
         @DisplayName("异常场景：项目名称为空应返回错误")
         void should_return_error_when_name_is_empty() {
-            testProject.setStatus("pending");
-            when(projectDAO.findById(1)).thenReturn(testProject);
-
             ProjectDTO updateDTO = new ProjectDTO();
             updateDTO.setName("");
             updateDTO.setCategory("CATEGORY");
@@ -787,6 +791,8 @@ class ProjectServiceTest {
 
             PlanDTO planDTO = new PlanDTO();
             planDTO.setTitle("计划");
+            planDTO.setStartDate(new Date());
+            planDTO.setEndDate(new Date(System.currentTimeMillis() + 86400000));
 
             Result result = projectService.addPlan(1, planDTO, 2);
 
@@ -806,7 +812,7 @@ class ProjectServiceTest {
             testProject.setStatus("approved");
             when(projectDAO.findById(1)).thenReturn(testProject);
             when(projectDAO.isMember(1, 2)).thenReturn(true);
-            when(projectDAO.addProgress(any(), any())).thenReturn(true);
+            when(projectDAO.addProgress(any(), any(), any())).thenReturn(true);
 
             ProgressDTO progressDTO = new ProgressDTO();
             progressDTO.setTitle("完成设计");
@@ -877,7 +883,7 @@ class ProjectServiceTest {
             testProject.setStatus("approved");
             when(projectDAO.findById(1)).thenReturn(testProject);
             when(projectDAO.isMember(1, 2)).thenReturn(true);
-            when(projectDAO.addProgress(any(), any())).thenReturn(true);
+            when(projectDAO.addProgress(any(), any(), any())).thenReturn(true);
 
             ProgressDTO progressDTO = new ProgressDTO();
             progressDTO.setTitle("刚开始");
@@ -894,7 +900,7 @@ class ProjectServiceTest {
             testProject.setStatus("approved");
             when(projectDAO.findById(1)).thenReturn(testProject);
             when(projectDAO.isMember(1, 2)).thenReturn(true);
-            when(projectDAO.addProgress(any(), any())).thenReturn(true);
+            when(projectDAO.addProgress(any(), any(), any())).thenReturn(true);
 
             ProgressDTO progressDTO = new ProgressDTO();
             progressDTO.setTitle("已完成");
@@ -984,15 +990,30 @@ class ProjectServiceTest {
         @DisplayName("正常路径：返回项目详情")
         void should_return_project_detail() {
             when(projectDAO.findById(1)).thenReturn(testProject);
-            when(projectDAO.getProjectMembers(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getLabels(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getPlans(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getProgressList(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getHistory(1)).thenReturn(Collections.emptyList());
+            List<Object> members = List.of(Map.of("user_id", 2, "role", "OWNER"));
+            List<Object> labels = List.of(Map.of("label_code", "AI"));
+            List<Object> plans = List.of(Map.of("title", "Plan A"));
+            List<Object> progress = List.of(Map.of("title", "Milestone A"));
+            List<Object> history = List.of(Map.of("action", "created"));
+            when(projectDAO.getProjectMembers(1)).thenReturn(members);
+            when(projectDAO.getLabels(1)).thenReturn(labels);
+            when(projectDAO.getPlans(1)).thenReturn(plans);
+            when(projectDAO.getProgressList(1)).thenReturn(progress);
+            when(projectDAO.getHistory(1)).thenReturn(history);
 
             Result result = projectService.getProjectDetail(1, 2, false);
 
             assertThat(result.isSuccess()).isTrue();
+            assertThat(result.getData()).isInstanceOf(Map.class);
+            Map<?, ?> detail = (Map<?, ?>) result.getData();
+            assertThat(detail.get("project")).isSameAs(testProject);
+            assertThat(detail.get("members")).isEqualTo(members);
+            assertThat(detail.get("labels")).isEqualTo(labels);
+            assertThat(detail.get("plans")).isEqualTo(plans);
+            assertThat(detail.get("progress")).isEqualTo(progress);
+            assertThat(detail.get("history")).isEqualTo(history);
+            assertThat(detail.get("isMember")).isEqualTo(false);
+            assertThat(detail.get("currentUserRole")).isEqualTo("ADMIN");
         }
 
         @Test

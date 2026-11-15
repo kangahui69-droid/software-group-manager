@@ -2,6 +2,7 @@ package com.softwaregroup.ai.dao;
 
 import com.softwaregroup.ai.model.entity.AIMessage;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Profile;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +12,7 @@ import java.util.stream.Collectors;
  * AIMessageDAO内存实现（用于测试）
  */
 @Repository
+@Profile("test")
 public class AIMessageDAOImpl implements AIMessageDAO {
     private final Map<Integer, AIMessage> storage = new ConcurrentHashMap<>();
     private int nextId = 1;
