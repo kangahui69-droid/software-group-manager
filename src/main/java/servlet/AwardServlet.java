@@ -100,6 +100,9 @@ public class AwardServlet extends HttpServlet {
             case "edit":
                 showEditForm(request, response, user);
                 break;
+            case "addImage":
+                showAddImageForm(request, response, user);
+                break;
             case "delete":
                 response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
                 return;
@@ -219,7 +222,7 @@ public class AwardServlet extends HttpServlet {
         if (competitionLevelsResult.isSuccess()) {
             request.setAttribute("competitionLevels", competitionLevelsResult.getData());
         }
-        request.getRequestDispatcher("/jsp/member/award/list.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/jsp/member/award/list.jsp").forward(request, response);
     }
 
     private void getStatistics(HttpServletRequest request, HttpServletResponse response, User user)
@@ -234,7 +237,7 @@ public class AwardServlet extends HttpServlet {
     private void showSubmitForm(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
         loadDictionaryData(request);
-        request.getRequestDispatcher("/jsp/member/award/submit.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/jsp/member/award/submit.jsp").forward(request, response);
     }
 
     private void submitAward(HttpServletRequest request, HttpServletResponse response, User user)
@@ -252,14 +255,14 @@ public class AwardServlet extends HttpServlet {
         if (competition == null || competition.trim().isEmpty()) {
             request.setAttribute("error", "竞赛名称不能为空");
             loadDictionaryData(request);
-            request.getRequestDispatcher("/jsp/member/award/submit.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/jsp/member/award/submit.jsp").forward(request, response);
             return;
         }
 
         if (competitionTime != null && !competitionTime.matches("\\d{4}-\\d{2}-\\d{2}")) {
             request.setAttribute("error", "日期格式错误");
             loadDictionaryData(request);
-            request.getRequestDispatcher("/jsp/member/award/submit.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/jsp/member/award/submit.jsp").forward(request, response);
             return;
         }
 
@@ -297,7 +300,7 @@ public class AwardServlet extends HttpServlet {
             request.setAttribute("error", "提交失败: " + e.getMessage());
         }
         loadDictionaryData(request);
-        request.getRequestDispatcher("/jsp/member/award/submit.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/jsp/member/award/submit.jsp").forward(request, response);
     }
 
     /**
@@ -406,6 +409,36 @@ public class AwardServlet extends HttpServlet {
         } catch (Exception e) {
             request.setAttribute("error", "添加失败: " + e.getMessage());
         }
+    }
+
+    private void showAddImageForm(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        String idStr = request.getParameter("id");
+        int id;
+        try {
+            id = Integer.parseInt(idStr);
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        Result result = awardService.getAwardDetail(id);
+        if (!result.isSuccess() || !(result.getData() instanceof Award)) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        Award award = (Award) result.getData();
+        if (!java.util.Objects.equals(user.getId(), award.getCreatedBy())
+                && !"ADMIN".equals(user.getRole())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+        request.setAttribute("award", award);
+        Result images = awardService.getAwardImages(id);
+        if (images.isSuccess()) {
+            request.setAttribute("awardImages", images.getData());
+        }
+        request.getRequestDispatcher("/WEB-INF/jsp/member/award/add-image.jsp")
+                .forward(request, response);
     }
 
     /**
@@ -560,7 +593,7 @@ public class AwardServlet extends HttpServlet {
                 request.setAttribute("competitionLevels", competitionLevelsResult.getData());
             }
 
-            request.getRequestDispatcher("/jsp/member/award/detail.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/jsp/member/award/detail.jsp").forward(request, response);
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/award?action=myAwards");
         }
@@ -604,7 +637,7 @@ public class AwardServlet extends HttpServlet {
                 request.setAttribute("competitionLevels", competitionLevelsResult.getData());
             }
 
-            request.getRequestDispatcher("/jsp/member/award/edit.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/jsp/member/award/edit.jsp").forward(request, response);
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/award?action=myAwards");
         }

@@ -1,20 +1,41 @@
 package filter;
 
 import dao.OperationLogDAO;
+import model.AuditLogCategory;
 import model.OperationLog;
 import model.User;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.UUID;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 操作日志过滤器
  */
 public class LoggingFilter implements Filter {
-    private OperationLogDAO logDAO = new OperationLogDAO();
+    public static final String REQUEST_ID_ATTRIBUTE = "audit.requestId";
+    private static final String REQUEST_ID_HEADER = "X-Request-ID";
+    private final OperationLogDAO logDAO;
+    private final ClientIpResolver clientIpResolver;
+
+    public LoggingFilter() {
+        this(new OperationLogDAO());
+    }
+
+    LoggingFilter(OperationLogDAO logDAO) {
+        this(logDAO, new ClientIpResolver());
+    }
+
+    LoggingFilter(OperationLogDAO logDAO, ClientIpResolver clientIpResolver) {
+        this.logDAO = logDAO;
+        this.clientIpResolver = clientIpResolver;
+    }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -25,63 +46,190 @@ public class LoggingFilter implements Filter {
             throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-
-        String requestURI = httpRequest.getRequestURI();
         String method = httpRequest.getMethod();
 
-        // 只记录POST、PUT、DELETE等修改操作
-        if ("POST".equals(method) || "PUT".equals(method) || "DELETE".equals(method)) {
+        AuditLogCategory.Operation operation = AuditLogCategory.loggedOperation(method, httpRequest.getRequestURI());
+        if (operation == null) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        long startedAt = System.nanoTime();
+        String requestId = UUID.randomUUID().toString();
+        httpRequest.setAttribute(REQUEST_ID_ATTRIBUTE, requestId);
+        httpResponse.setHeader(REQUEST_ID_HEADER, requestId);
+        User userBeforeRequest = getCurrentUser(httpRequest);
+        AuditResponseWrapper wrappedResponse = new AuditResponseWrapper(httpResponse, requestId);
+        boolean completed = false;
+        try {
+            chain.doFilter(request, wrappedResponse);
+            completed = true;
+        } finally {
+            // The business request must finish before the log is written.
             try {
-                HttpSession session = httpRequest.getSession(false);
-                User user = null;
-                Integer userId = null;
-                String username = "游客";
-
-                if (session != null && session.getAttribute("user") != null) {
-                    user = (User) session.getAttribute("user");
-                    userId = user.getId();
-                    username = user.getUsername();
+                User user = userBeforeRequest != null ? userBeforeRequest : getCurrentUser(httpRequest);
+                int status = wrappedResponse.getStatus();
+                if (!completed && status < 400 && !wrappedResponse.isCommitted()) {
+                    status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
                 }
-
+                String result = classifyResult(httpRequest, wrappedResponse, completed, userBeforeRequest, status);
+                String targetType = extractTargetType(httpRequest.getRequestURI());
                 OperationLog log = new OperationLog();
-                log.setUserId(userId);
-                log.setUsername(username);
-                log.setOperation(method);
-                log.setModule(extractModule(requestURI));
+                log.setUserId(user == null ? null : user.getId());
+                log.setUsername(user == null ? "游客" : AuditLogSanitizer.maskedUsername(user.getUsername()));
+                log.setOperation(operation.name());
+                log.setModule(AuditLogCategory.moduleForUri(httpRequest.getRequestURI()).getValue());
                 log.setDescription(buildDescription(httpRequest, method));
-                log.setIpAddress(getClientIpAddress(httpRequest));
-                log.setUserAgent(httpRequest.getHeader("User-Agent"));
-
-                logDAO.insert(log);
+                ClientIpResolver.ClientAddress clientAddress = clientIpResolver.resolve(httpRequest);
+                log.setIpAddress(clientAddress.clientIp());
+                log.setProxyIp(clientAddress.proxyIp());
+                log.setUserAgent(AuditLogSanitizer.safeUserAgent(httpRequest.getHeader("User-Agent")));
+                log.setResult(result);
+                log.setHttpStatus(status);
+                log.setDurationMs(TimeUnit.NANOSECONDS.toMillis(Math.max(0L, System.nanoTime() - startedAt)));
+                log.setRequestId(requestId);
+                log.setErrorCode(resolveErrorCode(httpRequest, completed, result, status));
+                log.setTargetType(targetType);
+                log.setTargetId(extractTargetId(httpRequest, targetType));
+                if (!logDAO.insert(log)) {
+                    System.err.println("[LoggingFilter] 操作日志写入失败, requestId=" + requestId);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
-                // 日志记录失败不应影响业务
+                // Audit storage errors must not change the business response.
             }
         }
-
-        chain.doFilter(request, response);
     }
 
-    /**
-     * 提取模块名
-     */
-    private String extractModule(String uri) {
-        if (uri.contains("/admin/")) {
-            return "管理员";
-        } else if (uri.contains("/member/")) {
-            return "成员";
-        } else if (uri.contains("/news")) {
-            return "新闻";
-        } else if (uri.contains("/activity")) {
-            return "活动";
-        } else if (uri.contains("/award")) {
-            return "奖项";
-        } else if (uri.contains("/project")) {
-            return "项目";
-        } else if (uri.contains("/recruit")) {
-            return "招新";
+    private User getCurrentUser(HttpServletRequest request) {
+        try {
+            HttpSession session = request.getSession(false);
+            Object principal = session == null ? null : session.getAttribute("user");
+            return principal instanceof User ? (User) principal : null;
+        } catch (RuntimeException ignored) {
+            // Logout may invalidate the session before this filter finishes.
+            return null;
         }
-        return "其他";
+    }
+
+    private String classifyResult(HttpServletRequest request, AuditResponseWrapper response,
+                                  boolean completed, User userBeforeRequest, int status) {
+        if (!completed) return "FAILED";
+
+        if (status == HttpServletResponse.SC_UNAUTHORIZED || status == HttpServletResponse.SC_FORBIDDEN) {
+            return "DENIED";
+        }
+        if (request.getRequestURI().endsWith("/login") && request.getAttribute("error") != null) {
+            return "DENIED";
+        }
+        if (status >= 400 || request.getAttribute("error") != null
+                || hasErrorRedirect(response.getRedirectLocation())) {
+            return "FAILED";
+        }
+        if (status >= 300 && status < 400 && userBeforeRequest == null
+                && isLoginRedirect(response.getRedirectLocation())) {
+            return "DENIED";
+        }
+        return "SUCCESS";
+    }
+
+    private String resolveErrorCode(HttpServletRequest request, boolean completed, String result, int status) {
+        if (!completed) return "UNHANDLED_EXCEPTION";
+        if (status >= 400) return "HTTP_" + status;
+        if ("DENIED".equals(result)) {
+            return request.getRequestURI().endsWith("/login") ? "AUTH_FAILED" : "AUTH_REQUIRED";
+        }
+        return "FAILED".equals(result) ? "BUSINESS_ERROR" : null;
+    }
+
+    private String extractTargetType(String uri) {
+        if (uri == null) return null;
+        if (uri.contains("/project")) return "PROJECT";
+        if (uri.contains("/award")) return "AWARD";
+        if (uri.contains("/activity")) return "ACTIVITY";
+        if (uri.contains("/news")) return "NEWS";
+        if (uri.contains("/admin/member") || uri.contains("/api/user")) return "USER";
+        if (uri.contains("/recruit")) return "RECRUIT";
+        if (uri.contains("/resume")) return "RESUME";
+        if (uri.contains("/file") || uri.contains("/upload")) return "FILE";
+        if (uri.contains("/group")) return "GROUP";
+        if (uri.contains("/problem")) return "PROBLEM";
+        return null;
+    }
+
+    private String extractTargetId(HttpServletRequest request, String targetType) {
+        if (targetType == null) return null;
+        String id = request.getParameter("id");
+        if (id == null || id.isBlank()) {
+            String namedId = targetType.toLowerCase(Locale.ROOT) + "Id";
+            id = request.getParameter(namedId);
+        }
+        if (id == null) return null;
+        return AuditLogSanitizer.safeTargetId(id);
+    }
+
+    private boolean hasErrorRedirect(String location) {
+        return location != null && (location.contains("?error=") || location.contains("&error="));
+    }
+
+    private boolean isLoginRedirect(String location) {
+        if (location == null) return false;
+        String path = location.split("\\?", 2)[0];
+        return path.endsWith("/login.jsp") || path.endsWith("/login");
+    }
+
+    private static final class AuditResponseWrapper extends HttpServletResponseWrapper {
+        private final String requestId;
+        private int status;
+        private String redirectLocation;
+
+        private AuditResponseWrapper(HttpServletResponse response, String requestId) {
+            super(response);
+            this.requestId = requestId;
+            this.status = response.getStatus() > 0 ? response.getStatus() : SC_OK;
+        }
+
+        @Override
+        public void setStatus(int status) {
+            super.setStatus(status);
+            this.status = status;
+        }
+
+        @Override
+        public void sendError(int status) throws IOException {
+            super.sendError(status);
+            this.status = status;
+        }
+
+        @Override
+        public void sendError(int status, String message) throws IOException {
+            super.sendError(status, message);
+            this.status = status;
+        }
+
+        @Override
+        public void sendRedirect(String location) throws IOException {
+            super.sendRedirect(location);
+            this.status = SC_FOUND;
+            this.redirectLocation = location;
+        }
+
+        @Override
+        public void reset() {
+            super.reset();
+            this.status = SC_OK;
+            this.redirectLocation = null;
+            setHeader(REQUEST_ID_HEADER, requestId);
+        }
+
+        @Override
+        public int getStatus() {
+            return status;
+        }
+
+        private String getRedirectLocation() {
+            return redirectLocation;
+        }
     }
 
     /**
@@ -89,20 +237,8 @@ public class LoggingFilter implements Filter {
      */
     private String buildDescription(HttpServletRequest request, String method) {
         String uri = request.getRequestURI();
-        String queryString = request.getQueryString();
-        String fullPath = queryString != null ? uri + "?" + queryString : uri;
-
-        // 提取操作类型和详情
         String actionDesc = extractActionDescription(request, uri);
-
-        // 构建详细描述
-        if (actionDesc != null && !actionDesc.isEmpty()) {
-            String targetId = request.getParameter("id");
-            String targetInfo = targetId != null ? " [目标ID:" + targetId + "]" : "";
-            return method + " " + actionDesc + targetInfo;
-        }
-
-        return method + " " + fullPath;
+        return AuditLogSanitizer.description(request, method, actionDesc);
     }
 
     /**
@@ -221,23 +357,6 @@ public class LoggingFilter implements Filter {
         }
 
         return null;
-    }
-
-    /**
-     * 获取客户端IP地址
-     */
-    private String getClientIpAddress(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
     }
 
     @Override

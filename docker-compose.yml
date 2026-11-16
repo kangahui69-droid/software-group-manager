@@ -20,6 +20,7 @@ services:
 
     # 环境变量（MySQL 镜像会自动使用这些配置初始化数据库）
     environment:
+      TZ: Asia/Shanghai
       # root 密码（生产环境必须修改！）
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       # 自动创建的数据库名
@@ -27,6 +28,8 @@ services:
       # 字符集配置（必须 utf8mb4 支持中文）
       MYSQL_CHARACTER_SET_SERVER: utf8mb4
       MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+
+    command: ["--default-time-zone=+08:00"]
 
     # 端口映射：宿主机端口:容器端口
     # 访问方式：宿主机上连接 localhost:3306 就等于连接容器内的 MySQL
@@ -79,6 +82,7 @@ services:
 
     # Redis 配置；避免在 Compose 命令中展开密码
     environment:
+      TZ: Asia/Shanghai
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$${REDIS_PASSWORD}\""]
 
@@ -109,6 +113,7 @@ services:
 
     # 环境变量（设置默认用户和密码）
     environment:
+      TZ: Asia/Shanghai
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
 
@@ -135,6 +140,8 @@ services:
     container_name: sg_nacos
     restart: always
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       # 单机模式（使用嵌入式 Derby 数据库，无需 MySQL）
       MODE: standalone
       # Nacos 认证（开发环境关闭，生产环境必须开启）
@@ -143,6 +150,18 @@ services:
       JVM_XMS: 256m
       JVM_XMX: 512m
       JVM_XMN: 128m
+      # 持久化改用 MySQL：内嵌 Derby 在慢盘（Hyper-V 动态扩展 VHDX）上启动会超过其 30s 登录超时，
+      # 建库失败进入崩溃循环，且调大超时参数无效（2026-10-02 实测）
+      SPRING_DATASOURCE_PLATFORM: mysql
+      MYSQL_SERVICE_HOST: mysql
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_SERVICE_DB_PARAM: "characterEncoding=utf8&connectTimeout=3000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       - "${NACOS_PORT:-8848}:8848"
       - "${NACOS_GRPC_PORT:-9848}:9848"
@@ -164,6 +183,8 @@ services:
     container_name: sg_sentinel
     restart: always
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       # JVM 内存配置
       JAVA_OPTS: "-Dserver.port=8858 -Dcsp.sentinel.dashboard.server=localhost:8858 -Dproject.name=sentinel-dashboard"
     ports:
@@ -183,6 +204,7 @@ services:
     container_name: sg_minio
     restart: always
     environment:
+      TZ: Asia/Shanghai
       # Root 用户凭证（生产环境必须修改！）
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
@@ -216,6 +238,8 @@ services:
     ports:
       - "127.0.0.1:${FILE_SERVICE_PORT:-8081}:8081"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -235,6 +259,8 @@ services:
       MINIO_BUCKET: software-group
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_APPLICATION_NAME: file-service
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
@@ -249,7 +275,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8081/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -264,6 +290,8 @@ services:
     ports:
       - "127.0.0.1:${USER_SERVICE_PORT:-8082}:8082"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -282,6 +310,8 @@ services:
       DES_KEY: ${DES_KEY:?DES_KEY is required during legacy password migration}
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_APPLICATION_NAME: user-service
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
@@ -294,7 +324,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8082/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -309,6 +339,8 @@ services:
     ports:
       - "127.0.0.1:${ACTIVITY_SERVICE_PORT:-8084}:8084"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
@@ -323,6 +355,8 @@ services:
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_APPLICATION_NAME: activity-service
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
@@ -335,7 +369,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8084/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -350,6 +384,8 @@ services:
     ports:
       - "127.0.0.1:${PROJECT_AWARD_SERVICE_PORT:-8085}:8085"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
@@ -364,6 +400,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
@@ -376,7 +413,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8085/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -391,6 +428,8 @@ services:
     ports:
       - "127.0.0.1:${HR_SERVICE_PORT:-8089}:8089"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
@@ -405,6 +444,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_APPLICATION_NAME: hr-service
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
@@ -417,7 +458,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8089/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8089/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -432,6 +473,8 @@ services:
     ports:
       - "127.0.0.1:${MONITOR_SERVICE_PORT:-8086}:8086"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
@@ -446,6 +489,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_APPLICATION_NAME: monitor-service
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
@@ -458,7 +503,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8086/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -466,6 +511,8 @@ services:
   # Prepare only the shared news directories for content-service's UID 1001.
   content-storage-init:
     image: software-group-content-service
+    environment:
+      TZ: Asia/Shanghai
     user: "0:0"
     restart: "no"
     entrypoint: ["/bin/sh", "-c"]
@@ -488,6 +535,8 @@ services:
     ports:
       - "127.0.0.1:${CONTENT_SERVICE_PORT:-8087}:8087"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       NEWS_CONTENT_ROOT: /usr/local/tomcat/webapps/localstorage
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
@@ -503,6 +552,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     volumes:
@@ -519,7 +569,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8087/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -534,6 +584,8 @@ services:
     ports:
       - "127.0.0.1:${AI_SERVICE_PORT:-8094}:8094"
     environment:
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_KEY_ID: ${JWT_KEY_ID:-v1}
       # 数据库配置
@@ -558,6 +610,7 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
       # Nacos 配置
       NACOS_HOST: nacos
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
@@ -572,7 +625,7 @@ services:
     networks:
       - software-group-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8094/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8094/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -604,6 +657,9 @@ services:
 
     # 运行期环境变量由 config.Config 读取；敏感值必须在私有 .env 或外部环境中提供
     environment:
+      TZ: Asia/Shanghai
+      # 仅信任同一 Compose 网络中的 Nginx 服务地址；直连 8080 忽略转发头
+      AUDIT_TRUSTED_PROXY_HOSTS: nginx
       APP_ENV: production
       # 数据库（用户名 root，密码与 mysql 服务的 MYSQL_ROOT_PASSWORD 同源）
       DB_HOST: mysql
@@ -646,6 +702,9 @@ services:
     # 使用 Alpine 精简版镜像
     image: nginx:alpine
 
+    environment:
+      TZ: Asia/Shanghai
+
     # 容器名称
     container_name: sg_nginx
 
@@ -685,7 +744,7 @@ services:
 
     # 健康检查
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/health"]
       interval: 10s
       timeout: 5s
       retries: 3

@@ -47,7 +47,7 @@
                 </a>
             </div>
             <div class="col-6 mb-3">
-                <a href="${pageContext.request.contextPath}/project?action=list" class="card card-link card-body p-3">
+                <a href="${pageContext.request.contextPath}/project?action=myProjects" class="card card-link card-body p-3">
                     <div class="mb-2">
                         <i class="bi bi-kanban h2 text-purple"></i>
                     </div>

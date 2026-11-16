@@ -49,6 +49,13 @@ public class ProjectController {
         return projectService.getMyProjects(userId, page, pageSize);
     }
 
+    @GetMapping("/created-by-me")
+    public Result getCreatedByMeProjects(@AuthenticatedUser Integer userId,
+                                         @RequestParam(defaultValue = "1") int page,
+                                         @RequestParam(defaultValue = "20") int pageSize) {
+        return projectService.getCreatedByMeProjects(userId, page, pageSize);
+    }
+
     @PostMapping
     public Result createProject(@RequestBody ProjectDTO dto,
                                 @AuthenticatedUser Integer userId) {

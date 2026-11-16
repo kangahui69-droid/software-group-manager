@@ -27,6 +27,8 @@ public class Project {
     public static final String STATUS_APPROVED = "approved";
     public static final String STATUS_IN_PROGRESS = "in_progress";
     public static final String STATUS_COMPLETED = "completed";
+    public static final String STATUS_CANCELED = "canceled";
+    public static final String STATUS_REJECTED = "rejected";
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

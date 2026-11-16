@@ -9,6 +9,7 @@ import java.util.List;
  */
 public interface ProblemReportDAO {
     int insert(ProblemReport problem);
+    int updateDetails(ProblemReport problem, Integer operatorId, boolean adminOverride);
     boolean updateCategoryAndStatus(Integer id, String category, String status, String comment, Integer operatorId);
     boolean updateAdminComment(Integer id, String comment);
     ProblemReport findById(Integer id);

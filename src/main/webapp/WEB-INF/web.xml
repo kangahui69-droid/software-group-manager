@@ -21,6 +21,16 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+    <!-- 操作日志过滤器：先于权限和安全过滤器，以便记录被拒绝的修改请求 -->
+    <filter>
+        <filter-name>LoggingFilter</filter-name>
+        <filter-class>filter.LoggingFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>LoggingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <!-- 权限控制过滤器 -->
     <filter>
         <filter-name>AuthFilter</filter-name>
@@ -46,16 +56,6 @@
         <url-pattern>/ai/*</url-pattern>
         <url-pattern>/group</url-pattern>
         <url-pattern>/group/*</url-pattern>
-    </filter-mapping>
-
-    <!-- 操作日志过滤器 -->
-    <filter>
-        <filter-name>LoggingFilter</filter-name>
-        <filter-class>filter.LoggingFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>LoggingFilter</filter-name>
-        <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <!-- 安全过滤器（XSS 和 CSRF 防护） -->

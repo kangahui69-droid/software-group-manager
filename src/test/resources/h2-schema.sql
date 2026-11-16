@@ -323,6 +323,14 @@ CREATE TABLE IF NOT EXISTS operation_log (
     ip_address varchar(50) DEFAULT NULL,
     user_agent varchar(500) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    result varchar(16) DEFAULT NULL,
+    http_status SMALLINT DEFAULT NULL,
+    duration_ms BIGINT DEFAULT NULL,
+    request_id CHAR(36) DEFAULT NULL,
+    error_code varchar(64) DEFAULT NULL,
+    target_type varchar(32) DEFAULT NULL,
+    target_id varchar(64) DEFAULT NULL,
+    proxy_ip varchar(45) DEFAULT NULL,
     PRIMARY KEY (id)
 );
 

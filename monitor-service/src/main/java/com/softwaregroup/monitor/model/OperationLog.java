@@ -14,7 +14,15 @@ public class OperationLog {
     private String module;
     private String description;
     private String ipAddress;
+    private String proxyIp;
     private String userAgent;
+    private String result;
+    private Integer httpStatus;
+    private Long durationMs;
+    private String requestId;
+    private String errorCode;
+    private String targetType;
+    private String targetId;
     private Date createdAt;
 
     public OperationLog() {
@@ -76,6 +84,9 @@ public class OperationLog {
         this.ipAddress = ipAddress;
     }
 
+    public String getProxyIp() { return proxyIp; }
+    public void setProxyIp(String proxyIp) { this.proxyIp = proxyIp; }
+
     public String getUserAgent() {
         return userAgent;
     }
@@ -83,6 +94,27 @@ public class OperationLog {
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
     }
+
+    public String getResult() { return result; }
+    public void setResult(String result) { this.result = result; }
+
+    public Integer getHttpStatus() { return httpStatus; }
+    public void setHttpStatus(Integer httpStatus) { this.httpStatus = httpStatus; }
+
+    public Long getDurationMs() { return durationMs; }
+    public void setDurationMs(Long durationMs) { this.durationMs = durationMs; }
+
+    public String getRequestId() { return requestId; }
+    public void setRequestId(String requestId) { this.requestId = requestId; }
+
+    public String getErrorCode() { return errorCode; }
+    public void setErrorCode(String errorCode) { this.errorCode = errorCode; }
+
+    public String getTargetType() { return targetType; }
+    public void setTargetType(String targetType) { this.targetType = targetType; }
+
+    public String getTargetId() { return targetId; }
+    public void setTargetId(String targetId) { this.targetId = targetId; }
 
     public Date getCreatedAt() {
         return createdAt;

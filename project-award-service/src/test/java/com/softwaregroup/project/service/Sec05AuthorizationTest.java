@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -44,10 +45,10 @@ class Sec05AuthorizationTest {
 
     @Test
     void pendingProjectIsAbsentFromPublicList() {
-        Project project = new Project();
-        project.setStatus("pending");
-        when(projects.findByConditions(any(), any(), any())).thenReturn(List.of(project));
-        assertThat((List<?>) projectService.listProjects(new ProjectFilterDTO(), 1, 20, null).getData()).isEmpty();
+        when(projects.countByConditions(null, null, null, true)).thenReturn(0);
+        assertThat(((Map<?, ?>) projectService.listProjects(new ProjectFilterDTO(), 1, 20, null)
+                .getData()).get("list")).isEqualTo(List.of());
+        verify(projects).countByConditions(null, null, null, true);
     }
 
     @Test

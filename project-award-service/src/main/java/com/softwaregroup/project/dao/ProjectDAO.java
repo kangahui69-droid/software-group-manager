@@ -59,7 +59,7 @@ public class ProjectDAO {
         }
         if (status != null && !status.isBlank()) {
             sql.append(" AND p.status=?");
-            args.add(status);
+            args.add(status.trim().toLowerCase(java.util.Locale.ROOT));
         }
         if (year != null) {
             sql.append(" AND p.year=?");
@@ -67,6 +67,51 @@ public class ProjectDAO {
         }
         sql.append(" ORDER BY p.created_at DESC,p.id DESC");
         return jdbc.query(sql.toString(), PROJECT_MAPPER, args.toArray());
+    }
+
+    private static class ProjectFilterQuery {
+        private final StringBuilder fromWhere = new StringBuilder(" FROM project p WHERE p.deleted=0");
+        private final List<Object> args = new ArrayList<>();
+
+        private ProjectFilterQuery(String keyword, String status, Integer year, boolean publicOnly) {
+            if (keyword != null && !keyword.isBlank()) {
+                fromWhere.append(" AND (p.name LIKE ? OR p.description LIKE ?)");
+                String like = "%" + keyword.trim() + "%";
+                args.add(like);
+                args.add(like);
+            }
+            if (publicOnly) {
+                fromWhere.append(" AND p.status IN (?,?,?)");
+                args.add(Project.STATUS_APPROVED);
+                args.add(Project.STATUS_IN_PROGRESS);
+                args.add(Project.STATUS_COMPLETED);
+            }
+            if (status != null && !status.isBlank()) {
+                fromWhere.append(" AND p.status=?");
+                args.add(status.trim().toLowerCase(java.util.Locale.ROOT));
+            }
+            if (year != null) {
+                fromWhere.append(" AND p.year=?");
+                args.add(year);
+            }
+        }
+    }
+
+    public int countByConditions(String keyword, String status, Integer year, boolean publicOnly) {
+        ProjectFilterQuery query = new ProjectFilterQuery(keyword, status, year, publicOnly);
+        Integer count = jdbc.queryForObject("SELECT COUNT(*)" + query.fromWhere,
+                Integer.class, query.args.toArray());
+        return count == null ? 0 : count;
+    }
+
+    public List<Project> findPageByConditions(String keyword, String status, Integer year,
+                                               boolean publicOnly, int limit, int offset) {
+        ProjectFilterQuery query = new ProjectFilterQuery(keyword, status, year, publicOnly);
+        query.args.add(limit);
+        query.args.add(offset);
+        return jdbc.query("SELECT " + COLUMNS + query.fromWhere +
+                        " ORDER BY p.created_at DESC,p.id DESC LIMIT ? OFFSET ?",
+                PROJECT_MAPPER, query.args.toArray());
     }
 
     public Project findById(Integer id) {
@@ -86,9 +131,39 @@ public class ProjectDAO {
                 "ORDER BY p.created_at DESC,p.id DESC", PROJECT_MAPPER, userId, userId, userId);
     }
 
+    public int countProjectsByUserId(Integer userId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM project p WHERE p.deleted=0 " +
+                "AND (p.leader_id=? OR p.admin_id=? OR EXISTS " +
+                "(SELECT 1 FROM project_member pm WHERE pm.project_id=p.id AND pm.user_id=?))",
+                Integer.class, userId, userId, userId);
+        return count == null ? 0 : count;
+    }
+
+    public List<Project> findPageByUserId(Integer userId, int limit, int offset) {
+        return jdbc.query("SELECT " + COLUMNS + " FROM project p WHERE p.deleted=0 " +
+                        "AND (p.leader_id=? OR p.admin_id=? OR EXISTS " +
+                        "(SELECT 1 FROM project_member pm WHERE pm.project_id=p.id AND pm.user_id=?)) " +
+                        "ORDER BY p.created_at DESC,p.id DESC LIMIT ? OFFSET ?",
+                PROJECT_MAPPER, userId, userId, userId, limit, offset);
+    }
+
     public List<Project> findByOwnerId(Integer ownerId) {
         return jdbc.query("SELECT " + COLUMNS + " FROM project p WHERE p.deleted=0 AND p.leader_id=? " +
                 "ORDER BY p.created_at DESC,p.id DESC", PROJECT_MAPPER, ownerId);
+    }
+
+    public int countProjectsByLeaderId(Integer leaderId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM project p WHERE p.deleted=0 AND p.leader_id=?",
+                Integer.class, leaderId);
+        return count == null ? 0 : count;
+    }
+
+    public List<Project> findPageByLeaderId(Integer leaderId, int limit, int offset) {
+        return jdbc.query("SELECT " + COLUMNS + " FROM project p " +
+                        "WHERE p.deleted=0 AND p.leader_id=? " +
+                        "ORDER BY p.created_at DESC,p.id DESC LIMIT ? OFFSET ?",
+                PROJECT_MAPPER, leaderId, limit, offset);
     }
 
     public int countProjectsByMemberAndYear(Integer userId, Integer year) {
@@ -110,7 +185,8 @@ public class ProjectDAO {
             ps.setString(2, project.getDescription());
             ps.setString(3, project.getCategory());
             ps.setInt(4, project.getYear());
-            ps.setString(5, project.getStatus());
+            ps.setString(5, project.getStatus() == null ? Project.STATUS_PENDING
+                    : project.getStatus().trim().toLowerCase(java.util.Locale.ROOT));
             ps.setInt(6, project.getLeaderId());
             ps.setObject(7, project.getAdminId());
             ps.setBigDecimal(8, project.getBudget());
@@ -132,25 +208,28 @@ public class ProjectDAO {
     public boolean update(Project project, Integer operatorId) {
         return jdbc.update("UPDATE project SET name=?,description=?,category=?,budget=?,repo_url=?," +
                         "expected_start_date=?,expected_end_date=? WHERE id=? AND deleted=0 " +
-                        "AND status NOT IN ('in_progress','completed')",
+                        "AND status NOT IN (?,?)",
                 project.getName(), project.getDescription(), project.getCategory(), project.getBudget(),
                 project.getRepoUrl(), sqlDate(project.getExpectedStartDate()),
-                sqlDate(project.getExpectedEndDate()), project.getId()) == 1;
+                sqlDate(project.getExpectedEndDate()), project.getId(),
+                Project.STATUS_IN_PROGRESS, Project.STATUS_COMPLETED) == 1;
     }
 
     public boolean delete(Integer id, Integer operatorId) {
         return jdbc.update("UPDATE project SET deleted=1 WHERE id=? AND deleted=0 " +
-                "AND status NOT IN ('in_progress','completed')", id) == 1;
+                "AND status NOT IN (?,?)", id, Project.STATUS_IN_PROGRESS, Project.STATUS_COMPLETED) == 1;
     }
 
     public boolean approve(Integer id, Integer approverId, Object extra) {
-        return jdbc.update("UPDATE project SET status='approved',approved_by=?,approved_at=NOW() " +
-                "WHERE id=? AND deleted=0 AND status='pending'", approverId, id) == 1;
+        return jdbc.update("UPDATE project SET status=?,approved_by=?,approved_at=NOW() " +
+                "WHERE id=? AND deleted=0 AND status=?",
+                Project.STATUS_APPROVED, approverId, id, Project.STATUS_PENDING) == 1;
     }
 
     public boolean reject(Integer id, Integer approverId, Object extra) {
-        return jdbc.update("UPDATE project SET status='rejected',approved_by=?,approved_at=NOW() " +
-                "WHERE id=? AND deleted=0 AND status='pending'", approverId, id) == 1;
+        return jdbc.update("UPDATE project SET status=?,approved_by=?,approved_at=NOW() " +
+                "WHERE id=? AND deleted=0 AND status=?",
+                Project.STATUS_REJECTED, approverId, id, Project.STATUS_PENDING) == 1;
     }
 
     public boolean isMember(Integer projectId, Integer userId) {

@@ -1,6 +1,8 @@
 package servlet;
 
 import dao.OperationLogDAO;
+import model.AuditLogCategory;
+import model.LogTimeRange;
 import model.OperationLog;
 import model.User;
 
@@ -70,9 +72,21 @@ public class LogServlet extends HttpServlet {
         String operation = request.getParameter("operation");
         String module = request.getParameter("module");
         String dateRange = request.getParameter("dateRange");
+        String startTime = request.getParameter("startTime");
+        String endTime = request.getParameter("endTime");
 
-        List<OperationLog> logs = logDAO.findByConditions(keyword, operation, module, dateRange, page, pageSize);
-        int totalLogs = logDAO.countByConditions(keyword, operation, module, dateRange);
+        LogTimeRange range;
+        try {
+            range = hasValue(startTime) || hasValue(endTime)
+                    ? LogTimeRange.explicit(startTime, endTime) : LogTimeRange.legacy(dateRange);
+        } catch (IllegalArgumentException ex) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "日期范围参数无效");
+            return;
+        }
+
+        List<OperationLog> logs = logDAO.findByTimeRange(keyword, operation, module,
+                range.getStart(), range.getEnd(), page, pageSize);
+        int totalLogs = logDAO.countByTimeRange(keyword, operation, module, range.getStart(), range.getEnd());
         int totalPages = (int) Math.ceil((double) totalLogs / pageSize);
 
         request.setAttribute("logs", logs);
@@ -84,6 +98,14 @@ public class LogServlet extends HttpServlet {
         request.setAttribute("operation", operation);
         request.setAttribute("module", module);
         request.setAttribute("dateRange", dateRange);
+        request.setAttribute("startTime", startTime);
+        request.setAttribute("endTime", endTime);
+        request.setAttribute("operationOptions", AuditLogCategory.operations());
+        request.setAttribute("moduleOptions", AuditLogCategory.modules());
         request.getRequestDispatcher("/jsp/log/list.jsp").forward(request, response);
+    }
+
+    private boolean hasValue(String value) {
+        return value != null && !value.isBlank();
     }
 }

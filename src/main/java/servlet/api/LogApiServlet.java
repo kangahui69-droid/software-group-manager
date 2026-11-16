@@ -152,6 +152,8 @@ public class LogApiServlet extends BaseApiServlet {
         addFilterIfPresent(filter, "operation", req.getParameter("operation"));
         addFilterIfPresent(filter, "module", req.getParameter("module"));
         addFilterIfPresent(filter, "dateRange", req.getParameter("dateRange"));
+        addFilterIfPresent(filter, "startTime", req.getParameter("startTime"));
+        addFilterIfPresent(filter, "endTime", req.getParameter("endTime"));
         return filter;
     }
 

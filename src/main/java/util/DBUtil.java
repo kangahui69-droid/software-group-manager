@@ -57,6 +57,11 @@ public class DBUtil {
         config.setIdleTimeout(parseIntProperty("hikaricp.idleTimeout", (int) DEFAULT_IDLE_TIMEOUT));
 
         config.setPoolName("SoftwareGroup-HikariPool");
+        // DATETIME/CURRENT_TIMESTAMP are interpreted in the MySQL session time zone.
+        // H2 is used by local tests and does not support MySQL's time_zone variable.
+        if (config.getJdbcUrl().startsWith("jdbc:mysql:")) {
+            config.setConnectionInitSql("SET time_zone = '+08:00'");
+        }
         config.setAutoCommit(true);
         config.setConnectionTestQuery("SELECT 1");
 

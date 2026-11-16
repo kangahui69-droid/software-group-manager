@@ -1,12 +1,14 @@
 package com.softwaregroup.monitor.dao;
 
 import com.softwaregroup.monitor.model.OperationLog;
+import com.softwaregroup.monitor.model.LogTimeRange;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 /**
  * 操作日志数据访问实现
@@ -31,12 +33,21 @@ public class OperationLogDAOImpl implements OperationLogDAO {
 
     @Override
     public List<OperationLog> findByConditions(String keyword, String operation, String module, String dateRange, int page, int pageSize) {
+        LogTimeRange range = LogTimeRange.legacy(dateRange);
+        return findByTimeRange(keyword, operation, module, range.getStart(), range.getEnd(), page, pageSize);
+    }
+
+    @Override
+    public List<OperationLog> findByTimeRange(String keyword, String operation, String module,
+                                               LocalDateTime startTime, LocalDateTime endTime,
+                                               int page, int pageSize) {
         StringBuilder sql = new StringBuilder("SELECT * FROM operation_log WHERE 1=1");
         List<Object> params = new java.util.ArrayList<>();
 
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (username LIKE ? OR operation LIKE ? OR module LIKE ? OR description LIKE ?)");
+            sql.append(" AND (username LIKE ? OR operation LIKE ? OR module LIKE ? OR description LIKE ? OR request_id LIKE ?)");
             String like = "%" + keyword.trim() + "%";
+            params.add(like);
             params.add(like);
             params.add(like);
             params.add(like);
@@ -50,10 +61,7 @@ public class OperationLogDAOImpl implements OperationLogDAO {
             sql.append(" AND module=?");
             params.add(module);
         }
-        if (dateRange != null && !dateRange.trim().isEmpty()) {
-            sql.append(" AND DATE(created_at)=?");
-            params.add(dateRange);
-        }
+        appendTimeRange(sql, params, startTime, endTime);
         sql.append(" ORDER BY created_at DESC LIMIT ? OFFSET ?");
         int offset = (page - 1) * pageSize;
         params.add(pageSize);
@@ -71,12 +79,20 @@ public class OperationLogDAOImpl implements OperationLogDAO {
 
     @Override
     public int countByConditions(String keyword, String operation, String module, String dateRange) {
+        LogTimeRange range = LogTimeRange.legacy(dateRange);
+        return countByTimeRange(keyword, operation, module, range.getStart(), range.getEnd());
+    }
+
+    @Override
+    public int countByTimeRange(String keyword, String operation, String module,
+                                LocalDateTime startTime, LocalDateTime endTime) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM operation_log WHERE 1=1");
         List<Object> params = new java.util.ArrayList<>();
 
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (username LIKE ? OR operation LIKE ? OR module LIKE ? OR description LIKE ?)");
+            sql.append(" AND (username LIKE ? OR operation LIKE ? OR module LIKE ? OR description LIKE ? OR request_id LIKE ?)");
             String like = "%" + keyword.trim() + "%";
+            params.add(like);
             params.add(like);
             params.add(like);
             params.add(like);
@@ -90,12 +106,21 @@ public class OperationLogDAOImpl implements OperationLogDAO {
             sql.append(" AND module=?");
             params.add(module);
         }
-        if (dateRange != null && !dateRange.trim().isEmpty()) {
-            sql.append(" AND DATE(created_at)=?");
-            params.add(dateRange);
-        }
+        appendTimeRange(sql, params, startTime, endTime);
 
         Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
         return count != null ? count : 0;
+    }
+
+    private void appendTimeRange(StringBuilder sql, List<Object> params,
+                                 LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime != null) {
+            sql.append(" AND created_at >= ?");
+            params.add(startTime);
+        }
+        if (endTime != null) {
+            sql.append(" AND created_at < ?");
+            params.add(endTime);
+        }
     }
 }

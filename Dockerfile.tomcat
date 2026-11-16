@@ -11,7 +11,7 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 COPY target/software-group.war /usr/local/tomcat/webapps/software-group.war
 
 # 配置 JVM 参数
-ENV CATALINA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication"
+ENV CATALINA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication -Duser.timezone=Asia/Shanghai"
 
 # 暴露端口
 EXPOSE 8080

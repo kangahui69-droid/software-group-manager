@@ -396,7 +396,7 @@
                                                     <a class="dropdown-item ${param.active == 'myActivities' ? 'active' : ''}" href="${pageContext.request.contextPath}/activity?action=myCreatedActivities">
                                                         <i class="bi bi-calendar-plus me-1"></i>活动申请
                                                     </a>
-                                                    <a class="dropdown-item ${param.active == 'myProjects' ? 'active' : ''}" href="${pageContext.request.contextPath}/project?action=list">
+                                                    <a class="dropdown-item ${param.active == 'myProjects' ? 'active' : ''}" href="${pageContext.request.contextPath}/project?action=myProjects">
                                                         <i class="bi bi-kanban me-1"></i>项目申请
                                                     </a>
                                                     <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/award?action=myAwards">

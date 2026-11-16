@@ -55,7 +55,7 @@ public class ProjectServlet extends HttpServlet {
 
         switch (action) {
             case "list":
-                listProjects(request, response, user);  // 根据用户角色转发到不同页面
+                redirectLegacyList(request, response, user);
                 break;
             case "detail":
                 getProjectDetail(request, response, user);
@@ -64,7 +64,10 @@ public class ProjectServlet extends HttpServlet {
                 editProject(request, response, user);  // 编辑项目表单
                 break;
             case "myProjects":
-                getMyProjects(request, response, user);  // 用户端"我的项目"（我创建的项目）
+                getMyProjects(request, response, user);  // 当前用户创建或参与的项目
+                break;
+            case "browse":
+                browseProjects(request, response);
                 break;
             case "myApplications":
                 getMyApplications(request, response, user);  // 我的申请记录（我申请加入的项目）
@@ -74,13 +77,13 @@ public class ProjectServlet extends HttpServlet {
                     response.sendError(HttpServletResponse.SC_FORBIDDEN);
                     return;
                 }
-                listProjects(request, response, user);  // 管理端项目管理
+                listProjects(request, response, user);
                 break;
             case "createForm":
                 showCreateForm(request, response, user);
                 break;
             default:
-                listProjects(request, response, user);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
@@ -133,16 +136,28 @@ public class ProjectServlet extends HttpServlet {
         }
     }
 
-    private void listProjects(HttpServletRequest request, HttpServletResponse response, User user)
-            throws ServletException, IOException {
+    private void redirectLegacyList(HttpServletRequest request, HttpServletResponse response, User user)
+            throws IOException {
         if (user == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
+        String action = "ADMIN".equals(user.getRole()) ? "manage" : "myProjects";
+        response.sendRedirect(request.getContextPath() + "/project?action=" + action);
+    }
 
-        boolean isAdmin = "ADMIN".equals(user.getRole());
+    private void listProjects(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         String keyword = request.getParameter("keyword");
         String status = request.getParameter("status");
+        if (status != null) {
+            status = status.trim().toLowerCase(java.util.Locale.ROOT);
+        }
         String yearStr = request.getParameter("year");
 
         ProjectFilterDTO filter = new ProjectFilterDTO();
@@ -152,23 +167,34 @@ public class ProjectServlet extends HttpServlet {
             filter.setYear(Integer.parseInt(yearStr));
         }
 
-        // 数据范围由服务端角色决定；普通成员不能通过更换入口查看其他人的项目。
-        Result result = isAdmin
-                ? projectService.listProjects(filter, 1, 20)
-                : projectService.getMyProjects(user.getId(), 1, 20);
-        if (result.isSuccess()) {
-            request.setAttribute("projects", result.getData());
+        Result result = projectService.listProjectsForAdmin(filter,
+                parsePageParam(request, "page", 1), parsePageParam(request, "pageSize", 20), user);
+        if (!result.isSuccess()) {
+            response.sendError(result.getCode());
+            return;
         }
+        setProjectPageAttributes(request, result);
         request.setAttribute("keyword", keyword);
         request.setAttribute("status", status);
         request.setAttribute("year", yearStr);
 
-        // 根据用户角色决定转发到哪个页面
-        if (isAdmin) {
-            request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
-        } else {
-            request.getRequestDispatcher("/jsp/member/project/list.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
+    }
+
+    private void browseProjects(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        ProjectFilterDTO filter = new ProjectFilterDTO();
+        filter.setKeyword(request.getParameter("keyword"));
+        Result result = projectService.browseProjects(filter,
+                parsePageParam(request, "page", 1), parsePageParam(request, "pageSize", 20));
+        if (!result.isSuccess()) {
+            response.sendError(result.getCode());
+            return;
         }
+        setProjectPageAttributes(request, result);
+        request.setAttribute("browseMode", true);
+        request.setAttribute("keyword", filter.getKeyword());
+        request.getRequestDispatcher("/WEB-INF/jsp/member/project/list.jsp").forward(request, response);
     }
 
     private void getProjectDetail(HttpServletRequest request, HttpServletResponse response, User user)
@@ -198,7 +224,7 @@ public class ProjectServlet extends HttpServlet {
             if (user != null && "ADMIN".equals(user.getRole())) {
                 request.getRequestDispatcher("/jsp/admin/project/detail.jsp").forward(request, response);
             } else {
-                request.getRequestDispatcher("/jsp/member/project/detail.jsp").forward(request, response);
+                request.getRequestDispatcher("/WEB-INF/jsp/member/project/detail.jsp").forward(request, response);
             }
         } catch (NumberFormatException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -212,11 +238,33 @@ public class ProjectServlet extends HttpServlet {
             return;
         }
 
-        Result result = projectService.getMyProjects(user.getId(), 1, 20);
-        if (result.isSuccess()) {
-            request.setAttribute("projects", result.getData());
+        Result result = projectService.getMyProjects(user.getId(),
+                parsePageParam(request, "page", 1), parsePageParam(request, "pageSize", 20));
+        if (!result.isSuccess()) {
+            response.sendError(result.getCode());
+            return;
         }
-        request.getRequestDispatcher("/jsp/member/project/list.jsp").forward(request, response);
+        setProjectPageAttributes(request, result);
+        request.getRequestDispatcher("/WEB-INF/jsp/member/project/list.jsp").forward(request, response);
+    }
+
+    private int parsePageParam(HttpServletRequest request, String name, int defaultValue) {
+        try {
+            String value = request.getParameter(name);
+            return value == null ? defaultValue : Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setProjectPageAttributes(HttpServletRequest request, Result result) {
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        request.setAttribute("projects", data.get("list"));
+        request.setAttribute("currentPage", data.get("page"));
+        request.setAttribute("totalPages", data.get("totalPages"));
+        request.setAttribute("totalCount", data.get("total"));
+        request.setAttribute("pageSize", data.get("pageSize"));
     }
 
     private void editProject(HttpServletRequest request, HttpServletResponse response, User user)
@@ -230,9 +278,12 @@ public class ProjectServlet extends HttpServlet {
         try {
             Integer id = Integer.parseInt(idStr);
             Result result = projectService.getProjectDetail(id, user != null ? user.getId() : null);
-            if (result.isSuccess()) {
-                request.setAttribute("project", result.getData());
+            if (!result.isSuccess()) {
+                response.sendError(result.getCode());
+                return;
             }
+            java.util.Map<String, Object> data = (java.util.Map<String, Object>) result.getData();
+            request.setAttribute("project", data.get("project"));
             request.getRequestDispatcher("/jsp/admin/project/edit.jsp").forward(request, response);
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/project?action=list");
@@ -245,8 +296,30 @@ public class ProjectServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
-        // TODO: 调用 projectService.getMyApplications(user.getId()) 获取申请记录
-        request.getRequestDispatcher("/jsp/member/project/myApplications.jsp").forward(request, response);
+
+        int page = 1;
+        String pageParam = request.getParameter("page");
+        if (pageParam != null) {
+            try {
+                page = Integer.parseInt(pageParam);
+            } catch (NumberFormatException ignored) {
+                page = 1;
+            }
+        }
+
+        Result result = projectService.getMyApplications(user.getId(), page, 20);
+        if (!result.isSuccess()) {
+            response.sendError(result.getCode());
+            return;
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        request.setAttribute("applications", data.get("list"));
+        request.setAttribute("currentPage", data.get("page"));
+        request.setAttribute("totalPages", data.get("totalPages"));
+        request.setAttribute("totalCount", data.get("total"));
+        request.getRequestDispatcher("/WEB-INF/jsp/member/project/myApplications.jsp").forward(request, response);
     }
 
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response, User user)
@@ -255,7 +328,7 @@ public class ProjectServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
-        request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/jsp/member/project/create.jsp").forward(request, response);
     }
 
     private void createProject(HttpServletRequest request, HttpServletResponse response, User user)
@@ -263,13 +336,13 @@ public class ProjectServlet extends HttpServlet {
         String name = request.getParameter("name");
         if (name == null || name.trim().isEmpty()) {
             request.setAttribute("error", "项目名称不能为空");
-            request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/jsp/member/project/create.jsp").forward(request, response);
             return;
         }
 
         if (name.length() > 100) {
             request.setAttribute("error", "项目名称不能超过100个字符");
-            request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/jsp/member/project/create.jsp").forward(request, response);
             return;
         }
 
@@ -280,7 +353,7 @@ public class ProjectServlet extends HttpServlet {
             Result result = projectService.createProject(dto, user.getId());
             if (result.isSuccess()) {
                 // 创建成功后跳转到"我的项目"页面
-                response.sendRedirect(request.getContextPath() + "/project?action=myApplications");
+                response.sendRedirect(request.getContextPath() + "/project?action=myProjects");
                 return;
             } else {
                 request.setAttribute("error", result.getMessage());
@@ -288,7 +361,7 @@ public class ProjectServlet extends HttpServlet {
         } catch (Exception e) {
             request.setAttribute("error", "创建失败: " + e.getMessage());
         }
-        request.getRequestDispatcher("/jsp/member/project/create.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/jsp/member/project/create.jsp").forward(request, response);
     }
 
     private void updateProject(HttpServletRequest request, HttpServletResponse response, User user)

@@ -55,7 +55,7 @@ public class MemberProblemServlet extends HttpServlet {
         User user = (User) session.getAttribute("user");
         List<ProblemReport> reports = problemReportDAO.findByUserId(user.getId());
         request.setAttribute("reports", reports);
-        request.getRequestDispatcher("/jsp/member/problem/list.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/jsp/member/problem/list.jsp").forward(request, response);
     }
 
     private void submitReport(HttpServletRequest request, HttpServletResponse response)

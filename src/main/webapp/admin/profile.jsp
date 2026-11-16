@@ -208,7 +208,7 @@
                             </a>
                         </div>
                         <div class="col-6">
-                            <a href="${pageContext.request.contextPath}/project/list" class="quick-link-card" style="background: var(--bg-white); border-radius: var(--radius-comfortable); padding: 16px; box-shadow: var(--shadow-standard); border: 1px solid var(--border-light); transition: all 0.3s ease; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                            <a href="${pageContext.request.contextPath}/project?action=manage" class="quick-link-card" style="background: var(--bg-white); border-radius: var(--radius-comfortable); padding: 16px; box-shadow: var(--shadow-standard); border: 1px solid var(--border-light); transition: all 0.3s ease; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 12px;">
                                 <div class="quick-link-icon" style="width: 48px; height: 48px; border-radius: var(--radius-standard); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: linear-gradient(135deg, #10b981, #34d399); color: white;">
                                     <i class="bi bi-kanban"></i>
                                 </div>

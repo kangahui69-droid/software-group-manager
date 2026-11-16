@@ -2,6 +2,7 @@ package service;
 
 import dao.OperationLogDAO;
 import model.OperationLog;
+import model.LogTimeRange;
 import util.Result;
 
 import java.util.HashMap;
@@ -35,7 +36,7 @@ public class LogService {
     /**
      * 日志列表(分页)
      *
-     * @param filter 筛选条件，支持 keyword/operation/module/dateRange，可为 null
+     * @param filter 筛选条件，支持 keyword/operation/module/startTime/endTime；dateRange 兼容旧客户端
      * @param page 页码(从1开始)
      * @param pageSize 每页条数
      * @return 分页结果，包含 list/total/page/pageSize/totalPages
@@ -51,6 +52,8 @@ public class LogService {
             Map<String, Object> paginationData = buildPaginationData(
                 queryResult.logs, queryResult.total, page, pageSize);
             return Result.ok(paginationData);
+        } catch (IllegalArgumentException e) {
+            return Result.error(400, "日期范围参数无效");
         } catch (Exception e) {
             return serverError();
         }
@@ -90,10 +93,22 @@ public class LogService {
         }
 
         FilterTerms terms = extractFilterTerms(filter);
-        List<OperationLog> logs = operationLogDAO.findByConditions(
-            terms.keyword, terms.operation, terms.module, terms.dateRange, page, pageSize);
-        int total = operationLogDAO.countByConditions(
-            terms.keyword, terms.operation, terms.module, terms.dateRange);
+        List<OperationLog> logs;
+        int total;
+        if (terms.explicitRange) {
+            LogTimeRange range = LogTimeRange.explicit(terms.startTime, terms.endTime);
+            logs = operationLogDAO.findByTimeRange(terms.keyword, terms.operation, terms.module,
+                range.getStart(), range.getEnd(), page, pageSize);
+            total = operationLogDAO.countByTimeRange(terms.keyword, terms.operation, terms.module,
+                range.getStart(), range.getEnd());
+        } else {
+            // Keep dateRange for existing API clients; both DAOs now interpret it alike.
+            LogTimeRange.legacy(terms.dateRange);
+            logs = operationLogDAO.findByConditions(
+                terms.keyword, terms.operation, terms.module, terms.dateRange, page, pageSize);
+            total = operationLogDAO.countByConditions(
+                terms.keyword, terms.operation, terms.module, terms.dateRange);
+        }
 
         return new QueryResult(ensureListNotNull(logs), normalizeTotal(total));
     }
@@ -104,7 +119,14 @@ public class LogService {
         terms.operation = getFilterValueAsString(filter, "operation");
         terms.module = getFilterValueAsString(filter, "module");
         terms.dateRange = getFilterValueAsString(filter, "dateRange");
+        terms.startTime = getFilterValueAsString(filter, "startTime");
+        terms.endTime = getFilterValueAsString(filter, "endTime");
+        terms.explicitRange = hasValue(terms.startTime) || hasValue(terms.endTime);
         return terms;
+    }
+
+    private boolean hasValue(String value) {
+        return value != null && !value.isBlank();
     }
 
     private OperationLog findLogById(List<OperationLog> logs, Integer targetId) {
@@ -196,5 +218,8 @@ public class LogService {
         String operation;
         String module;
         String dateRange;
+        String startTime;
+        String endTime;
+        boolean explicitRange;
     }
 }

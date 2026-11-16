@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<jsp:useBean id="projectStatuses" class="model.ProjectStatusCodes" scope="page" />
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="编辑项目" />
 </jsp:include>
@@ -97,17 +98,23 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label-design required">项目状态</label>
-                            <select class="input-design" name="status" required>
-                                <option value="PENDING" ${project.status == 'PENDING' ? 'selected' : ''}>待审批</option>
-                                <option value="APPROVED" ${project.status == 'APPROVED' ? 'selected' : ''}>已批准</option>
-                                <option value="REJECTED" ${project.status == 'REJECTED' ? 'selected' : ''}>已拒绝</option>
-                            </select>
+                            <label class="form-label-design">项目状态</label>
+                            <div class="input-design" aria-label="当前项目状态">
+                                <c:choose>
+                                    <c:when test="${project.status == projectStatuses.pending}">待审批</c:when>
+                                    <c:when test="${project.status == projectStatuses.approved}">已批准</c:when>
+                                    <c:when test="${project.status == projectStatuses.inProgress}">进行中</c:when>
+                                    <c:when test="${project.status == projectStatuses.completed}">已完成</c:when>
+                                    <c:when test="${project.status == projectStatuses.canceled}">已取消</c:when>
+                                    <c:when test="${project.status == projectStatuses.rejected}">已拒绝</c:when>
+                                    <c:otherwise>未知状态</c:otherwise>
+                                </c:choose>
+                            </div>
                         </div>
                     </div>
                     <div class="card-footer-design text-end">
                         <div class="d-flex">
-                            <a href="${pageContext.request.contextPath}/project?action=list" class="btn-outline-brand">取消</a>
+                            <a href="${pageContext.request.contextPath}/project?action=manage" class="btn-outline-brand">取消</a>
                             <button type="submit" class="btn-brand ms-auto">保存更改</button>
                         </div>
                     </div>

@@ -17,8 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -55,9 +55,9 @@ class ProjectControllerTest {
     @Test
     void listProjects_shouldReturnProjectList() throws Exception {
         when(projectService.listProjects(any(ProjectFilterDTO.class), anyInt(), anyInt(), isNull()))
-            .thenReturn(Result.ok(Arrays.asList(
-                Map.of("id", 1, "name", "测试项目", "status", "ongoing")
-            )));
+            .thenReturn(Result.ok(Map.of("list", List.of(
+                    Map.of("id", 1, "name", "测试项目", "status", "approved")),
+                    "total", 1, "page", 1, "pageSize", 20, "totalPages", 1)));
 
         mockMvc.perform(get("/api/projects")
                 .param("page", "1")
@@ -65,7 +65,8 @@ class ProjectControllerTest {
                 .header("X-User-Id", 1))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(0))
-            .andExpect(jsonPath("$.data[0].name").value("测试项目"));
+            .andExpect(jsonPath("$.data.list[0].name").value("测试项目"))
+            .andExpect(jsonPath("$.data.total").value(1));
     }
 
     @Test
@@ -83,9 +84,8 @@ class ProjectControllerTest {
     @Test
     void getMyProjects_shouldReturnProjects() throws Exception {
         when(projectService.getMyProjects(any(), anyInt(), anyInt()))
-            .thenReturn(Result.ok(Arrays.asList(
-                Map.of("id", 1, "name", "我的项目")
-            )));
+            .thenReturn(Result.ok(Map.of("list", List.of(Map.of("id", 1, "name", "我的项目")),
+                    "total", 1, "page", 1, "pageSize", 20, "totalPages", 1)));
 
         mockMvc.perform(get("/api/projects/my")
                 .param("userId", "1")
@@ -93,7 +93,27 @@ class ProjectControllerTest {
                 .param("pageSize", "20"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(0))
-            .andExpect(jsonPath("$.data[0].name").value("我的项目"));
+            .andExpect(jsonPath("$.data.list[0].name").value("我的项目"))
+            .andExpect(jsonPath("$.data.total").value(1));
+    }
+
+    @Test
+    void createdByMe_shouldUseOwnerOnlyServiceAndAuthenticatedUser() throws Exception {
+        when(projectService.getCreatedByMeProjects(eq(1), eq(2), eq(3)))
+            .thenReturn(Result.ok(Map.of("list", List.of(Map.of("id", 8)),
+                    "total", 4, "page", 2, "pageSize", 3, "totalPages", 2)));
+
+        mockMvc.perform(get("/api/projects/created-by-me")
+                .param("userId", "999")
+                .param("page", "2")
+                .param("pageSize", "3"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.list[0].id").value(8))
+            .andExpect(jsonPath("$.data.total").value(4));
+
+        org.mockito.Mockito.verify(projectService).getCreatedByMeProjects(1, 2, 3);
+        org.mockito.Mockito.verify(projectService, org.mockito.Mockito.never())
+                .getMyProjects(any(), anyInt(), anyInt());
     }
 
     @Test

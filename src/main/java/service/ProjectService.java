@@ -21,9 +21,10 @@ import java.sql.Connection;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ProjectService {
 
@@ -34,12 +35,12 @@ public class ProjectService {
     private static final int CODE_INTERNAL_ERROR = 500;
 
     // ==================== 项目状态 ====================
-    private static final String STATUS_PENDING = "pending";
-    private static final String STATUS_APPROVED = "approved";
-    private static final String STATUS_IN_PROGRESS = "in_progress";
-    private static final String STATUS_COMPLETED = "completed";
-    private static final String STATUS_CANCELED = "canceled";
-    private static final String STATUS_REJECTED = "rejected";
+    private static final String STATUS_PENDING = Project.STATUS_PENDING;
+    private static final String STATUS_APPROVED = Project.STATUS_APPROVED;
+    private static final String STATUS_IN_PROGRESS = Project.STATUS_IN_PROGRESS;
+    private static final String STATUS_COMPLETED = Project.STATUS_COMPLETED;
+    private static final String STATUS_CANCELED = Project.STATUS_CANCELED;
+    private static final String STATUS_REJECTED = Project.STATUS_REJECTED;
 
     // ==================== 申请状态 ====================
     private static final String APP_STATUS_PENDING = "PENDING";
@@ -760,23 +761,55 @@ public class ProjectService {
 
     // ==================== listProjects ====================
 
-    public Result listProjects(ProjectFilterDTO filter, int page, int pageSize) {
-        normalizePageParams(page, pageSize);
+    public Result listProjectsForAdmin(ProjectFilterDTO filter, int page, int pageSize, User user) {
+        if (user == null || !ROLE_ADMIN.equals(user.getRole())) {
+            return forbidden("无权管理项目");
+        }
+        return listProjects(filter, page, pageSize);
+    }
 
+    public Result browseProjects(ProjectFilterDTO filter, int page, int pageSize) {
+        ProjectFilterDTO publicFilter = new ProjectFilterDTO();
+        if (filter != null) {
+            publicFilter.setKeyword(filter.getKeyword());
+            publicFilter.setCategory(filter.getCategory());
+            publicFilter.setYear(filter.getYear());
+        }
+        publicFilter.setStatus(STATUS_APPROVED);
+        return listProjects(publicFilter, page, pageSize);
+    }
+
+    public Result listProjects(ProjectFilterDTO filter, int page, int pageSize) {
+        int[] normalized = normalizePageParams(page, pageSize);
         String keyword = filter != null ? filter.getKeyword() : null;
         String status = filter != null ? filter.getStatus() : null;
         String category = filter != null ? filter.getCategory() : null;
         Integer year = filter != null ? filter.getYear() : null;
-
-        List<Project> projects = projectDAO.findByConditions(keyword, status, year);
-
-        if (category != null && !category.isEmpty() && projects != null) {
-            projects = projects.stream()
-                    .filter(p -> category.equals(p.getCategory()))
-                    .collect(Collectors.toList());
+        try {
+            int total = projectDAO.countByConditions(keyword, status, category, year);
+            int currentPage = clampPage(normalized[0], normalized[1], total);
+            List<Project> projects = total == 0 ? Collections.emptyList()
+                    : projectDAO.findPageByConditions(keyword, status, category, year,
+                    normalized[1], (currentPage - 1) * normalized[1]);
+            return Result.ok(projectPage(projects, total, currentPage, normalized[1]));
+        } catch (RuntimeException e) {
+            return serverError("查询项目", e);
         }
+    }
 
-        return Result.ok(projects != null ? projects : Collections.emptyList());
+    private int clampPage(int page, int pageSize, int total) {
+        int pages = total == 0 ? 0 : (total - 1) / pageSize + 1;
+        return pages == 0 ? 1 : Math.min(page, pages);
+    }
+
+    private Map<String, Object> projectPage(List<Project> projects, int total, int page, int pageSize) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("list", projects);
+        data.put("total", total);
+        data.put("page", page);
+        data.put("pageSize", pageSize);
+        data.put("totalPages", total == 0 ? 0 : (total - 1) / pageSize + 1);
+        return data;
     }
 
     // ==================== getProjectDetail ====================
@@ -824,11 +857,61 @@ public class ProjectService {
     // ==================== getMyProjects ====================
 
     public Result getMyProjects(Integer userId, int page, int pageSize) {
-        if (userId == null) return badRequest("用户ID不能为空");
-        normalizePageParams(page, pageSize);
+        if (userId == null || userId <= 0) return badRequest("用户ID无效");
+        int[] normalized = normalizePageParams(page, pageSize);
+        try {
+            int total = projectDAO.countProjectsByUserId(userId);
+            int currentPage = clampPage(normalized[0], normalized[1], total);
+            List<Project> projects = total == 0 ? Collections.emptyList()
+                    : projectDAO.findPageByUserId(userId, normalized[1], (currentPage - 1) * normalized[1]);
+            return Result.ok(projectPage(projects, total, currentPage, normalized[1]));
+        } catch (RuntimeException e) {
+            return serverError("查询我的项目", e);
+        }
+    }
 
-        List<Project> list = projectDAO.findProjectsByUserId(userId);
-        return Result.ok(list != null ? list : Collections.emptyList());
+    public Result getCreatedByMeProjects(Integer userId, int page, int pageSize) {
+        if (userId == null || userId <= 0) return badRequest("用户ID无效");
+        int[] normalized = normalizePageParams(page, pageSize);
+        try {
+            int total = projectDAO.countProjectsByLeaderId(userId);
+            int currentPage = clampPage(normalized[0], normalized[1], total);
+            List<Project> projects = total == 0 ? Collections.emptyList()
+                    : projectDAO.findPageByLeaderId(userId, normalized[1], (currentPage - 1) * normalized[1]);
+            return Result.ok(projectPage(projects, total, currentPage, normalized[1]));
+        } catch (RuntimeException e) {
+            return serverError("查询我负责的项目", e);
+        }
+    }
+
+    public Result getMyApplications(Integer userId) {
+        return getMyApplications(userId, 1, DEFAULT_PAGE_SIZE);
+    }
+
+    public Result getMyApplications(Integer userId, int page, int pageSize) {
+        if (userId == null || userId <= 0) return badRequest("用户ID无效");
+
+        int[] params = normalizePageParams(page, pageSize);
+        int size = params[1];
+        try {
+            int total = projectDAO.countMyApplications(userId);
+            int totalPages = total == 0 ? 0 : (total - 1) / size + 1;
+            int currentPage = totalPages == 0 ? 1 : Math.min(params[0], totalPages);
+            int offset = (currentPage - 1) * size;
+            List<ProjectMemberApplication> list = total == 0
+                    ? Collections.emptyList()
+                    : projectDAO.getMyApplications(userId, size, offset);
+
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("list", list);
+            data.put("total", total);
+            data.put("page", currentPage);
+            data.put("pageSize", size);
+            data.put("totalPages", totalPages);
+            return Result.ok(data);
+        } catch (RuntimeException e) {
+            return serverError("查询申请记录", e);
+        }
     }
 
     // ==================== 便捷方法（测试用）====================

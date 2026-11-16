@@ -338,7 +338,10 @@ public class ProjectApiServlet extends BaseApiServlet {
         filter.setStatus(req.getParameter("status"));
         filter.setKeyword(req.getParameter("keyword"));
 
-        writeJson(resp, projectService.listProjects(filter, page, pageSize));
+        Result result = "ADMIN".equals(currentUser.getRole())
+                ? projectService.listProjectsForAdmin(filter, page, pageSize, currentUser)
+                : projectService.browseProjects(filter, page, pageSize);
+        writeJson(resp, result);
     }
 
     private void handleGetProjectDetail(HttpServletResponse resp, int projectId, User currentUser) throws IOException {
@@ -490,12 +493,14 @@ public class ProjectApiServlet extends BaseApiServlet {
 
     private void handleMyProjects(HttpServletRequest req, HttpServletResponse resp, User currentUser) throws IOException {
         int page = parseIntParam(req.getParameter("page"), 1);
-        writeJson(resp, projectService.getMyProjects(currentUser.getId(), page, DEFAULT_PAGE_SIZE));
+        int pageSize = parseIntParam(req.getParameter("pageSize"), DEFAULT_PAGE_SIZE);
+        writeJson(resp, projectService.getMyProjects(currentUser.getId(), page, pageSize));
     }
 
     private void handleCreatedByMeProjects(HttpServletRequest req, HttpServletResponse resp, User currentUser) throws IOException {
         int page = parseIntParam(req.getParameter("page"), 1);
-        writeJson(resp, projectService.getMyProjects(currentUser.getId(), page, DEFAULT_PAGE_SIZE));
+        int pageSize = parseIntParam(req.getParameter("pageSize"), DEFAULT_PAGE_SIZE);
+        writeJson(resp, projectService.getCreatedByMeProjects(currentUser.getId(), page, pageSize));
     }
 
     // ==================== 参数提取辅助 ====================

@@ -5,8 +5,6 @@
 # 使用方式：./scripts/verify-infrastructure.sh
 # ============================================================
 
-set -e
-
 echo "========================================"
 echo "阶段三基础设施验证脚本"
 echo "========================================"
@@ -62,6 +60,32 @@ wait_for_service() {
     done
 
     echo -e "${RED}✗ 超时${NC}"
+    FAILED=$((FAILED + 1))
+    return 1
+}
+
+# 等待 TCP 端口就绪（MySQL/Redis 等非 HTTP 服务）
+wait_for_tcp() {
+    local name=$1
+    local host=$2
+    local port=$3
+    local max_wait=${4:-60}
+    local wait_interval=${5:-5}
+
+    echo -n "等待 $name 启动 (TCP ${host}:${port}, 最多 ${max_wait}s) ... "
+
+    elapsed=0
+    while [ $elapsed -lt $max_wait ]; do
+        if timeout 2 bash -c "echo > /dev/tcp/${host}/${port}" 2>/dev/null; then
+            echo -e "${GREEN}✓ 已就绪${NC}"
+            return 0
+        fi
+        sleep $wait_interval
+        elapsed=$((elapsed + wait_interval))
+    done
+
+    echo -e "${RED}✗ 超时${NC}"
+    FAILED=$((FAILED + 1))
     return 1
 }
 
@@ -69,11 +93,11 @@ echo "========================================"
 echo "1. 等待基础服务就绪"
 echo "========================================"
 
-# 等待 MySQL
-wait_for_service "MySQL" "http://localhost:3307" 30
+# 等待 MySQL（MySQL 协议，非 HTTP -> TCP 探）
+wait_for_tcp "MySQL" "localhost" "3307" 30
 
-# 等待 Redis
-wait_for_service "Redis" "http://localhost:6379" 20
+# 等待 Redis（Redis 协议，非 HTTP -> TCP 探）
+wait_for_tcp "Redis" "localhost" "6379" 20
 
 # 等待 RabbitMQ
 wait_for_service "RabbitMQ" "http://localhost:15672" 30

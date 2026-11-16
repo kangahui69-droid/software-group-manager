@@ -46,6 +46,19 @@ public class ProblemReportDAOImpl implements ProblemReportDAO {
     }
 
     @Override
+    public int updateDetails(ProblemReport problem, Integer operatorId, boolean adminOverride) {
+        String sql = "UPDATE problem_report SET title=?, content=?, reporter_name=?, " +
+                "reporter_contact=?, updated_at=NOW() WHERE id=?" +
+                (adminOverride ? "" : " AND user_id=?");
+        if (adminOverride) {
+            return jdbcTemplate.update(sql, problem.getTitle(), problem.getContent(),
+                    problem.getReporterName(), problem.getReporterContact(), problem.getId());
+        }
+        return jdbcTemplate.update(sql, problem.getTitle(), problem.getContent(),
+                problem.getReporterName(), problem.getReporterContact(), problem.getId(), operatorId);
+    }
+
+    @Override
     public boolean updateCategoryAndStatus(Integer id, String category, String status, String comment, Integer operatorId) {
         String sql = "UPDATE problem_report SET category=?, status=?, admin_comment=?, updated_at=NOW() WHERE id=?";
         return jdbcTemplate.update(sql, category, status, comment, id) > 0;

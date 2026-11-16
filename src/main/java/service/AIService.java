@@ -1002,6 +1002,11 @@ public class AIService {
             return result;
         }
 
+        if ("view_my_projects".equals(actionType)) {
+            recordQuestionStatistics("查看我的项目");
+            return executeViewMyProjects(params, user);
+        }
+
         if (ROLE_ADMIN.equals(userRole)) {
             return executeAdminAction(actionType, params, user);
         }
@@ -1023,9 +1028,6 @@ public class AIService {
                 case "view_my_activities":
                     recordQuestionStatistics("查看我的活动");
                     return executeViewMyActivities(params, user);
-                case "view_my_projects":
-                    recordQuestionStatistics("查看我的项目");
-                    return executeViewMyProjects(params, user);
                 case "view_my_groups":
                     recordQuestionStatistics("查看我的群组");
                     return executeViewMyGroups(params, user);
@@ -2337,7 +2339,7 @@ public class AIService {
         result.put("success", true);
         result.put("type", "redirect");
         result.put("message", "正在跳转到我的项目页面...");
-        result.put("redirectUrl", "/project?action=myApplications");
+        result.put("redirectUrl", "/project?action=myProjects");
         return result;
     }
 
