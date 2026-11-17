@@ -47,7 +47,7 @@ public class DBUtil {
 
         config.setJdbcUrl(Config.getProperty("db.url",
             "jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"));
-        config.setUsername(Config.getProperty("db.username", "root"));
+        config.setUsername(Config.getProperty("db.username", "sg_app_svc"));
         config.setPassword(Config.getProperty("db.password", ""));
         config.setDriverClassName(Config.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
 

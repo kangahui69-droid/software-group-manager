@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>software.group</groupId>
+    <artifactId>software-group-db-migrations</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <!-- Run this module separately from the application reactor. Credentials come from FLYWAY_* variables. -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>11.19.1</version>
+                <configuration>
+                    <locations>
+                        <location>filesystem:${project.basedir}/sql</location>
+                    </locations>
+                    <baselineOnMigrate>false</baselineOnMigrate>
+                    <cleanDisabled>true</cleanDisabled>
+                    <validateMigrationNaming>true</validateMigrationNaming>
+                    <validateOnMigrate>true</validateOnMigrate>
+                    <connectRetries>3</connectRetries>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-mysql</artifactId>
+                        <version>11.19.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
+                        <version>8.0.33</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>

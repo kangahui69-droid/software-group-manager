@@ -40,9 +40,6 @@ services:
     volumes:
       # MySQL 数据目录（数据库文件存放位置）
       - mysql_data:/var/lib/mysql
-      # 初始化 SQL 脚本（容器首次启动时自动执行）
-      # :ro 表示只读权限
-      - ./sql:/docker-entrypoint-initdb.d:ro
 
     # Docker 网络（让容器之间可以互相通信）
     networks:
@@ -55,6 +52,53 @@ services:
       interval: 10s      # 每 10 秒检查一次
       timeout: 5s       # 5 秒超时
       retries: 5        # 连续失败 5 次认为不健康
+
+  # Flyway owns business schema creation and upgrades. An existing database needs
+  # an explicit, reviewed baseline before this service can succeed.
+  db-migrate:
+    image: maven:3.9-eclipse-temurin-17
+    restart: "no"
+    working_dir: /migrations
+    environment:
+      FLYWAY_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-software_group}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      FLYWAY_USER: root
+      FLYWAY_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+    volumes:
+      - ./db-migrations:/migrations:ro
+      - flyway_maven_cache:/root/.m2
+    command: ["mvn", "-B", "-ntp", "-f", "/migrations/pom.xml", "flyway:migrate"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - software-group-net
+
+  # Root is used here only to provision runtime users after Flyway has created tables.
+  db-users-init:
+    image: mysql:8
+    restart: "no"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB03_BUSINESS_DB: ${MYSQL_DATABASE:-software_group}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}
+      NACOS_DB_PASSWORD: ${NACOS_DB_PASSWORD:?NACOS_DB_PASSWORD is required}
+      FILE_DB_PASSWORD: ${FILE_DB_PASSWORD:?FILE_DB_PASSWORD is required}
+      USER_DB_PASSWORD: ${USER_DB_PASSWORD:?USER_DB_PASSWORD is required}
+      ACTIVITY_DB_PASSWORD: ${ACTIVITY_DB_PASSWORD:?ACTIVITY_DB_PASSWORD is required}
+      PROJECT_AWARD_DB_PASSWORD: ${PROJECT_AWARD_DB_PASSWORD:?PROJECT_AWARD_DB_PASSWORD is required}
+      HR_DB_PASSWORD: ${HR_DB_PASSWORD:?HR_DB_PASSWORD is required}
+      MONITOR_DB_PASSWORD: ${MONITOR_DB_PASSWORD:?MONITOR_DB_PASSWORD is required}
+      CONTENT_DB_PASSWORD: ${CONTENT_DB_PASSWORD:?CONTENT_DB_PASSWORD is required}
+      AI_DB_PASSWORD: ${AI_DB_PASSWORD:?AI_DB_PASSWORD is required}
+    volumes:
+      - ./scripts/provision-db-users.sh:/provision/provision-db-users.sh:ro
+      - ./migrations/20261117_db03_runtime_grants.sql:/provision/runtime-grants.sql:ro
+    entrypoint: ["sh", "/provision/provision-db-users.sh"]
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - software-group-net
 
 
   # ========== Redis 缓存服务（阶段二中间件引入）==========
@@ -156,10 +200,12 @@ services:
       MYSQL_SERVICE_HOST: mysql
       MYSQL_SERVICE_PORT: 3306
       MYSQL_SERVICE_DB_NAME: nacos_config
-      MYSQL_SERVICE_USER: root
-      MYSQL_SERVICE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_SERVICE_USER: sg_nacos_svc
+      MYSQL_SERVICE_PASSWORD: ${NACOS_DB_PASSWORD:?NACOS_DB_PASSWORD is required}
       MYSQL_SERVICE_DB_PARAM: "characterEncoding=utf8&connectTimeout=3000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
     ports:
@@ -244,8 +290,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_file_svc
+      DB_PASSWORD: ${FILE_DB_PASSWORD:?FILE_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -264,6 +310,10 @@ services:
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -296,8 +346,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_user_svc
+      DB_PASSWORD: ${USER_DB_PASSWORD:?USER_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -315,6 +365,10 @@ services:
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -345,8 +399,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_activity_svc
+      DB_PASSWORD: ${ACTIVITY_DB_PASSWORD:?ACTIVITY_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -360,6 +414,10 @@ services:
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -392,8 +450,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_project_award_svc
+      DB_PASSWORD: ${PROJECT_AWARD_DB_PASSWORD:?PROJECT_AWARD_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -404,6 +462,10 @@ services:
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -436,8 +498,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_hr_svc
+      DB_PASSWORD: ${HR_DB_PASSWORD:?HR_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -449,6 +511,10 @@ services:
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -481,8 +547,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_monitor_svc
+      DB_PASSWORD: ${MONITOR_DB_PASSWORD:?MONITOR_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -494,6 +560,10 @@ services:
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -544,8 +614,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_content_svc
+      DB_PASSWORD: ${CONTENT_DB_PASSWORD:?CONTENT_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -559,6 +629,10 @@ services:
       - app_data:/usr/local/tomcat/webapps/localstorage
     depends_on:
       content-storage-init:
+        condition: service_completed_successfully
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
         condition: service_completed_successfully
       mysql:
         condition: service_healthy
@@ -592,8 +666,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: software_group
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_ai_svc
+      DB_PASSWORD: ${AI_DB_PASSWORD:?AI_DB_PASSWORD is required}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -614,6 +688,10 @@ services:
       NACOS_PORT: 8848
       NACOS_NAMESPACE: public
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -648,6 +726,10 @@ services:
 
     # 启动依赖：确保 MySQL、Redis 和 RabbitMQ 健康检查通过后再启动 App
     depends_on:
+      db-users-init:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -661,12 +743,12 @@ services:
       # 仅信任同一 Compose 网络中的 Nginx 服务地址；直连 8080 忽略转发头
       AUDIT_TRUSTED_PROXY_HOSTS: nginx
       APP_ENV: production
-      # 数据库（用户名 root，密码与 mysql 服务的 MYSQL_ROOT_PASSWORD 同源）
+      # 旧 WAR 使用独立的业务数据账号
       DB_HOST: mysql
       DB_PORT: "3306"
       DB_NAME: ${MYSQL_DATABASE:-software_group}
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      DB_USER: sg_app_svc
+      DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}
       # 连接池 / 会话 / 加密 / 上传目录
       HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-10}
       HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-5}
@@ -764,6 +846,7 @@ networks:
 # - Docker 自动处理权限问题
 # - 适合 Windows/Linux/macOS 跨平台
 volumes:
+  flyway_maven_cache:
   mysql_data:
   redis_data:
   rabbitmq_data:

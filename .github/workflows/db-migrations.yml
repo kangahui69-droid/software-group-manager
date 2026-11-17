@@ -1,0 +1,102 @@
+name: Business database migrations
+
+on:
+  push:
+    paths:
+      - 'db-migrations/**'
+      - 'sql/software_group.sql'
+      - 'migrations/20261117_db03_runtime_grants.sql'
+      - 'scripts/provision-db-users.sh'
+      - 'docker-compose.yml'
+      - '.github/workflows/db-migrations.yml'
+  pull_request:
+    paths:
+      - 'db-migrations/**'
+      - 'sql/software_group.sql'
+      - 'migrations/20261117_db03_runtime_grants.sql'
+      - 'scripts/provision-db-users.sh'
+      - 'docker-compose.yml'
+      - '.github/workflows/db-migrations.yml'
+
+jobs:
+  mysql8:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0.42
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-password
+          MYSQL_DATABASE: software_group
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-password"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      FLYWAY_URL: jdbc:mysql://127.0.0.1:3306/software_group?useSSL=false&allowPublicKeyRetrieval=true
+      FLYWAY_USER: root
+      FLYWAY_PASSWORD: ci-only-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Keep V1 immutable and schema-only
+        run: |
+          cmp sql/software_group.sql db-migrations/sql/V1__baseline_schema.sql
+          if grep -Eiq '^[[:space:]]*(INSERT|REPLACE|UPDATE|DELETE|CREATE[[:space:]]+USER|GRANT)[[:space:]]' db-migrations/sql/V1__baseline_schema.sql; then
+            echo 'V1 contains data or account changes' >&2
+            exit 1
+          fi
+      - name: Fresh database migration and validation
+        run: |
+          mvn -B -ntp -f db-migrations/pom.xml flyway:migrate flyway:validate
+          db="${{ job.services.mysql.id }}"
+          test "$(docker exec "$db" mysql -uroot -pci-only-password -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='software_group' AND table_name <> 'flyway_schema_history'")" = 45
+          test "$(docker exec "$db" mysql -uroot -pci-only-password -N -e "SELECT COUNT(*) FROM software_group.flyway_schema_history WHERE success=1 AND version='1'")" = 1
+      - name: Existing database requires an explicit baseline
+        run: |
+          db="${{ job.services.mysql.id }}"
+          docker exec "$db" mysql -uroot -pci-only-password -e 'DROP DATABASE software_group; CREATE DATABASE software_group CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+          docker exec -i "$db" mysql -uroot -pci-only-password software_group < sql/software_group.sql
+          if mvn -B -ntp -f db-migrations/pom.xml -Dflyway.connectRetries=0 flyway:migrate; then
+            echo 'Unbaselined nonempty database was accepted' >&2
+            exit 1
+          fi
+          mvn -B -ntp -f db-migrations/pom.xml -Dflyway.baselineVersion=1 flyway:baseline
+          mvn -B -ntp -f db-migrations/pom.xml flyway:migrate flyway:validate
+      - name: Upgrade a baselined database with a later version
+        run: |
+          mkdir -p "$RUNNER_TEMP/flyway-upgrade"
+          cp db-migrations/sql/V1__baseline_schema.sql "$RUNNER_TEMP/flyway-upgrade/"
+          printf 'CREATE TABLE ci_upgrade_probe (id INT PRIMARY KEY);\n' > "$RUNNER_TEMP/flyway-upgrade/V2__ci_upgrade_probe.sql"
+          FLYWAY_LOCATIONS="filesystem:$RUNNER_TEMP/flyway-upgrade" mvn -B -ntp -f db-migrations/pom.xml flyway:migrate flyway:validate
+          db="${{ job.services.mysql.id }}"
+          test "$(docker exec "$db" mysql -uroot -pci-only-password -N -e "SELECT COUNT(*) FROM software_group.flyway_schema_history WHERE success=1 AND version='2'")" = 1
+          test "$(docker exec "$db" mysql -uroot -pci-only-password -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='software_group' AND table_name='ci_upgrade_probe'")" = 1
+      - name: Provision isolated runtime accounts and verify privilege boundaries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq default-mysql-client
+          export MYSQL_ROOT_PASSWORD=ci-only-password
+          export DB03_MYSQL_HOST=127.0.0.1 DB03_MYSQL_PORT=3306
+          export DB03_GRANTS_FILE="$PWD/migrations/20261117_db03_runtime_grants.sql"
+          for role in APP NACOS FILE USER ACTIVITY PROJECT_AWARD HR MONITOR CONTENT AI; do
+            export "${role}_DB_PASSWORD=$(openssl rand -hex 32)"
+          done
+          MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -h 127.0.0.1 -uroot -e 'CREATE DATABASE nacos_config; CREATE TABLE nacos_config.ci_probe (id INT PRIMARY KEY);'
+          bash scripts/provision-db-users.sh
+          MYSQL_PWD="$FILE_DB_PASSWORD" mysql -h 127.0.0.1 -u sg_file_svc software_group -e 'SELECT COUNT(*) FROM file_storage'
+          if MYSQL_PWD="$FILE_DB_PASSWORD" mysql -h 127.0.0.1 -u sg_file_svc software_group -e 'SELECT COUNT(*) FROM user'; then
+            echo 'file service can read user table' >&2; exit 1
+          fi
+          MYSQL_PWD="$APP_DB_PASSWORD" mysql -h 127.0.0.1 -u sg_app_svc software_group -e 'SELECT COUNT(*) FROM user'
+          if MYSQL_PWD="$APP_DB_PASSWORD" mysql -h 127.0.0.1 -u sg_app_svc software_group -e 'SELECT COUNT(*) FROM flyway_schema_history'; then
+            echo 'WAR can read Flyway history' >&2; exit 1
+          fi
+          MYSQL_PWD="$NACOS_DB_PASSWORD" mysql -h 127.0.0.1 -u sg_nacos_svc nacos_config -e 'SELECT COUNT(*) FROM ci_probe'
+          if MYSQL_PWD="$NACOS_DB_PASSWORD" mysql -h 127.0.0.1 -u sg_nacos_svc nacos_config -e 'SELECT COUNT(*) FROM software_group.user'; then
+            echo 'Nacos can read the business database' >&2; exit 1
+          fi

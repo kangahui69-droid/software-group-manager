@@ -34,7 +34,7 @@ public class Config {
     // ==================== 数据库默认值 ====================
     private static final String DEFAULT_DB_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static final String DEFAULT_DB_URL = "jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true";
-    private static final String DEFAULT_DB_USERNAME = "root";
+    private static final String DEFAULT_DB_USERNAME = "sg_app_svc";
     private static final String DEFAULT_DB_PASSWORD = "";
 
     // ==================== HikariCP连接池默认值 ====================
@@ -107,6 +107,7 @@ public class Config {
     public static String getProperty(String key, String defaultValue) {
         String envName;
         switch (key) {
+            case "db.username": envName = "DB_USER"; break;
             case "db.password": envName = "DB_PASSWORD"; break;
             case "redis.password": envName = "REDIS_PASSWORD"; break;
             case "rabbitmq.username": envName = "RABBITMQ_USER"; break;
@@ -119,6 +120,9 @@ public class Config {
         if (envName != null && "production".equalsIgnoreCase(System.getenv("APP_ENV"))) {
             String envValue = System.getenv(envName);
             if (envValue != null && !envValue.trim().isEmpty()) {
+                if ("db.username".equals(key) && "root".equalsIgnoreCase(envValue.trim())) {
+                    throw new IllegalStateException("DB_USER must not be root in production");
+                }
                 return envValue;
             }
             if (!key.startsWith("ai.")) {

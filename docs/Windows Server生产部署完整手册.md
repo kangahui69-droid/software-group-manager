@@ -1324,7 +1324,7 @@ MYSQL_SERVICE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       -e "SHOW TABLES IN nacos_config;"        # 期望 12 行
   ```
 
-  > ⚠️ **`nacos-mysql-schema.sql` 故意放在项目根目录，不要放进 `sql/`。** `sql/` 目录被 mysql 容器挂成 `docker-entrypoint-initdb.d`，放进去会在**首次初始化时**被自动执行，而那里默认库是 `software_group` → 会把 12 张 nacos 表错建到业务库里。
+  > ⚠️ **`nacos-mysql-schema.sql` 放在项目根目录，不要混入业务库初始化文件。** DB-02 起 Compose 不再将 `sql/software_group.sql` 挂载到 MySQL 初始化目录，业务库由独立 Flyway `db-migrate` 任务管理；Nacos 的 12 张表仍须按本节单独导入 `nacos_config`，不能导入 `software_group`。已有业务库首次使用新 Compose 前，先按《业务数据库Flyway迁移说明》核对结构并显式 baseline。
 
 **③ 重建 nacos 容器并验证**
 
@@ -1495,3 +1495,7 @@ curl -s -o /dev/null -w 'via-nginx=%{http_code}\n'  http://localhost/software-gr
 - **协作方式**：用户把 VM 终端输出存到桌面 `终端输出.txt` 再发我；**每次只给一到两条命令的输出**，所以诊断步骤要能独立判断。**粘贴易失真**（中文变 `⬢`、空格/分号丢、命令被改写），验证优先用纯 ASCII + 计数判定（详见记忆 `feedback_paste_mangling`）。
 - **详细证据与修复过程**：`docs/旧WAR_Tomcat10修复与部署方案.md`。
 - **微服务逐服务的命令与预期值**：`docs/阶段三_微服务拆分实施计划.md` §3.3–§3.8。
+
+### 19.7 DB-03 运行账号切换补充（2026-11-17）
+
+前文 19.3 中“9 个 `DB_USER` 全是 root”和 19.4 中 Nacos 使用 root 的记录是当时的部署历史。DB-03 的本地配置已改为 10 个独立运行账号，生产尚未切换。正式更新 VM 前，先完成 DB-02 生产库 baseline，再按 [数据库运行账号切换说明](数据库运行账号切换说明.md) 设置私有 `.env`、运行 `db-migrate` 与 `db-users-init` 并验收权限。不能再执行旧的 `migrations/20261114_db_user_grants.sql`。

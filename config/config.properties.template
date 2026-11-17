@@ -21,7 +21,7 @@
 #db.url=jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
 
 # 数据库用户名
-db.username=root
+db.username=sg_app_svc
 
 # 数据库密码
 # 警告：请将此文件添加到 .gitignore，不要将真实密码提交到Git！

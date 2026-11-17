@@ -335,24 +335,24 @@ class ConfigTest {
     }
 
     @FastTest
-    @DisplayName("getDbUsername: 未配置db.username时应返回root默认值")
-    void should_return_root_default_when_username_not_set() throws Exception {
+    @DisplayName("getDbUsername: 未配置db.username时应返回受限账号默认值")
+    void should_return_restricted_default_when_username_not_set() throws Exception {
         setTestProperty("db.username", null);
-        assertThat(Config.getDbUsername()).isEqualTo("root");
+        assertThat(Config.getDbUsername()).isEqualTo("sg_app_svc");
     }
 
     @FastTest
     @DisplayName("getDbUsername: db.username为空字符串时应返回默认值")
     void should_return_default_username_when_empty() throws Exception {
         setTestProperty("db.username", "");
-        assertThat(Config.getDbUsername()).isEqualTo("root");
+        assertThat(Config.getDbUsername()).isEqualTo("sg_app_svc");
     }
 
     @FastTest
     @DisplayName("getDbUsername: db.username为空白字符时应返回默认值")
     void should_return_default_username_when_whitespace() throws Exception {
         setTestProperty("db.username", "  ");
-        assertThat(Config.getDbUsername()).isEqualTo("root");
+        assertThat(Config.getDbUsername()).isEqualTo("sg_app_svc");
     }
 
     // ==================== getDbPassword 数据库密码测试 ====================

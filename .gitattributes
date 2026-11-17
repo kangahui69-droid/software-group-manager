@@ -1,0 +1,2 @@
+scripts/provision-db-users.sh text eol=lf
+migrations/20261117_db03_runtime_grants.sql text eol=lf
