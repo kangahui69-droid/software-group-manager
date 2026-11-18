@@ -825,6 +825,7 @@ class GroupServiceTest {
             when(activityGroupDAO.findById(GROUP_ID)).thenReturn(group);
             when(groupMemberDAO.isOwner(GROUP_ID, ADMIN_USER_ID)).thenReturn(true);
             when(groupMemberDAO.isMember(GROUP_ID, NONEXISTENT_USER_ID)).thenReturn(false);
+            when(userDAO.findById(NONEXISTENT_USER_ID)).thenReturn(null);
 
             Result result = groupService.removeMember(GROUP_ID, NONEXISTENT_USER_ID, ADMIN_USER_ID);
 

@@ -18,6 +18,7 @@ import support.FastTest;
 import util.Result;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.Date;
@@ -68,12 +69,16 @@ class ActivityServletTest {
     @Mock
     private HttpSession session;
 
+    @Mock
+    private RequestDispatcher dispatcher;
+
     private ActivityServletRefactored servlet;
 
     @BeforeEach
     void setUp() throws Exception {
         servlet = new ActivityServletRefactored();
         servlet.setActivityService(activityService);
+        when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
     }
 
     // ==================== 辅助方法 ====================
@@ -119,11 +124,11 @@ class ActivityServletTest {
             User user = createUser(1, "admin", ROLE_ADMIN);
             setupSession(user);
             when(request.getParameter("action")).thenReturn("list");
-            when(activityService.listActivities(any(), any(), any())).thenReturn(Result.ok(List.of()));
+            when(activityService.listActivities(any(), anyInt(), anyInt())).thenReturn(Result.ok(List.of()));
 
             servlet.doGet(request, response);
 
-            verify(activityService).listActivities(any(), any(), any());
+            verify(activityService).listActivities(any(), anyInt(), anyInt());
         }
 
         @FastTest
@@ -150,7 +155,8 @@ class ActivityServletTest {
 
             servlet.doGet(request, response);
 
-            verify(request).getRequestDispatcher("/jsp/admin/activity/edit.jsp").forward(request, response);
+            verify(request).getRequestDispatcher("/jsp/admin/activity/edit.jsp");
+            verify(dispatcher).forward(request, response);
         }
 
         @FastTest
@@ -195,11 +201,11 @@ class ActivityServletTest {
             when(request.getParameter("description")).thenReturn("活动描述");
             when(request.getParameter("location")).thenReturn("教学楼101");
             when(request.getParameter("activity_type")).thenReturn("LECTURE");
-            when(activityService.createActivity(any(), any())).thenReturn(Result.ok());
+            when(activityService.createActivity(anyMap(), anyInt())).thenReturn(Result.ok());
 
             servlet.doPost(request, response);
 
-            verify(activityService).createActivity(any(), any());
+            verify(activityService).createActivity(anyMap(), anyInt());
         }
 
         @FastTest
@@ -262,7 +268,7 @@ class ActivityServletTest {
                     createActivity(2, "活动2", STATUS_APPROVED)
             );
             when(request.getParameter("action")).thenReturn("list");
-            when(activityService.listActivities(any(), any(), any())).thenReturn(Result.ok(activities));
+            when(activityService.listActivities(any(), anyInt(), anyInt())).thenReturn(Result.ok(activities));
 
             servlet.doGet(request, response);
 
@@ -275,11 +281,11 @@ class ActivityServletTest {
             User user = createUser(1, "admin", ROLE_ADMIN);
             setupSession(user);
             when(request.getParameter("action")).thenReturn("list");
-            when(activityService.listActivities(any(), any(), any())).thenReturn(Result.ok(List.of()));
+            when(activityService.listActivities(any(), anyInt(), anyInt())).thenReturn(Result.ok(List.of()));
 
             servlet.doGet(request, response);
 
-            verify(request).setAttribute(eq("message"), anyString());
+            verify(request).setAttribute("activities", List.of());
         }
     }
 
@@ -296,11 +302,11 @@ class ActivityServletTest {
             setupSession(user);
             when(request.getParameter("action")).thenReturn("list");
             when(request.getParameter("page")).thenReturn("0");
-            when(activityService.listActivities(any(), eq(1), any())).thenReturn(Result.ok(List.of()));
+            when(activityService.listActivities(any(), eq(1), anyInt())).thenReturn(Result.ok(List.of()));
 
             servlet.doGet(request, response);
 
-            verify(activityService).listActivities(any(), eq(1), any());
+            verify(activityService).listActivities(any(), eq(1), anyInt());
         }
 
         @FastTest
@@ -310,11 +316,11 @@ class ActivityServletTest {
             setupSession(user);
             when(request.getParameter("action")).thenReturn("list");
             when(request.getParameter("page")).thenReturn("-1");
-            when(activityService.listActivities(any(), eq(1), any())).thenReturn(Result.ok(List.of()));
+            when(activityService.listActivities(any(), eq(1), anyInt())).thenReturn(Result.ok(List.of()));
 
             servlet.doGet(request, response);
 
-            verify(activityService).listActivities(any(), eq(1), any());
+            verify(activityService).listActivities(any(), eq(1), anyInt());
         }
 
         @FastTest
@@ -324,11 +330,11 @@ class ActivityServletTest {
             setupSession(user);
             when(request.getParameter("action")).thenReturn("list");
             when(request.getParameter("keyword")).thenReturn("a".repeat(500));
-            when(activityService.listActivities(any(), any(), any())).thenReturn(Result.ok(List.of()));
+            when(activityService.listActivities(any(), anyInt(), anyInt())).thenReturn(Result.ok(List.of()));
 
             servlet.doGet(request, response);
 
-            verify(activityService).listActivities(any(), any(), any());
+            verify(activityService).listActivities(any(), anyInt(), anyInt());
         }
     }
 
@@ -377,11 +383,11 @@ class ActivityServletTest {
             when(request.getParameter("description")).thenReturn("描述");
             when(request.getParameter("location")).thenReturn("地点");
             when(request.getParameter("activity_type")).thenReturn("LECTURE");
-            when(activityService.createActivity(any(), any())).thenReturn(Result.ok());
+            when(activityService.createActivity(anyMap(), anyInt())).thenReturn(Result.ok());
 
             servlet.doPost(request, response);
 
-            verify(activityService).createActivity(any(), any());
+            verify(activityService).createActivity(anyMap(), anyInt());
         }
     }
 

@@ -17,6 +17,7 @@ import support.FastTest;
 import util.Result;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.Date;
@@ -65,12 +66,16 @@ class AwardServletTest {
     @Mock
     private HttpSession session;
 
+    @Mock
+    private RequestDispatcher dispatcher;
+
     private AwardServletRefactored servlet;
 
     @BeforeEach
     void setUp() throws Exception {
         servlet = new AwardServletRefactored();
         servlet.setAwardService(awardService);
+        when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
     }
 
     // ==================== 辅助方法 ====================
@@ -166,6 +171,7 @@ class AwardServletTest {
         void should_allow_filter_without_login() throws Exception {
             setupNoSession();
             when(request.getParameter("action")).thenReturn("filter");
+            when(request.getParameter("status")).thenReturn(STATUS_APPROVED);
             when(awardService.filterAwards(any(), any())).thenReturn(Result.ok(List.of()));
 
             servlet.doGet(request, response);
@@ -188,11 +194,11 @@ class AwardServletTest {
             when(request.getParameter("action")).thenReturn("submit");
             when(request.getParameter("competition")).thenReturn("程序设计竞赛");
             when(request.getParameter("compTime")).thenReturn("2024-06-15");
-            when(awardService.submitAward(any(AwardDTO.class), any(), any())).thenReturn(Result.ok());
+            when(awardService.submitAward(anyMap(), anyInt(), isNull())).thenReturn(Result.ok());
 
             servlet.doPost(request, response);
 
-            verify(awardService).submitAward(any(AwardDTO.class), eq(1), any());
+            verify(awardService).submitAward(anyMap(), eq(1), isNull());
         }
 
         @FastTest
@@ -267,7 +273,7 @@ class AwardServletTest {
             when(request.getParameter("compTime")).thenReturn("2024-06-15");
             when(request.getParameter("awardLevel")).thenReturn("1");
             when(request.getParameter("awardType")).thenReturn("1");
-            when(awardService.submitAward(any(AwardDTO.class), eq(1), any())).thenReturn(Result.ok());
+            when(awardService.submitAward(anyMap(), eq(1), isNull())).thenReturn(Result.ok());
 
             servlet.doPost(request, response);
 
@@ -284,11 +290,12 @@ class AwardServletTest {
             when(request.getParameter("compTime")).thenReturn("2024-06-15");
             when(request.getParameter("awardLevel")).thenReturn("1");
             when(request.getParameter("awardType")).thenReturn("1");
-            when(awardService.submitAward(any(AwardDTO.class), eq(1), any())).thenReturn(Result.ok());
+            when(awardService.submitAward(anyMap(), eq(1), isNull())).thenReturn(Result.ok());
 
             servlet.doPost(request, response);
 
-            verify(request).getRequestDispatcher("/jsp/award/list.jsp").forward(request, response);
+            verify(request).getRequestDispatcher("/jsp/award/list.jsp");
+            verify(dispatcher).forward(request, response);
         }
     }
 
@@ -333,11 +340,11 @@ class AwardServletTest {
             when(request.getParameter("action")).thenReturn("submit");
             when(request.getParameter("competition")).thenReturn("a".repeat(500));
             when(request.getParameter("compTime")).thenReturn("2024-06-15");
-            when(awardService.submitAward(any(AwardDTO.class), eq(1), any())).thenReturn(Result.ok());
+            when(awardService.submitAward(anyMap(), eq(1), isNull())).thenReturn(Result.ok());
 
             servlet.doPost(request, response);
 
-            verify(awardService).submitAward(any(AwardDTO.class), eq(1), any());
+            verify(awardService).submitAward(anyMap(), eq(1), isNull());
         }
 
         @FastTest
@@ -346,7 +353,7 @@ class AwardServletTest {
             User user = createUser(1, "member1", ROLE_MEMBER);
             setupSession(user);
             when(request.getParameter("action")).thenReturn("submit");
-            when(awardService.submitAward(any(AwardDTO.class), eq(1), any())).thenReturn(Result.error(400, "请提供完整信息"));
+            when(awardService.submitAward(anyMap(), eq(1), isNull())).thenReturn(Result.error(400, "请提供完整信息"));
 
             servlet.doPost(request, response);
 
@@ -368,7 +375,7 @@ class AwardServletTest {
             when(request.getParameter("action")).thenReturn("submit");
             when(request.getParameter("competition")).thenReturn("程序设计竞赛");
             when(request.getParameter("compTime")).thenReturn("2024-06-15");
-            when(awardService.submitAward(any(AwardDTO.class), eq(1), any())).thenThrow(new RuntimeException("数据库错误"));
+            when(awardService.submitAward(anyMap(), eq(1), isNull())).thenThrow(new RuntimeException("数据库错误"));
 
             servlet.doPost(request, response);
 
@@ -383,7 +390,7 @@ class AwardServletTest {
             when(request.getParameter("action")).thenReturn("submit");
             when(request.getParameter("competition")).thenReturn("程序设计竞赛");
             when(request.getParameter("compTime")).thenReturn("2024-06-15");
-            when(awardService.submitAward(any(AwardDTO.class), eq(1), any())).thenReturn(Result.error(400, "您已提交过相同奖项"));
+            when(awardService.submitAward(anyMap(), eq(1), isNull())).thenReturn(Result.error(400, "您已提交过相同奖项"));
 
             servlet.doPost(request, response);
 

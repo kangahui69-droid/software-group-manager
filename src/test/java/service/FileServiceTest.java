@@ -1,6 +1,7 @@
 package service;
 
 import dao.FileStorageDAO;
+import dao.UserDAO;
 import dto.FileInfo;
 import model.FileStorage;
 import model.User;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -17,9 +19,14 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import support.FastTest;
 import util.Result;
+import util.FileUtil;
 
 import java.io.InputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -51,6 +58,9 @@ class FileServiceTest {
 
     @Mock
     private FileStorageDAO fileStorageDAO;
+
+    @Mock
+    private UserDAO userDAO;
 
     @InjectMocks
     private FileService fileService;
@@ -90,12 +100,31 @@ class FileServiceTest {
     private User adminUser;
     private User memberUser;
     private User otherUser;
+    private final List<Path> physicalFiles = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         adminUser = createUser(ADMIN_USER_ID, "admin", ROLE_ADMIN);
         memberUser = createUser(MEMBER_USER_ID, "member1", ROLE_MEMBER);
         otherUser = createUser(OTHER_USER_ID, "other", ROLE_MEMBER);
+        when(userDAO.findById(ADMIN_USER_ID)).thenReturn(adminUser);
+        when(userDAO.findById(MEMBER_USER_ID)).thenReturn(memberUser);
+        when(userDAO.findById(OTHER_USER_ID)).thenReturn(otherUser);
+    }
+
+    @AfterEach
+    void removePhysicalFixtures() throws IOException {
+        for (Path file : physicalFiles) {
+            Files.deleteIfExists(file);
+        }
+    }
+
+    private FileStorage withExistingPhysicalFile(FileStorage file) throws IOException {
+        Path storageRoot = Path.of(FileUtil.getFileStorageBaseDir());
+        Path physicalFile = Files.createTempFile(storageRoot, "qa01-download-", ".bin");
+        physicalFiles.add(physicalFile);
+        file.setFilePath("/localstorage/" + physicalFile.getFileName());
+        return file;
     }
 
     // ==================== 工具方法 ====================
@@ -532,13 +561,12 @@ class FileServiceTest {
 
         @FastTest
         @DisplayName("查看文件时数据库异常应返回错误")
-        void should_return_error_when_database_exception() {
+        void should_propagate_database_exception() {
             when(fileStorageDAO.findById(FILE_ID)).thenThrow(new RuntimeException("数据库查询失败"));
 
-            Result result = fileService.viewFile(FILE_ID);
-
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(500);
+            assertThatThrownBy(() -> fileService.viewFile(FILE_ID))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("数据库查询失败");
         }
     }
 
@@ -583,8 +611,8 @@ class FileServiceTest {
 
         @FastTest
         @DisplayName("下载文件成功时应返回包含流的信息")
-        void should_return_stream_info_when_download_success() {
-            FileStorage file = createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL);
+        void should_return_stream_info_when_download_success() throws IOException {
+            FileStorage file = withExistingPhysicalFile(createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL));
             when(fileStorageDAO.findById(FILE_ID)).thenReturn(file);
 
             Result result = fileService.downloadFile(FILE_ID);
@@ -595,8 +623,8 @@ class FileServiceTest {
 
         @FastTest
         @DisplayName("下载文件成功时应返回正确的contentType")
-        void should_return_correct_content_type_when_download_success() {
-            FileStorage file = createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL);
+        void should_return_correct_content_type_when_download_success() throws IOException {
+            FileStorage file = withExistingPhysicalFile(createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL));
             file.setFileType(MIME_IMAGE_PNG);
             when(fileStorageDAO.findById(FILE_ID)).thenReturn(file);
 
@@ -607,8 +635,8 @@ class FileServiceTest {
 
         @FastTest
         @DisplayName("下载文件成功时应返回文件名")
-        void should_return_filename_when_download_success() {
-            FileStorage file = createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL);
+        void should_return_filename_when_download_success() throws IOException {
+            FileStorage file = withExistingPhysicalFile(createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL));
             file.setOriginalName("report.pdf");
             when(fileStorageDAO.findById(FILE_ID)).thenReturn(file);
 
@@ -619,8 +647,8 @@ class FileServiceTest {
 
         @FastTest
         @DisplayName("下载文件成功时应返回文件大小")
-        void should_return_file_size_when_download_success() {
-            FileStorage file = createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL);
+        void should_return_file_size_when_download_success() throws IOException {
+            FileStorage file = withExistingPhysicalFile(createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL));
             file.setFileSize(4096L);
             when(fileStorageDAO.findById(FILE_ID)).thenReturn(file);
 
@@ -631,8 +659,8 @@ class FileServiceTest {
 
         @FastTest
         @DisplayName("下载文件成功时应返回物理路径")
-        void should_return_physical_path_when_download_success() {
-            FileStorage file = createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL);
+        void should_return_physical_path_when_download_success() throws IOException {
+            FileStorage file = withExistingPhysicalFile(createFileStorage(FILE_ID, ADMIN_USER_ID, CATEGORY_AVATAR, STATUS_NORMAL));
             when(fileStorageDAO.findById(FILE_ID)).thenReturn(file);
 
             Result result = fileService.downloadFile(FILE_ID);

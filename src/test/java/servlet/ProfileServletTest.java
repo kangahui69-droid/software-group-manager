@@ -15,6 +15,7 @@ import support.FastTest;
 import util.Result;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
@@ -63,6 +64,9 @@ class ProfileServletTest {
     private HttpSession session;
 
     @Mock
+    private RequestDispatcher dispatcher;
+
+    @Mock
     private Part avatarPart;
 
     private ProfileServletRefactored servlet;
@@ -71,6 +75,22 @@ class ProfileServletTest {
     void setUp() throws Exception {
         servlet = new ProfileServletRefactored();
         servlet.setUserService(userService);
+        Field productionService = ProfileServlet.class.getDeclaredField("userService");
+        productionService.setAccessible(true);
+        productionService.set(servlet, userService);
+        when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
+        when(request.getParameter("action")).thenReturn("update");
+    }
+
+    private void setupRealAvatarUpdate(User user, long size, String contentType) throws Exception {
+        setupSession(user);
+        when(request.getRequestURI()).thenReturn("/member/profile/update");
+        when(request.getParameter("name")).thenReturn("张三");
+        when(request.getPart("avatar")).thenReturn(avatarPart);
+        when(avatarPart.getSize()).thenReturn(size);
+        when(avatarPart.getContentType()).thenReturn(contentType);
+        when(userService.updateProfile(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Result.ok());
     }
 
     // ==================== 辅助方法 ====================
@@ -110,7 +130,8 @@ class ProfileServletTest {
 
             servlet.doGet(request, response);
 
-            verify(request).getRequestDispatcher("/member/edit-profile.jsp").forward(request, response);
+            verify(request).getRequestDispatcher("/member/edit-profile.jsp");
+            verify(dispatcher).forward(request, response);
         }
 
         @FastTest
@@ -220,7 +241,8 @@ class ProfileServletTest {
 
             servlet.doPost(request, response);
 
-            verify(request).getRequestDispatcher("/member/edit-profile.jsp").forward(request, response);
+            verify(request).getRequestDispatcher("/member/edit-profile.jsp");
+            verify(dispatcher).forward(request, response);
         }
     }
 
@@ -369,48 +391,41 @@ class ProfileServletTest {
         @DisplayName("上传头像成功应返回成功消息")
         void should_return_success_when_avatar_upload_success() throws Exception {
             User user = createUser(1, "member1", ROLE_MEMBER);
-            setupSession(user);
-            when(request.getParameter("userType")).thenReturn("MEMBER");
-            when(request.getContentType()).thenReturn("multipart/form-data");
-            when(request.getPart("avatar")).thenReturn(avatarPart);
-            when(avatarPart.getSize()).thenReturn(1024L * 100); // 100KB
-            when(avatarPart.getContentType()).thenReturn("image/png");
-            when(userService.uploadAvatar(any(), any())).thenReturn(Result.ok());
+            setupRealAvatarUpdate(user, 1024L * 100, "image/png");
+            when(userService.uploadAvatar(eq(1), same(avatarPart))).thenReturn(Result.ok());
 
-            servlet.doPost(request, response);
+            servlet.doRealPost(request, response);
 
-            verify(userService).uploadAvatar(any(), any());
+            verify(userService).uploadAvatar(eq(1), same(avatarPart));
+            verify(request).setAttribute("success", "个人信息和头像更新成功");
         }
 
         @FastTest
         @DisplayName("头像大小超过500KB应返回错误")
         void should_return_error_when_avatar_too_large() throws Exception {
             User user = createUser(1, "member1", ROLE_MEMBER);
-            setupSession(user);
-            when(request.getParameter("userType")).thenReturn("MEMBER");
-            when(request.getContentType()).thenReturn("multipart/form-data");
-            when(request.getPart("avatar")).thenReturn(avatarPart);
-            when(avatarPart.getSize()).thenReturn(1024L * 600); // 600KB
+            setupRealAvatarUpdate(user, 1024L * 600, "image/png");
+            when(userService.uploadAvatar(eq(1), same(avatarPart)))
+                    .thenReturn(Result.error(400, "头像图片大小不能超过500KB"));
 
-            servlet.doPost(request, response);
+            servlet.doRealPost(request, response);
 
-            verify(request).setAttribute("error", "头像图片大小不能超过500KB");
+            verify(userService).uploadAvatar(eq(1), same(avatarPart));
+            verify(request).setAttribute("error", "个人信息已更新，但头像上传失败: 头像图片大小不能超过500KB");
         }
 
         @FastTest
         @DisplayName("头像格式不支持应返回错误")
         void should_return_error_when_avatar_format_unsupported() throws Exception {
             User user = createUser(1, "member1", ROLE_MEMBER);
-            setupSession(user);
-            when(request.getParameter("userType")).thenReturn("MEMBER");
-            when(request.getContentType()).thenReturn("multipart/form-data");
-            when(request.getPart("avatar")).thenReturn(avatarPart);
-            when(avatarPart.getSize()).thenReturn(1024L * 100);
-            when(avatarPart.getContentType()).thenReturn("application/pdf");
+            setupRealAvatarUpdate(user, 1024L * 100, "application/pdf");
+            when(userService.uploadAvatar(eq(1), same(avatarPart)))
+                    .thenReturn(Result.error(400, "仅支持JPEG、JPG、PNG、GIF、WebP格式的图片"));
 
-            servlet.doPost(request, response);
+            servlet.doRealPost(request, response);
 
-            verify(request).setAttribute("error", "仅支持JPEG、JPG、PNG、GIF、WebP格式的图片");
+            verify(userService).uploadAvatar(eq(1), same(avatarPart));
+            verify(request).setAttribute("error", "个人信息已更新，但头像上传失败: 仅支持JPEG、JPG、PNG、GIF、WebP格式的图片");
         }
     }
 
@@ -437,7 +452,8 @@ class ProfileServletTest {
 
             servlet.doGet(request, response);
 
-            verify(request).getRequestDispatcher("/member/edit-profile.jsp").forward(request, response);
+            verify(request).getRequestDispatcher("/member/edit-profile.jsp");
+            verify(dispatcher).forward(request, response);
         }
 
         @FastTest
@@ -471,6 +487,11 @@ class ProfileServletTest {
             return userService;
         }
 
+        void doRealPost(HttpServletRequest request, HttpServletResponse response)
+                throws jakarta.servlet.ServletException, java.io.IOException {
+            super.doPost(request, response);
+        }
+
         String[] getSupportedActions() {
             return new String[]{"edit", "update"};
         }
@@ -478,12 +499,7 @@ class ProfileServletTest {
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response)
                 throws jakarta.servlet.ServletException, java.io.IOException {
-            String action = request.getParameter("action");
-            if ("edit".equals(action)) {
-                showEditProfilePage(request, response);
-            } else {
-                response.sendRedirect(request.getContextPath() + "/member/profile.jsp");
-            }
+            super.doGet(request, response);
         }
 
         @Override

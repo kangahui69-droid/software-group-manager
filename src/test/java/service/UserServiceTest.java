@@ -5,6 +5,7 @@ import dao.MemberProfileDAO;
 import dao.UserDAO;
 import dto.ProfileDTO;
 import model.MemberProfile;
+import model.FileStorage;
 import model.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,7 +20,10 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import support.FastTest;
 import util.Result;
+import util.FileUtil;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -608,6 +612,9 @@ class UserServiceTest {
                 public long getSize() { return size; }
                 public String getContentType() { return contentType; }
                 public String getSubmittedFileName() { return "avatar.png"; }
+                public java.io.InputStream getInputStream() {
+                    return new java.io.ByteArrayInputStream(new byte[]{1, 2, 3});
+                }
             };
         }
     }
@@ -781,7 +788,7 @@ class UserServiceTest {
 
         @FastTest
         @DisplayName("管理员上传头像应成功")
-        void should_update_avatar_successfully_as_admin() {
+        void should_update_avatar_successfully_as_admin() throws Exception {
             User admin = createUser(ADMIN_USER_ID, "admin", "pwd", ROLE_ADMIN, STATUS_ACTIVE);
             when(userDAO.findById(ADMIN_USER_ID)).thenReturn(admin);
             when(memberProfileDAO.findByUserId(ADMIN_USER_ID)).thenReturn(createMemberProfile(ADMIN_USER_ID));
@@ -790,8 +797,16 @@ class UserServiceTest {
             when(memberProfileDAO.update(any(MemberProfile.class))).thenReturn(true);
 
             Result result = userService.updateAdminAvatar(ADMIN_USER_ID, createMockPart(1024, "image/png"));
-
-            assertThat(result.isSuccess()).isTrue();
+            ArgumentCaptor<FileStorage> savedStorage = ArgumentCaptor.forClass(FileStorage.class);
+            verify(fileStorageDAO).insert(savedStorage.capture());
+            Path savedFile = Path.of(FileUtil.getCategoryDir("images/avatar"),
+                    savedStorage.getValue().getStoredName());
+            try {
+                assertThat(result.isSuccess()).as(result.getMessage()).isTrue();
+                assertThat(Files.readAllBytes(savedFile)).containsExactly(1, 2, 3);
+            } finally {
+                Files.deleteIfExists(savedFile);
+            }
         }
 
         @FastTest
@@ -825,6 +840,9 @@ class UserServiceTest {
                 public long getSize() { return size; }
                 public String getContentType() { return contentType; }
                 public String getSubmittedFileName() { return "avatar.png"; }
+                public java.io.InputStream getInputStream() {
+                    return new java.io.ByteArrayInputStream(new byte[]{1, 2, 3});
+                }
             };
         }
     }

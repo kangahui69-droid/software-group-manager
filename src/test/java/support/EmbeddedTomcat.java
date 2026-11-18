@@ -49,6 +49,13 @@ public class EmbeddedTomcat {
 
     public String getBaseUrl() { return "http://localhost:" + port + contextPath; }
 
+    public void setSessionTimeout(String sessionId, int seconds) throws Exception {
+        Context context = (Context) tomcat.getHost().findChild(contextPath);
+        org.apache.catalina.Session session = context.getManager().findSession(sessionId);
+        if (session == null) throw new IllegalArgumentException("Session not found: " + sessionId);
+        session.setMaxInactiveInterval(seconds);
+    }
+
     private File findWebappDir() {
         String[] candidates = {"src/main/webapp", "../src/main/webapp"};
         for (String c : candidates) {

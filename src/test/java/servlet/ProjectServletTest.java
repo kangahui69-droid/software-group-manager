@@ -17,6 +17,7 @@ import support.FastTest;
 import util.Result;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.Date;
@@ -68,12 +69,16 @@ class ProjectServletTest {
     @Mock
     private HttpSession session;
 
+    @Mock
+    private RequestDispatcher dispatcher;
+
     private ProjectServletRefactored servlet;
 
     @BeforeEach
     void setUp() throws Exception {
         servlet = new ProjectServletRefactored();
         servlet.setProjectService(projectService);
+        when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
     }
 
     // ==================== 辅助方法 ====================
@@ -277,7 +282,8 @@ class ProjectServletTest {
 
             servlet.doPost(request, response);
 
-            verify(request).getRequestDispatcher("/jsp/admin/project/list.jsp").forward(request, response);
+            verify(request).getRequestDispatcher("/jsp/admin/project/list.jsp");
+            verify(dispatcher).forward(request, response);
         }
     }
 
@@ -445,7 +451,8 @@ class ProjectServletTest {
 
             servlet.doPost(request, response);
 
-            verify(request).setAttribute("error", "只有项目负责人可以删除项目");
+            verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+            verify(projectService, never()).deleteProject(anyInt());
         }
     }
 
