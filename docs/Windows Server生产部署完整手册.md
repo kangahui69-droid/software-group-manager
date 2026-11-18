@@ -1,1092 +1,96 @@
-# Windows Server 生产部署完整手册
+# Windows Server 生产部署完整手册（Hyper-V Ubuntu VM）
 
-> **项目**: 高校软件小组管理系统
-> **版本**: 2.0.0（合并版）
-> **更新日期**: 2026-08-14
-> **服务器系统**: Windows Server 2019/2022
-> **对应迁移阶段**: 阶段一~阶段四（微服务迁移完成，生产部署落地）
+> **当前唯一部署路线**：Windows Server 宿主机 → Hyper-V 中的 Ubuntu VM `sg-linux` → VM 内 Docker Engine / Docker Compose。Windows 主机只负责虚拟化、文件中转和异机备份，不在 Windows Docker 中运行本项目的 Linux 镜像。
+>
+> **文档与版本核对**：2026-11-18；最后一次核对的 GitHub `Version-2` 基线为 `1befb72ee49199c7b8681f55aa929707fb9dc339`。本地已新增尚未推送的主题提交，仍有必要文档和 QA-04 工具待整理；实际本地 HEAD 以 `git rev-parse HEAD` 为准。最近一次已记录的生产容器基线为 2026-11-09；当前候选版本尚未部署，生产运行的 Git SHA 和本节发布步骤尚未在线验证。执行发布时须重新记录实际 VM IP、Git SHA、镜像 ID 和验收时间。
+>
+> 旧 Windows 主机 Docker、DockerCli 切换、Windows 防火墙端口表、`C:\software-group` 作为容器项目目录，以及早期 VM 安装过程已移入[历史附录](历史附录-Windows主机Docker与早期VM部署.md)。第十九章保存后续生产排查过程和专项补充，其中 2026-09/10 的“下一步”与旧 HTTP 命令是历史记录；当前操作从本页的步骤和专项验收文档进入。
 
----
+## 当前架构、目录和访问入口
 
-## 一、环境准备
+| 位置 | 用途 | 当前应使用的路径或规则 |
+|---|---|---|
+| Windows Server 宿主机 | 运行 Hyper-V、保存异机备份、必要时中转制品 | `C:\software-group` 可作受控中转；`C:\software-group\backup` 保存异机备份。两者都不是 Docker 项目目录或 Linux 容器挂载源 |
+| Ubuntu VM `sg-linux` | 唯一运行 Docker Engine/Compose 的主机 | `/opt/software-group` 为 Compose 项目目录；私有 `.env` 位于该目录且权限应为 `600` |
+| Ubuntu VM 私有目录 | HTTPS 证书和 CA 私钥 | `/opt/software-group-private`；证书挂载路径由私有 `.env` 的 `TLS_CERT_DIR` 指定，私钥不进 Git |
+| Docker 命名卷 | MySQL、Redis、MinIO、旧 WAR 上传文件等持久化数据 | 由 VM 内 Docker 管理；不要把 Windows `C:\` 路径写成 Linux bind mount |
+| 对外入口 | 目标版本仅 Nginx 发布宿主端口 | 80 跳转到 443，业务使用受信任内部 CA 的 HTTPS；内部容器仅走 Docker 网络 |
 
-### 1.1 系统要求
+2026-11-10 从 Windows 宿主机实测可连接的 VM 地址曾为 `192.168.65.33`，更早的 `192.168.0.15` 已不可达。两者都不能作为固定地址；每次部署前在 VM 核对实际 IP，并通过静态地址或 DHCP 保留稳定下来。目标版本的 HTTPS、端口收敛、Nacos 认证、数据库独立账号尚未在生产切换；此前的 `docker compose ps` 输出不能证明这些改动已上线。
 
-| 资源 | 最低配置 | 推荐配置 |
-|------|----------|----------|
-| CPU | 2 核 | 4 核 |
-| 内存 | 4 GB | 8 GB |
-| 磁盘 | 50 GB | 100 GB SSD |
-| 系统 | Windows Server 2019+ | Windows Server 2022 |
+## 发布前核对与顺序
 
-### 1.2 启用容器功能
+1. 在 VM 中核对当前版本、运行容器和私有配置，不把 `docker compose config` 的解析结果打印到终端或日志。若 VM 不是 Git 工作区，记录制品来源的提交 SHA 与镜像 ID。
+2. 在 VM 完成 MySQL `software_group` 与 `nacos_config`、MinIO、`.env` 和 Compose/Nginx 配置备份；将备份复制到 Windows 宿主机并核对 SHA-256。备份含个人数据和密钥，只放在受控目录。
+3. 已有生产库先按[业务数据库 Flyway 迁移说明](业务数据库Flyway迁移说明.md)完成结构比对、显式 baseline，再按[数据库运行账号切换说明](数据库运行账号切换说明.md)准备独立账号。全新环境另需初始化 `nacos_config`；第十九章 §19.4 保存了历史过程，执行前仍须核对当前 SQL 和配置。
+4. 按[OPS-03 HTTPS 部署与验收](OPS-03-内网IP-HTTPS部署与验收.md)准备证书及客户端信任，再按[OPS-02 Nacos 认证切换与验收](OPS-02-Nacos认证切换与验收.md)和[OPS-01 端口收敛与防火墙验收](OPS-01端口收敛与防火墙验收.md)安排发布窗口。不要直接把本地 Compose 套到未 baseline 的旧库。
+5. 候选版本发布后按 §19.12 采集整栈验收，再进行登录、项目、日志、上传下载及微服务实际业务读写验收。页面可达或容器 `healthy` 不能代替这些检查。
 
-以管理员身份打开 PowerShell，执行：
+发布版本的源码提交、容器镜像 ID/digest 与 Flyway 迁移版本须按 [QA-04 版本基线与发布追踪](QA-04版本基线与发布追踪.md) 留证。当前生产镜像来源尚未核实，不得将本地 HEAD 直接标记为生产版本；发布构建前先在干净的 `Version-2` 工作区运行 `scripts/qa04_preflight_release.sh`。
 
-```powershell
-# 安装容器功能
-Install-WindowsFeature -Name Containers -IncludeManagementTools
-Install-WindowsFeature -Name Containers -IncludeManagementTools
-# 重启服务器（如提示）
-Restart-Computer
-```
-
-重启后验证：
-
-```powershell
-# 检查容器功能是否安装成功
-Get-WindowsFeature | Where-Object {$_.InstallState -eq "Installed"}
-```
-
-应看到 `Containers` （已安装）。
-
-> **注意**：如果需要运行 Linux 容器（推荐），还需要启用 Hyper-V。但 Hyper-V 与某些硬件不兼容，可跳过并使用 Windows 容器模式。
-
-### 1.3 可选：启用 Hyper-V（支持 Linux 容器模式）（已安装）
-
-> 如果计划使用 Linux 容器模式（推荐），需要启用 Hyper-V。
-
-```powershell
-# 安装 Hyper-V
-Install-WindowsFeature -Name Hyper-V -IncludeManagementTools
-
-# 重启服务器（已重启）
-Restart-Computer
-```
-
----
-
-## 二、安装 Docker Engine
-
-> **重要**：Docker Desktop 不支持 Windows Server！Windows Server 需要安装 **Docker Engine (Docker EE)**。
-
-### 2.1 方法一：在线安装（推荐）
-
-以管理员身份打开 PowerShell，执行：
-
-```powershell
-# 安装 Docker Engine
-Install-Module DockerMsftProvider -Force
-Install-Package Docker -ProviderName DockerMsftProvider -Force
-
-# 启动 Docker 服务
-Start-Service Docker
-
-# 设置开机自启
-Set-Service -Name Docker -StartupType Automatic
-```
-
-### 2.2 方法二：离线安装
-
-如果服务器无法联网，下载 Docker Engine 包后手动安装：
-1. 在有网络的机器上下载：https://download.docker.com/win/static/stable/x86_64/
-2. 拷贝到服务器
-3. 解压后运行 `dockerd.exe`
-4. 或使用 `start-service docker` 启动服务
-
-### 2.3 验证安装（已完成）
-
-```powershell
-docker --version
-docker compose version
-```
-
-预期输出：
-```
-Docker version 27.x.x, build xxxxxx
-Docker Compose version v2.x.x
-```
-
-### 2.4 配置 Docker daemon（可选）（没有配置，先不用配置，容器的系统有问题）                                                         ）
-
-如需配置日志轮转、存储驱动等，创建配置文件：
-
-```powershell
-# 创建配置目录
-New-Item -ItemType Directory -Force -Path "C:\ProgramData\docker\config"
-
-# 创建 daemon.json
-notepad "C:\ProgramData\docker\config\daemon.json"
-```
-
-```json
-{
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "100m",
-    "max-file": "3"
-  },
-  "storage-opts": ["size=120GB"]
-}
-```
-
-修改后重启：
-
-```powershell
-Restart-Service Docker
-```
-
-### 2.5 Linux 容器模式（推荐，必须要在这个Hyper-V开Linux不然镜像跑不了）
-
-> **推荐**：使用 Linux 容器可以获得更好的兼容性和更多镜像选择。
-
-```powershell
-# 检查当前容器模式
-docker version -f '{{.Server.Os}}'
-
-# 如果显示 windows，运行以下命令切换到 Linux 容器模式
-# 注意：需要先启用 Hyper-V
-& 'C:\Program Files\Docker\Docker\DockerCli.exe' -SwitchDaemon
-```
-
-如果切换成功，再次检查应显示 `linux`。
-
----
-
-## 三、停止 IIS（释放 80 端口）（已释放）
-
-Windows Server 默认启用 IIS，会占用 80 端口。
-
-```powershell
-# 停止 IIS
-Stop-Service W3SVC
-
-# 禁用 IIS（可选，防止重启后再次占用）
-Set-Service -Name W3SVC -StartupType Disabled
-```
-
-验证 80 端口已释放：（已释放）
-
-```powershell
-netstat -ano | findstr ":80"
-```
-
-应无输出（或只有其他服务的 80）。
-
----
-
-## 四、上传项目代码
-
-### 4.1 创建项目目录
-
-```powershell
-mkdir C:\software-group
-cd C:\software-group
-```
-
-### 4.2 上传代码（用的是：打包解压得方式）
-
-**方式一：Git 克隆（推荐）**
-
-```powershell
-cd C:\software-group
-git clone <你的GitHub仓库地址> .
-```
-
-**方式二：远程桌面复制**
-
-使用 MSTSC 远程连接，直接复制粘贴文件。
-
-**方式三：SMB 共享**
-
-```powershell
-# 本地设置共享后，服务器访问
-\\本地电脑IP\share
-```
-
-### 4.3 创建静态资源目录（到这一步了）
-
-```powershell
-cd C:\software-group
-mkdir -p static/css static/js static/images
-```
-
----
-
-## 五、创建配置文件
-
-### 5.1 创建 .env 文件（已创建；按下列安全规则维护）
-
-当前服务运行于 Ubuntu VM。请在 `/opt/software-group` 维护私有 `.env`；已有文件时直接编辑，不能用模板覆盖。
+以下只读命令均在 **Ubuntu VM** 的 shell 执行；不要在 Windows PowerShell 中运行：
 
 ```bash
 cd /opt/software-group
-test -e .env || cp .env.example .env
-chmod 600 .env
-vi .env
-bash scripts/check-deployment-secrets.sh
-```
-
-模板只列变量名，不包含密码。每个必需变量须填入唯一的随机值；预检脚本不会打印值。`DES_KEY` 在 DATA-02 旧 DES 账户全部迁移前必须保持与历史数据一致。不要运行会打印解析后密钥的 `docker compose config`，只使用 `config --quiet`。
----
-
-## 六、开放端口
-
-### 6.1 Windows 防火墙规则
-
-以管理员身份打开 PowerShell，执行：
-
-```powershell
-# 主应用端口（必须）
-New-NetFirewallRule -DisplayName "Software Group HTTP" -Direction Inbound -Protocol TCP -LocalPort 80 -Action Allow
-
-# Grafana 监控仪表盘（运维）
-New-NetFirewallRule -DisplayName "Software Group Grafana" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow
-
-# Prometheus 指标采集（运维）
-New-NetFirewallRule -DisplayName "Software Group Prometheus" -Direction Inbound -Protocol TCP -LocalPort 9090 -Action Allow
-
-# Portainer Docker管理界面（运维）
-New-NetFirewallRule -DisplayName "Software Group Portainer" -Direction Inbound -Protocol TCP -LocalPort 9443 -Action Allow
-
-# Nacos 服务注册中心（运维）
-New-NetFirewallRule -DisplayName "Software Group Nacos" -Direction Inbound -Protocol TCP -LocalPort 8848 -Action Allow
-
-# MinIO 控制台（运维）
-New-NetFirewallRule -DisplayName "Software Group MinIO" -Direction Inbound -Protocol TCP -LocalPort 9001 -Action Allow
-
-# RabbitMQ 管理界面（运维）
-New-NetFirewallRule -DisplayName "Software Group RabbitMQ" -Direction Inbound -Protocol TCP -LocalPort 15672 -Action Allow
-```
-
-### 6.2 云服务商安全组（如果使用阿里云/腾讯云/华为云等）
-
-在云控制台安全组中添加入站规则：
-
-| 协议 | 端口 | 来源 | 说明 |
-|------|------|------|------|
-| TCP | 80 | 0.0.0.0/0 | 主应用 |
-| TCP | 3000 | 你的IP | Grafana |
-| TCP | 9090 | 你的IP | Prometheus |
-| TCP | 9443 | 你的IP | Portainer |
-| TCP | 8848 | 你的IP | Nacos |
-| TCP | 9001 | 你的IP | MinIO |
-| TCP | 15672 | 你的IP | RabbitMQ |
-
----
-
-## 七、启动基础服务
-
-### 7.1 进入项目目录
-
-```powershell
-cd C:\software-group
-```
-
-### 7.2 启动所有服务
-
-```powershell
-docker compose up -d
-```
-
-### 7.3 等待服务启动
-
-首次启动需要下载镜像，约 5-10 分钟。
-
-```powershell
-# 检查服务状态
+pwd
+git rev-parse HEAD
 docker compose ps
+docker compose config --quiet
+df -h /opt/software-group
 ```
 
-### 7.4 查看日志
+## Portainer 与监控边界
 
-```powershell
-# 查看所有服务日志
-docker compose logs
+当前仓库的 `docker-compose.yml` 没有 Portainer 服务，也没有 `docker-compose.ops.yml`；不能照历史附录中的 Windows Compose 示例启动它。若以后单独批准在 VM 部署 Portainer，Docker socket 的 Linux 路径是 `/var/run/docker.sock:/var/run/docker.sock`，Portainer 数据应使用 Linux Docker 命名卷挂到 `/data`。历史示例的 `//./pipe/docker_engine` 仅属于 Windows Docker，不适用于 Ubuntu VM。Docker socket 可控制宿主 Docker，管理入口必须限制在受控运维网络；本手册不将 9443/9001 视为当前已开放端口。
 
-# 查看指定服务日志
-docker compose logs nginx
-docker compose logs app
-docker compose logs mysql
-docker compose logs nacos
-```
+可选监控方案以仓库现有 `monitoring` profile 和[OPS-04 健康检查与业务合成验收](OPS-04-健康检查与业务合成验收.md)为准；历史附录中的 `docker-compose.monitoring.yml`、`docker-compose.logging.yml` 和 Portainer 文件并不存在于当前仓库。
 
----
+## 备份位置与命令差异
 
-## 八、验证基础部署
+下列示例只在 **Ubuntu VM** 执行，先用上面的 `df -h` 核对可用空间，再生成新的受限备份目录。任一步返回非零即停止备份和后续发布，排查后重做；示例中的 `set -e` 会在失败时退出当前 shell。`docker exec` 不加 `-t`，保证 SQL 重定向和归档流不经过伪终端；MySQL 密码从容器环境读取，不写入终端参数。MinIO 的 `docker cp ... -` 直接输出 tar 流，无须临时拉取 Alpine 镜像。生产对象存储正在写入时须安排静默窗口或采用一致性快照，并通过隔离恢复演练验证备份。
 
-### 8.1 检查服务状态
-
-```powershell
-docker compose ps
-```
-
-所有服务应显示 `Up` 状态。
-
-### 8.2 访问应用
-
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| **主应用** | http://服务器IP/ | 登录页面 |
-| **Nacos** | http://服务器IP:8848/nacos | 当前认证配置见 OPS-02，生产启用认证后使用受控凭据 |
-| **MinIO** | http://服务器IP:9001 | 使用受控凭据 |
-| **RabbitMQ** | http://服务器IP:15672 | 使用受控凭据 |
-| **Sentinel** | http://服务器IP:8858 | 无默认账号 |
-
-### 8.3 默认登录账号
-
-| 账号 | 用户名 | 密码 |
-|------|--------|------|
-| 管理员 | 由运维受控创建 | 不提供仓库内默认密码 |
-| 成员 | 由业务流程创建 | 不提供仓库内默认密码 |
-
----
-
-## 九、生产级优化（监控/日志/运维）
-
-> 基础服务运行正常后，执行以下配置以满足生产环境需求。
-
-### 9.1 创建监控配置文件
-
-#### 9.1.1 创建 Prometheus 配置目录和文件
-
-```powershell
-cd C:\software-group
-mkdir -p prometheus grafana/provisioning/datasources loki promtail
-```
-
-```yaml
-# prometheus/prometheus.yml
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
-scrape_configs:
-  # Spring Boot 微服务（需要 actuator/prometheus 端点）
-  - job_name: 'microservices'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets:
-          - 'file-service:8081'
-          - 'user-service:8082'
-          - 'activity-service:8084'
-          - 'project-award-service:8085'
-          - 'hr-service:8089'
-          - 'monitor-service:8086'
-          - 'content-service:8087'
-          - 'ai-service:8094'
-        labels:
-          group: 'software-group'
-
-  # Prometheus 自身
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
-
-  # Nginx（需要 nginx-vts 模块，如未安装可移除此job）
-  # 如需监控Nginx，需在nginx.conf中添加vhost_traffic_status模块
-  # 或使用nginx-prometheus-exporter作为替代方案
-  # - job_name: 'nginx'
-  #   static_configs:
-  #     - targets: ['nginx:80']
-```
-
-#### 9.1.2 创建 Grafana Loki 数据源配置
-
-```yaml
-# grafana/provisioning/datasources/loki.yml
-apiVersion: 1
-
-datasources:
-  - name: Loki
-    type: loki
-    access: proxy
-    url: http://loki:3100
-    jsonData:
-      httpHeaderName1: "X-Scope-OrgID"
-      httpHeaderValue1: "1"
-    isDefault: true
-    editable: false
-```
-
-#### 9.1.3 创建 Loki 配置
-
-```yaml
-# loki/loki-config.yml
-auth_enabled: false
-
-server:
-  http_listen_port: 3100
-
-ingester:
-  lifecycler:
-    address: 127.0.0.1
-  ring:
-    kvstore:
-      store: inmemory
-    replication_factor: 1
-  chunk_idle_period: 15m
-  max_transfer_retries: 0
-
-schema_config:
-  configs:
-    - from: 2026-01-01
-      store: boltdb
-      object_store: filesystem
-      schema: v11
-      index:
-        prefix: index_
-        period: 168h
-
-storage_config:
-  boltdb:
-    directory: /loki/index
-  filesystem:
-    directory: /loki/chunks
-
-limits_config:
-  enforce_metric_name: false
-  reject_old_samples: true
-  reject_old_samples_max_age: 168h
-```
-
-#### 9.1.4 创建 Promtail 配置（Linux only）
-
-> **注意**：Promtail 不支持 Windows，Windows 用户请跳过此步骤。
-
-```yaml
-# promtail/promtail-config.yml
-server:
-  http_listen_port: 9080
-  grpc_listen_port: 0
-
-positions:
-  filename: /tmp/positions.yaml
-
-clients:
-  - url: http://loki:3100/loki/api/v1/push
-
-scrape_configs:
-  - job_name: docker
-    docker targets:
-      - /var/lib/docker/containers/*.log
-    pipeline_stages:
-      - json:
-          expressions:
-            log: log
-            stream: stream
-      - labels:
-          stream:
-          container_name:
-      - multiline:
-          firstline: ^\d{4}-\d{2}-\d{2}
-          max_wait_time: 3s
-```
-
-### 9.2 创建 docker-compose.monitoring.yml
-
-```yaml
-# docker-compose.monitoring.yml
-# 监控服务：Prometheus + Grafana
-
-services:
-  # ========== Prometheus（指标采集）==========
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: sg_prometheus
-    restart: always
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.enable-lifecycle'
-    networks:
-      - software-group-net
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # ========== Grafana（可视化仪表盘）==========
-  grafana:
-    image: grafana/grafana:latest
-    container_name: sg_grafana
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD is required}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-    networks:
-      - software-group-net
-    depends_on:
-      - prometheus
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-volumes:
-  prometheus_data:
-  grafana_data:
-
-networks:
-  software-group-net:
-    external: true
-```
-
-### 9.3 创建 docker-compose.logging.yml
-
-> **Windows 说明**：Promtail 不支持 Windows，仅保留 Loki 服务，容器日志通过 Docker 自身日志驱动收集。
-
-```yaml
-# docker-compose.logging.yml
-# 日志服务：Loki（Windows简化版，不含Promtail）
-
-services:
-  # ========== Loki（日志存储）==========
-  loki:
-    image: grafana/loki:latest
-    container_name: sg_loki
-    restart: always
-    ports:
-      - "${LOKI_PORT:-3100}:3100"
-    volumes:
-      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - loki_data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - software-group-net
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3100/ready"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  loki_data:
-
-networks:
-  software-group-net:
-    external: true
-```
-
-### 9.4 创建 docker-compose.ops.yml
-
-> **Windows 说明**：使用 `//./pipe/docker_engine` 代替 `/var/run/docker.sock`。
-
-```yaml
-# docker-compose.ops.yml
-# 运维工具：Portainer
-
-services:
-  # ========== Portainer（Docker 可视化管理）==========
-  portainer:
-    image: portainer/portainer:latest
-    container_name: sg_portainer
-    restart: always
-    ports:
-      - "${PORTAINER_PORT:-9443}:9443"
-      - "${PORTAINER_AGENT_PORT:-9001}:9001"
-    volumes:
-      - //./pipe/docker_engine:/var/run/docker.sock
-      - portainer_data:/data
-    networks:
-      - software-group-net
-    command: --http-enabled
-    # 注意：Portainer 默认健康检查端口是 9000，但 Web UI 在 9443
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9443/api/system/status"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  portainer_data:
-
-networks:
-  software-group-net:
-    external: true
-```
-
-### 9.5 启动监控/日志/运维服务
-
-```powershell
-# 启动监控服务
-docker compose -f docker-compose.monitoring.yml up -d
-
-# 启动日志服务
-docker compose -f docker-compose.logging.yml up -d
-
-# 启动运维工具
-docker compose -f docker-compose.ops.yml up -d
-```
-
-### 9.6 验证监控/日志/运维服务
-
-```powershell
-# 验证 Prometheus
-curl http://localhost:9090/api/v1/status/config
-
-# 验证 Grafana
-curl http://localhost:3000/api/health
-
-# 验证 Loki
-curl http://localhost:3100/ready
-
-# 查看所有服务状态
-docker compose ps
-docker compose -f docker-compose.monitoring.yml ps
-docker compose -f docker-compose.logging.yml ps
-docker compose -f docker-compose.ops.yml ps
-```
-
-### 9.7 访问运维界面
-
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| **Grafana** | http://服务器IP:3000 | 使用私有环境文件中的受控凭据 |
-| **Prometheus** | http://服务器IP:9090 | 指标查询 |
-| **Portainer** | https://服务器IP:9443 | Docker Web管理界面 |
-
-### 9.8 Grafana 添加 Loki 日志源
-
-1. 登录 Grafana (http://服务器IP:3000)
-2. 点击 **Configuration** → **Data Sources**
-3. 点击 **Add data source**
-4. 选择 **Loki**
-5. URL 填写 `http://loki:3100`
-6. 点击 **Save & Test**
-
-查询日志示例：
-```
-{service="user-service"}
-{service="user-service"} |= "ERROR"
-```
-
----
-
-## 十、Docker Compose 配置优化
-
-> 为所有服务添加健康检查、重启策略、日志轮转等生产级配置。
-
-### 10.1 日志轮转配置（daemon.json）
-
-修改 `C:\ProgramData\docker\config\daemon.json`：
-
-```json
-{
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "100m",
-    "max-file": "3"
-  }
-}
-```
-
-修改后重启：
-
-```powershell
-Restart-Service Docker
-```
-
-### 10.2 资源限制查看（Windows 限制）
-
-> **注意**：`deploy.resources` 仅在 Docker Swarm 模式下生效，Docker Compose 在 Windows 上会忽略此配置。
-
-Windows 容器资源限制需要在创建容器时指定：
-
-```powershell
-# 查看当前容器资源使用
-docker stats
-```
-
-### 10.3 容器健康检查说明
-
-所有微服务已配置 `/actuator/health` 健康检查：
-- file-service: http://localhost:8081/actuator/health
-- user-service: http://localhost:8082/actuator/health
-- activity-service: http://localhost:8084/actuator/health
-- project-award-service: http://localhost:8085/actuator/health
-- hr-service: http://localhost:8089/actuator/health
-- monitor-service: http://localhost:8086/actuator/health
-- content-service: http://localhost:8087/actuator/health
-- ai-service: http://localhost:8094/actuator/health
-
----
-
-## 十一、日常运维
-
-### 11.1 常用命令
-
-```powershell
-# 进入项目目录
-cd C:\software-group
-
-# 停止服务
-docker compose stop
-
-# 启动服务
-docker compose start
-
-# 重启服务
-docker compose restart
-
-# 更新部署（代码更新后）
-git pull
-docker compose up -d --build
-
-# 同时更新监控/日志/运维服务
-docker compose -f docker-compose.monitoring.yml up -d --build
-docker compose -f docker-compose.logging.yml up -d --build
-docker compose -f docker-compose.ops.yml up -d --build
-
-# 查看资源使用
-docker stats
-
-# 查看所有服务状态
-docker compose ps
-```
-
-### 11.2 日志查看
-
-```powershell
-# 实时查看所有日志
-docker compose logs -f
-
-# 查看指定服务日志
-docker compose logs -f nginx
-docker compose logs -f app
-docker compose logs -f mysql
-
-# 查看监控服务日志
-docker compose -f docker-compose.monitoring.yml logs -f prometheus
-docker compose -f docker-compose.monitoring.yml logs -f grafana
-
-# 查看最近100行日志
-docker compose logs --tail=100
-```
-
-### 11.3 完全清理
-
-```powershell
-# 停止并删除容器（保留数据卷）
-docker compose down
-
-# 停止并删除所有容器和数据卷（数据会丢失！）
-docker compose down -v
-docker compose -f docker-compose.monitoring.yml down -v
-docker compose -f docker-compose.logging.yml down -v
-docker compose -f docker-compose.ops.yml down -v
-
-# 删除未使用的镜像
-docker image prune -a
-```
-
----
-
-## 十二、备份与恢复
-
-### 12.1 备份数据库
-
-```powershell
-cd C:\software-group
-
-# 创建备份目录
-mkdir backup
-
-# 备份 MySQL
-docker exec -it sg_mysql mysqldump -uroot -p --result-file=/tmp/software_group.sql software_group
-docker cp sg_mysql:/tmp/software_group.sql backup\backup.sql
-```
-
-### 12.2 恢复数据库
-
-```powershell
-cd C:\software-group
-docker cp backup\backup.sql sg_mysql:/tmp/restore.sql
-docker exec -it sg_mysql mysql -uroot -p software_group
-```
-
-进入 MySQL 后执行 `SOURCE /tmp/restore.sql;`。交互输入密码，不写入命令参数或终端历史。
-
-### 12.3 备份数据卷
-
-```powershell
-# 查看数据卷
-docker volume ls
-
-# 备份 MySQL 数据卷
-docker run --rm -v software_group_mysql_data:/data -v C:\software-group\backup:/backup alpine tar czf /backup/mysql_data_$(Get-Date -Format "yyyyMMdd_HHmmss").tar.gz /data
-```
-
----
-
-## 十三、故障排查
-
-### 13.1 常见问题
-
-| 问题 | 原因 | 解决方法 |
-|------|------|----------|
-| Docker 无法启动 | 容器功能未启用 | 检查步骤 1.2，重新启用容器功能 |
-| 容器启动失败 | 配置错误或端口占用 | `docker compose logs 服务名` 查看日志 |
-| MySQL 连接失败 | 密码错误或未就绪 | 等待 30 秒，或检查 .env 密码 |
-| Nacos unhealthy | 启动较慢 | 等待 1-2 分钟后再检查 |
-| 访问 localhost 404 | nginx 配置问题 | `docker compose logs nginx` 查看 |
-| 端口被占用 | 端口冲突 | 修改 .env 中端口配置 |
-| 80 端口被占用 | IIS 未停止 | `Stop-Service W3SVC` |
-| Prometheus 无数据 | 微服务 actuator 未启用 | 检查微服务是否暴露 /actuator/prometheus 端点 |
-| Grafana 无日志 | Loki 未启动或数据源配置错误 | 检查 Loki 容器状态和 Grafana Loki 数据源 |
-| Portainer 无法访问 | 端口 9443 未开放 | 检查防火墙规则 |
-
-### 13.2 快速诊断命令
-
-```powershell
-# 1. 检查 Docker 是否运行
-docker version
-
-# 2. 检查所有服务状态
-docker compose ps
-docker compose -f docker-compose.monitoring.yml ps
-docker compose -f docker-compose.logging.yml ps
-docker compose -f docker-compose.ops.yml ps
-
-# 3. 检查端口占用
-netstat -ano | findstr ":80"
-netstat -ano | findstr ":8080"
-
-# 4. 检查容器网络
-docker network ls
-docker network inspect software_group_software-group-net
-
-# 5. 检查磁盘空间
-Get-PSDrive C
-
-# 6. 查看容器资源使用
-docker stats
-
-# 7. 检查健康检查状态
-docker inspect --format='{{.State.Health.Status}}' sg_mysql
-docker inspect --format='{{.State.Health.Status}}' sg_redis
-```
-
----
-
-## 十四、安全建议
-
-### 14.1 必做安全措施
-
-1. **修改所有默认密码**
-   - [ ] MySQL root 密码
-   - [ ] Redis 密码
-   - [ ] RabbitMQ 密码
-   - [ ] JWT Secret
-   - [ ] MinIO 密码
-   - [ ] Grafana 密码
-   - [ ] Nacos 密码（生产环境）
-
-2. **限制端口访问**
-   - 数据库（3306）不对外开放
-   - Redis（6379）不对外开放
-   - Nacos/Sentinel 仅对运维 IP 开放
-   - Grafana/Prometheus 仅对运维 IP 开放
-   - Portainer 仅对运维 IP 开放
-
-3. **定期备份**
-   - 数据库每日备份
-   - 配置文件备份
-   - 数据卷定期备份
-
-### 14.2 生产环境建议
-
-1. **配置 HTTPS**（可选但强烈推荐）
-   - 使用 Nginx 反向代理 + Let's Encrypt 免费证书
-   - 或使用云服务商提供的 SSL 证书
-
-2. **启用防火墙**
-   - 只开放必要的 80/443 端口
-   - 数据库、Redis 等使用内网访问
-
-3. **监控告警**
-   - 在 Grafana 中配置告警规则
-   - 设置邮件/钉钉/飞书通知
-
----
-
-## 十五、服务端口汇总
-
-### 15.1 应用服务
-
-| 服务 | 端口 | 访问范围 |
-|------|------|----------|
-| app (旧 WAR) | 8080 | 仅内网 |
-| file-service | 8081 | 仅内网 |
-| user-service | 8082 | 仅内网 |
-| activity-service | 8084 | 仅内网 |
-| project-award-service | 8085 | 仅内网 |
-| hr-service | 8089 | 仅内网 |
-| monitor-service | 8086 | 仅内网 |
-| content-service | 8087 | 仅内网 |
-| ai-service | 8094 | 仅内网 |
-
-### 15.2 基础设施服务
-
-| 服务 | 端口 | 访问范围 |
-|------|------|----------|
-| nginx | 80 | 对外 |
-| mysql | 3307 | 仅内网 |
-| redis | 6379 | 仅内网 |
-| rabbitmq | 5672/15672 | 运维/内网 |
-| nacos | 8848/9848 | 运维 |
-| sentinel | 8858 | 运维 |
-| minio | 9000/9001 | 运维 |
-
-### 15.3 运维服务
-
-| 服务 | 端口 | 访问范围 |
-|------|------|----------|
-| prometheus | 9090 | 运维 |
-| grafana | 3000 | 运维 |
-| loki | 3100 | 运维 |
-| portainer | 9443 | 运维 |
-
----
-
-## 十六、完整文件结构
-
-```
-C:\software-group\
-├── docker-compose.yml              # 基础服务（MySQL/Redis/微服务/Nginx等）
-├── docker-compose.monitoring.yml   # 监控服务（Prometheus/Grafana）
-├── docker-compose.logging.yml      # 日志服务（Loki）
-├── docker-compose.ops.yml          # 运维工具（Portainer）
-├── .env                            # 环境变量配置
-├── Dockerfile.tomcat              # 旧WAR构建文件
-├── sql/                            # 数据库初始化脚本
-├── nginx/nginx.conf                # Nginx配置
-├── static/                         # 静态资源
-├── prometheus/
-│   └── prometheus.yml             # Prometheus配置
-├── grafana/
-│   └── provisioning/
-│       └── datasources/
-│           └── loki.yml           # Grafana Loki数据源
-├── loki/
-│   └── loki-config.yml            # Loki配置
-└── backup/                        # 备份目录（手动创建）
-```
-
----
-
-## 十七、相关文档
-
-| 文档 | 位置 |
-|------|------|
-| 微服务迁移计划 | docs/微服务迁移计划.md |
-| 阶段一 Docker容器化实施计划 | docs/阶段一_Docker容器化实施计划.md |
-| 阶段二 中间件引入实施计划 | docs/阶段二_中间件引入实施计划.md |
-| 阶段三 微服务拆分实施计划 | docs/阶段三_微服务拆分实施计划.md |
-| 项目说明文档 | docs/README.md |
-| 开发文档 | docs/development.md |
-
----
-
-**部署过程中如有疑问，请联系开发者。**
-
----
-
-## 十八、Linux VM 部署路线（新增：Windows 主机无法跑 Linux 镜像的替代方案）
-
-> 追加日期：2026-09-08。以下是在**实机部署**过程中发现原手册假设不成立后，补充的路线与进度记录。**原手册 一~十七章 为原始内容，继续有效**。区别仅在：原 §7 `docker compose up -d` 的执行环境由"Windows 主机 Docker"改为"本机 Hyper-V 里的 Linux(Ubuntu)虚拟机"，其余（端口、防火墙、.env、目录、备份）基本不变。
-
-### 18.1 为什么必须改用 Linux VM（实机验证结论）
-
-- 本机 Docker 为 **Docker EE（经 DockerMsftProvider 安装）＝ Windows 容器模式**：`docker version -f '{{.Server.Os}}'` 返回 `windows`。
-- `DockerCli.exe -SwitchDaemon`（原手册 §2.5）**不存在** → 该命令是 Docker Desktop 专属，而 Windows Server 不支持 Docker Desktop。
-- 原手册整套 compose（mysql/redis/nginx/nacos/minio + 8 微服务 + 旧 WAR + 监控）全部是 **Linux 镜像**，Windows 容器下无法运行；且 MySQL/Redis/Nacos/MinIO/Nginx 等均无官方 Windows 容器镜像，"改成 Windows 镜像"不现实（工作量大且核心组件无解）。
-- **结论**：在本机 Hyper-V 中开一台 Ubuntu 虚拟机，VM 内安装 Docker Engine，把整套 compose 原样搬进 VM 运行。Windows 主机那套 Docker 弃用、不再启动。
-
-### 18.2 服务器环境事实记录
-
-| 项 | 值 |
-|----|----|
-| 项目目录 | `C:\software-group`（服务器无 D 盘；本手册路径已全部由 D 改 C） |
-| Docker | Docker EE，`Server.Os = windows`（仅 Windows 容器） |
-| Hyper-V | 已安装且可用：`Get-WindowsFeature Hyper-V`=Installed、`HypervisorPresent`=True、`vmms`=Running |
-| 网络 | 校园网（可上网；拉 Docker Hub / Maven 可能慢，必要时配国内镜像） |
-| 内存 | ≥16GB（VM 分 8GB，动态 4–8） |
-
-### 18.3 已完成的部署步骤（进度记录）
-
-1. **§2.4 daemon.json 事故**：daemon.json 含 `storage-opts`（Linux 专属）导致 Docker 无法重启 → 已删除该文件恢复。**以后重建 daemon.json 必须去掉 storage-opts；§2.4 可选，可直接跳过。**
-2. **§2.5 判定**：`DockerCli.exe` 不存在，确认主机只能跑 Windows 容器。
-3. **Hyper-V 确认可用**：功能 Installed + HypervisorPresent=True + vmms Running。
-4. **创建 Linux VM（管理员 PowerShell）**：
-   - 交换机（桥接，VM 直接拿校园网 IP）：`New-VMSwitch -Name "External" -NetAdapterName <物理网卡名> -AllowManagementOS $true`
-   - VM：`New-VM -Name "sg-linux" -MemoryStartupBytes 8GB -Generation 2 -NewVHDPath "C:\software-group\vm\sg-linux.vhdx" -NewVHDSizeBytes 60GB -SwitchName "External"`
-   - CPU/内存：`Set-VM -Name "sg-linux" -ProcessorCount 4`；`Set-VMMemory -VMName "sg-linux" -DynamicMemoryEnabled $true -MinimumBytes 4GB -MaximumBytes 8GB`
-   - **踩坑修复（重要）**：
-     - VM 默认**没有 DVD 光驱**，`Set-VMDvdDrive` 无效 → 用 `Add-VMDvdDrive -VMName sg-linux -Path "C:\ubuntu-24.04.4-live-server-amd64.iso"`
-     - Gen2 安全启动模板默认 `MicrosoftWindows` 会拒绝 Ubuntu → `Set-VMFirmware -VMName sg-linux -EnableSecureBoot Off`
-     - DVD 设第一启动项：`$dvd=Get-VMDvdDrive sg-linux; Set-VMFirmware sg-linux -FirstBootDevice $dvd`
-   - ISO：`C:\ubuntu-24.04.4-live-server-amd64.iso`（3.17GB，下载完好）
-5. **Ubuntu 24.04.4 live-server 安装完成**：语言可选中文（简体）；键盘 English/US；存储 60GB 整盘；**勾选 Install OpenSSH server**；用户名/密码由使用者设定。
-   - ⚠️ 若重启后又回到安装界面（DVD 还挂着）：`Stop-VM sg-linux -Force; Set-VMDvdDrive sg-linux -Path $null; Start-VM sg-linux`
-6. **当前断点（2026-09-08）**：VM 内 Ubuntu **已安装完成**，停在**登录界面（输入用户名 + 密码）**，尚未登录。
-
-### 18.4 下一步（段 B / C / D）
-
-**B. VM 内安装 Docker Engine（Ubuntu 登录后执行）**
-```bash
-
-sudo systemctl enable --now docker
-sudo usermod -aG docker $USER   # 让当前用户免 sudo 用 docker，重新登录生效
-docker --version
-docker compose version
-```
-> 校园网拉 Docker Hub 慢时再配 registry 镜像（如 `docker.m.daocloud.io`），到时再给命令。
-
-**C. 代码 + 关键文件进 VM（建议放 /opt/software-group）**
-```bash
-sudo mkdir -p /opt/software-group && sudo chown $USER:$USER /opt/software-group
-```
-从 Windows 端 scp 或 git clone 仓库。**必须补上 3 个 git 不追踪的文件**：
-1. `target/software-group.war` —— 由 `mvn -f pom-war.xml clean package` 生成（根 `pom.xml` 已是微服务父工程，默认不打 WAR）
-2. `src/main/resources/config.local.properties` —— **必须是占位符格式**（`db.url=jdbc:mysql://${DB_HOST:-mysql}...`），`Dockerfile.tomcat` 构建时 COPY 并 envsubst 替换
-3. `.env` —— 注意 `docker-compose.yml:558` 的 app(WAR) 用 `${MYSQL_PASSWORD}`，微服务用 `${MYSQL_ROOT_PASSWORD}`；**两个变量都要在 .env 里设置且密码一致**，否则 WAR 连不上库而微服务正常（现象隐蔽）
-
-**D. 启动栈（在 /opt/software-group 内）**
 ```bash
 cd /opt/software-group
-docker compose up -d          # 首次构建镜像 + 拉镜像较久
-docker compose ps
-docker compose logs -f app mysql nginx   # 排错
+umask 077
+set -e
+set -o pipefail
+backup_dir="/opt/software-group/backup/pre-release-$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$backup_dir"
+docker exec sg_mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump -uroot --single-transaction --quick --routines --triggers --events --set-gtid-purged=OFF --databases software_group nacos_config' > "$backup_dir/mysql.sql"
+test -s "$backup_dir/mysql.sql"
+docker cp sg_minio:/data - | gzip > "$backup_dir/minio-data.tar.gz"
+gzip -t "$backup_dir/minio-data.tar.gz"
+tar -tzf "$backup_dir/minio-data.tar.gz" > /dev/null
+tar -czf "$backup_dir/deployment-config.tar.gz" .env docker-compose.yml Dockerfile.tomcat nginx/nginx.conf
+(cd "$backup_dir" && sha256sum mysql.sql minio-data.tar.gz deployment-config.tar.gz > SHA256SUMS)
 ```
-浏览器访问 VM 的 IP（80 端口）。
 
-### 18.5 部署进度快速定位（供下次读取本文件）
+`backup_dir` 变量仅在上述 VM shell 中有效。复制到 Windows 时，用 **Windows Server PowerShell** 新建接收目录并传输该次备份的实际文件夹名；不要把 VM 的 `/opt/...` 路径当作 Windows 本地路径，也不要把 `C:\software-group\backup` 绑定到 VM 容器：
 
-> ⚠️ **本节已过时（2026-09-28）**：下面写的"下一条要做的动作"（装 Docker）早已完成，且后续又推进了旧 WAR 修复与验证。**请直接读 §十九**，它以最新状态为准。18.5 保留作历史记录。
+```powershell
+New-Item -ItemType Directory -Force -Path 'C:\software-group\backup' | Out-Null
+scp -r 'ubuntu@<VM_IP>:/opt/software-group/backup/<实际备份目录名>' 'C:\software-group\backup\'
+Get-FileHash -Algorithm SHA256 -LiteralPath 'C:\software-group\backup\<实际备份目录名>\mysql.sql'
+```
 
-- 手册整体状态：一~十七 = 原始部署手册（仍用）；十八 = 本节（Linux VM 路线补充 + 进度）。
-- 服务器路径 `C:\software-group`；VM 名 `sg-linux`；Ubuntu ISO 在 `C:\ubuntu-24.04.4-live-server-amd64.iso`。
-- **下一条要做的动作**：VM 内 Ubuntu **登录** → 段 B 装 Docker（见 18.4 B）。
-- 待使用者提供的值：VM 用户名、VM IP、`.env` 密码（MYSQL_ROOT_PASSWORD 与 MYSQL_PASSWORD 一致）。
+将 Windows 的 `Get-FileHash` 与 VM 备份目录里的 `SHA256SUMS` 对照；MySQL、MinIO 和配置文件均要核对。2026-11-10 的整包异机校验记录见[修复执行计划的生产基线](项目问题汇总与整体修复执行计划.md)，不能当作本次发布的新备份。恢复操作先在隔离环境演练，不在运行中的生产库直接导入。旧 Windows Docker 命令中的 `docker run -v C:\...`、PowerShell `$(Get-Date)` 和 Linux `tar` 混用方式已归档，不作为当前命令。
+
+## 发布后验收与历史记录
+
+在 VM 上执行[步骤 6 验收采集脚本](../scripts/collect-ops07-acceptance.sh)，保存带时间、版本、退出码和原始日志的证据；具体前置条件和当前待执行状态见 §19.12。生产 VM 尚未应用本地修复时，不把此处目标端口、证书或新脚本写成已经验收。
 
 ---
+
+> 以下第十九章保留 2026-09 至 2026-10 的部署过程与 2026-11 的专项补充。历史操作与当时的 IP、密码变量、端口、容器状态应以当时日期解读；执行新发布请从上方当前路线开始。
 
 ## 十九、微服务部署进度与后续步骤（追加：2026-09-28）
 
-> **🔴 当前断点（2026-10-02 更新）：步骤 2 已完成，当前在步骤 3「构建 8 个微服务」。**
+> **历史断点（2026-10-02）**：当时步骤 2 已完成，下一步是构建 8 个微服务；这不是 2026-11-18 的部署进度。
 > 步骤 2 长期卡在 nacos 起不来，根因是**内嵌 Derby 在 Hyper-V 慢盘上首次建库 >30s，越过 Derby 默认 30s 登录超时**；
 > 已改为 **nacos 持久化切 MySQL**（详见 §19.4 步骤 2 的「✅ 已解决」与「步骤 2 收尾改动」），nacos 现为 `(healthy)` + `200`。
-> **下一步**：按 §19.4 步骤 3 构建 8 个微服务镜像（`COMPOSE_PARALLEL_LIMIT=2`，最慢一步，首次 20~40 分钟）。
+> **当时的下一步**：按 §19.4 步骤 3 构建 8 个微服务镜像（`COMPOSE_PARALLEL_LIMIT=2`，最慢一步，首次 20~40 分钟）。
 >
-> 追加日期：2026-09-28。**本节是当前唯一有效的进度断点**，§18.5 的"下一条动作"已过时，**以本节为准**。
+> 追加日期：2026-09-28。本节保存当时的排查与部署顺序；当前路线和真实待验收状态以上方入口及 §19.7–§19.12 为准。
 > 详细修复过程与逐条证据记录在 `docs/旧WAR_Tomcat10修复与部署方案.md`（同目录）。
 > 本节结构：19.1 环境事实 → 19.2 已完成 → 19.3 已知待办 → 19.4 接下来（步骤 0-6）→ 19.5 风险 → 19.6 快速定位。
 
@@ -1121,7 +125,7 @@ docker compose logs -f app mysql nginx   # 排错
 | `.dockerignore` | `target/` → `target/*`，让 WAR 能进构建上下文 |
 | `src/main/webapp/WEB-INF/web.xml` | 描述符升到 jakarta `web-app_6_0.xsd` + `version="6.0"` |
 
-**验证结果（阶段 C 通过，2026-09-23）**：容器内 `Starting Servlet engine: [Apache Tomcat/10.1.60]`；历史测试账号登录后 **302 → /index.jsp**；会话落 Redis（`session:*` 前缀，`dbsize=1`）；DB **45 张表**齐全；Windows Server 浏览器可访问 `192.168.0.15:8080`。历史凭据已弃用，生产凭据不得写入手册。
+**验证结果（阶段 C 通过，2026-09-23）**：容器内 `Starting Servlet engine: [Apache Tomcat/10.1.60]`；历史测试账号登录后 **302 → /index.jsp**；旧实现写入 Redis 的 `session:*` 键（`dbsize=1`，不代表能跨实例恢复）；DB **45 张表**齐全；Windows Server 浏览器可访问 `192.168.0.15:8080`。历史凭据已弃用，生产凭据不得写入手册。OPS-05 本地修复已移除旧过滤器，生产尚未部署；新版本旧 WAR 的 Session 由单实例 Tomcat 管理。
 
 #### ② 当时排查过的两个「非缺陷」（记下来，避免以后重复排查）
 
@@ -1159,7 +163,9 @@ sg_mysql      mysql:8                         Up 5 days (healthy)
 
 可回收空间：`docker rmi tomcat:9-jdk11`（652MB）+ `docker rmi nacos/nacos-server:v2.2.0`（1.63GB）≈ **2.28GB**。
 
-### 19.4 接下来：部署 8 个微服务（步骤 0 → 6）
+### 19.4 历史部署过程：8 个微服务（步骤 0 → 6）
+
+> 本节记录 2026-09/10 的命令和当时结果。当前版本已引入 Flyway、独立数据库账号、Nacos 认证、HTTPS 与端口收敛，不能直接复制本节的旧启动、密码、HTTP 或宿主端口命令；请先按文首当前发布顺序核对。
 
 > **总前提：绝对不要执行 `docker compose down -v`。** 数据卷一删就会触发待办 #1，45 张表全没。
 
@@ -1174,7 +180,7 @@ sg_mysql      mysql:8                         Up 5 days (healthy)
 | 步骤 3 构建 8 个微服务 | ✅ 已完成 | 2026-10-02 | 8 个镜像齐全（`docker images \| grep service \| wc -l` = **8**），SIZE **467–511MB**（=`eclipse-temurin:17-jre-alpine`≈180MB + Spring Boot fat jar），JAR 确已打入。本次 `docker compose build` 全命中缓存（`Building 8/8`、每条 `Built 0.0s`）——即**镜像已存在且与当前源码一致**，无须真编译 |
 | 步骤 4 启动 8 个微服务 | ✅ 已完成 | 2026-10-07 | 8 个容器 `Up (healthy)`，Nacos 服务列表 **`count=8`**（`hr/user/content/file/monitor/ai/activity/project-award` 全齐）。三个坑逐一定性并修复：① healthcheck 误用 `curl`（镜像里只有 wget）→ 改 `wget -q --spider`+`127.0.0.1`；② **真根因：5 个服务 `spring.application.name` 只写在被忽略的 `bootstrap.yml`、运行期为空 → `NacosServiceRegistry` 打 `No service to register for nacos client...` 直接跳过注册**（**并不是 server-addr**）；③ 用 `docker-compose.override.yml` 补 `environment` 被本机 compose 拒（`additional properties 'environment' not allowed`）。最终改法：在 base `docker-compose.yml` 的 5 个服务各插一行 `SPRING_APPLICATION_NAME: <svc>-service`（详见下方「步骤 4 修复 A / B」） |
 | 步骤 5 起 nginx | ✅ 已完成 | 2026-10-07 | `sg_nginx` `Up (healthy)`；四条 curl 全 200（`root`/`login`/`sg-login`/`sg-css`）。两个坑：① 探针 `localhost`→`127.0.0.1`（`nginx:alpine` 内 localhost 解析到 `::1`，而 `listen 80` 仅绑 IPv4）；② **旧站内链双前缀 404** —— 应用链接带 `${contextPath}`=`/software-group/...`，而 `location /` 把 `/` 映射成 `/software-group/` → 二次拼接成 `/software-group/software-group/...`（首页能开、CSS/JS/导航全 404）。修法：**新增独立前缀 location 原样透传** `location /software-group/ { proxy_pass http://tomcat_backend; ... }`（**rewrite 方向错、勿用**），并保留 `location /`（`e2e-smoke-test.sh` 要求 `/` 与 `/login.jsp`=200）。详见 §19.4「步骤 5」 |
-| 步骤 6 验收（3 个脚本 + 2 个 curl） | ⬜ 待执行 | — | — |
+| 步骤 6 验收（3 个脚本 + 2 个入口检查） | ⬜ 待执行 | — | 未收到完整生产输出；当前记录与采集方式见 §19.12 |
 
 > 状态用：⬜ 待执行 / 🔵 执行中 / ✅ 已完成 / ❌ 失败待查
 
@@ -1461,13 +467,15 @@ cd /opt/software-group
 bash scripts/verify-infrastructure.sh   # 只能在整栈起齐后跑（会查 sg_nacos/sg_minio/sg_nginx）
 bash scripts/verify-routes.sh
 bash scripts/e2e-smoke-test.sh
-curl -s -o /dev/null -w 'app-direct=%{http_code}\n' http://localhost:8080/software-group/login.jsp
+docker exec sg_nginx wget -q --spider http://app:8080/software-group/login.jsp && echo 'app-direct=200'
 curl -s -o /dev/null -w 'via-nginx=%{http_code}\n'  http://localhost/software-group/login.jsp
 ```
 
-- **预期**：三个脚本全绿；两个 curl 都 `200`（证明微服务上了、且旧站没被影响）。
+- **预期**：三个脚本全绿；容器内直连旧 WAR 和 Nginx 统一入口均返回 `200`（证明微服务上了、且旧站没被影响）。
 
-> 2026-11-15 的 4.3 补充：`verify-routes.sh` 和 `e2e-smoke-test.sh` 现只验证网关安全回退、页面可达及明确禁用的接口，不能证明微服务业务已切流。部署 4.3 候选版本并完成数据库迁移后，另运行 `bash scripts/verify-mig43-production-readiness.sh`，再做登录、项目、奖项、新闻和群组的实际读写验收。旧 WAR 的 8080 直连入口暂保留。
+> 2026-11-15 的 4.3 补充：`verify-routes.sh` 和 `e2e-smoke-test.sh` 现只验证网关安全回退、页面可达及明确禁用的接口，不能证明微服务业务已切流。部署 4.3 候选版本并完成数据库迁移后，另运行 `bash scripts/verify-mig43-production-readiness.sh`，再做登录、项目、奖项、新闻和群组的实际读写验收。OPS-01 后旧 WAR 的 8080 仅在 Docker 网络内可访问；直连验收从 Nginx 容器访问 `app:8080`。
+
+> **当前步骤 6 状态见 §19.12。** 上面的 HTTP 80 命令保留为 2026-10 的部署历史；新候选版本完成 OPS-03 的 TLS 部署后，应使用受信任 CA 的 HTTPS 入口采集验收证据。历史的页面 200 不等于当前版本通过。
 
 ### 19.5 风险清单
 
@@ -1481,9 +489,9 @@ curl -s -o /dev/null -w 'via-nginx=%{http_code}\n'  http://localhost/software-gr
 
 ### 19.6 快速定位（供下次读取本文件）
 
-- **手册状态**：一~十七 = 原始手册（仍有效）；十八 = Linux VM 路线（历史，已过时）；**十九 = 本文，当前唯一有效断点**。
-- **VM**：`sg-linux`，IP `192.168.0.15`，项目在 `/opt/software-group`。
-- **旧 WAR 状态**：**已跑通** —— `http://192.168.0.15:8080/software-group/login.jsp`（历史测试账号；生产凭据不在手册中展示）。
+- **手册状态**：原一~十八章已移入[历史附录](历史附录-Windows主机Docker与早期VM部署.md)；本节 19.1–19.6 是历史排查记录，当前生产操作以文首路线和 19.7–19.12 专项补充为准。
+- **VM 历史地址**：`sg-linux` 在 2026-09 曾使用 `192.168.0.15`，2026-11-10 从 Windows 宿主机实测可连接的地址为 `192.168.65.33`；当前 IP 须现场核对。项目目录为 `/opt/software-group`。
+- **旧 WAR 历史状态**：2026-09 曾通过 `http://192.168.0.15:8080/software-group/login.jsp` 直连；当前目标版本仅由 Nginx HTTPS 对外提供入口，生产尚未切换。
 - **进度一览（2026-10-07）**：步骤 0 ✅、步骤 1 ✅（sql 顺序+表名复数）、步骤 1.5 ✅（CRLF→LF）、步骤 2 ✅（nacos 切 MySQL）、步骤 3 ✅（8 个镜像 467–511MB）、**步骤 4 ✅（8 容器 `Up (healthy)`，Nacos `count=8`）**、**步骤 5 ✅（nginx `Up (healthy)`；`root`/`login`/`sg-login`/`sg-css` 四条 curl 全 200）**、**步骤 6 🔵 验收（下一动作）**。
 - **🔴 下一条动作：步骤 6（整栈验收）** —— 跑 `scripts/verify-infrastructure.sh`、`verify-routes.sh`、`e2e-smoke-test.sh` 三个脚本 + 两个 curl（`app-direct` 直连 `:8080`、`via-nginx` 走 `:80`）都应为 200。
 - **步骤 5 的两个坑（细节见 §19.4「步骤 5」）**：① 探针 `localhost`→`127.0.0.1`；② 旧站内链双前缀 404 → **新增 `location /software-group/ { proxy_pass http://tomcat_backend; ... }` 原样透传**（**rewrite 方向错、勿用**），保留 `location /`（`e2e-smoke-test.sh` 要 `/`、`/login.jsp`=200）。
@@ -1499,3 +507,44 @@ curl -s -o /dev/null -w 'via-nginx=%{http_code}\n'  http://localhost/software-gr
 ### 19.7 DB-03 运行账号切换补充（2026-11-17）
 
 前文 19.3 中“9 个 `DB_USER` 全是 root”和 19.4 中 Nacos 使用 root 的记录是当时的部署历史。DB-03 的本地配置已改为 10 个独立运行账号，生产尚未切换。正式更新 VM 前，先完成 DB-02 生产库 baseline，再按 [数据库运行账号切换说明](数据库运行账号切换说明.md) 设置私有 `.env`、运行 `db-migrate` 与 `db-users-init` 并验收权限。不能再执行旧的 `migrations/20261114_db_user_grants.sql`。
+
+### 19.8 OPS-01 端口收敛补充（2026-11-17）
+
+当前本地 Compose 只把 Nginx 的 TCP 80/443 发布到 VM 宿主机，80 仅用于 HTTPS 跳转；MySQL、Redis、RabbitMQ、Nacos、Sentinel、MinIO、8 个微服务和旧 WAR 均只在 Docker 网络内通信。上文 19.3、19.4、19.6 中的宿主直连端口和旧 IP 是当时的部署记录，不再作为新版本的端口要求。上线前必须按 OPS-03 文档先准备私有证书和客户端信任。
+
+生产 VM 仍在运行旧容器；本地改动不会自动关闭既有端口。正式切换须先完成 4.6 的生产库 baseline 和独立账号验收，再按 [OPS-01 端口收敛与防火墙验收](OPS-01端口收敛与防火墙验收.md) 核对现有绑定、备份配置、重建容器并从 VM 外验证端口。容器重建可能造成短暂连接中断，应在发布窗口执行，不使用 `docker compose down -v`。
+
+### 19.9 OPS-02 Nacos 认证补充（本地已修复，生产待验收；2026-11-17）
+
+当前本地 Compose 已为 Nacos 2.2.3 显式开启认证，要求私有 token/服务身份和八个微服务共用的专用客户端凭据。此前 `NACOS_AUTH_ENABLE=false`、`nacos/nacos` 的示例属于历史配置。生产 Nacos 尚未切换；账号创建、默认管理员改密、密钥生成、隔离演练及在线验证按 [OPS-02 Nacos 认证切换与验收](OPS-02-Nacos认证切换与验收.md) 执行。OPS-01 后 8848/9848 不再发布到 VM 宿主机。
+
+### 19.10 OPS-03 HTTPS 补充（本地已修复，生产待验收；2026-11-17）
+
+当前仅有内网 IP、没有证书。本地已配置 Nginx 443 TLS、80 跳转、Secure 会话 Cookie 和内部 CA 签发/续期脚本；**生产 VM 尚未套用此配置**。签发与信任步骤、到期告警和上线验收见 [OPS-03 内网 IP HTTPS 部署与验收](OPS-03-内网IP-HTTPS部署与验收.md)。内网 IP 的 HSTS 头不会被浏览器缓存；要获得 HSTS 保护，需使用域名。
+
+### 19.11 OPS-04 健康检查补充（本地已修复，生产待验收；2026-11-17）
+
+Nginx `/health` 现在只表示自身存活；容器健康状态改由 `/ready` 检查旧 WAR 与 MySQL/Redis。八个微服务提供内部 Prometheus 指标，可选 `monitoring` profile 在 Docker 网络内直接采集；线上仍需配置告警通道和 HTTPS 入口的业务合成检查。发布和验证步骤见 [OPS-04 健康检查与业务合成验收](OPS-04-健康检查与业务合成验收.md)。本地 Docker 未启动，生产 VM 未修改。
+
+### 19.12 OPS-07 步骤 6 生产验收记录（2026-11-18；待现场执行）
+
+**结论：步骤 6 尚未完成。** 截至本次文档核对，没有三项脚本和两项入口检查针对当前候选版本的完整生产输出、退出码、执行时间及 Git 版本。2026-10-07 的四条页面 `200` 和 2026-11-09 提供的 `docker compose ps`（16 个容器运行，其中 15 个显示 `healthy`，旧 WAR 为 `Up`）只能作为历史状态证据，不能代替当前步骤 6 验收。本地修复尚未发布到生产 VM。
+
+| 验收项 | 已有证据 | 当前候选版本结果 | 退出码 / 时间 / 证据文件 |
+|---|---|---|---|
+| `verify-infrastructure.sh` | 未收到完整运行输出 | 待执行 | 待采集 |
+| `verify-routes.sh` | 未收到完整运行输出 | 待执行 | 待采集 |
+| `e2e-smoke-test.sh`（含容器内服务健康） | 未收到完整运行输出 | 待执行 | 待采集 |
+| 旧 WAR 直连 `app:8080/software-group/login.jsp` | 2026-10 的旧部署曾可访问；非当前候选版本证据 | 待执行 | 待采集 |
+| Nginx 统一入口 `/software-group/login.jsp` | 2026-10-07 历史页面检查为 `200`；非当前候选版本证据 | 待执行 | 待采集 |
+| `verify-mig43-production-readiness.sh` | 4.3 候选版本和生产数据库迁移尚未验收 | 待满足前置条件后执行 | 待采集 |
+
+完成 4.6 数据库 baseline 与账号验收、OPS-03 证书和客户端信任、候选版本发布后，在 **VM** 的 `/opt/software-group` 运行只读采集脚本。将 `<VM_IP>` 与 CA 路径替换成生产实际值；只有 4.3 候选版本已部署且数据库迁移完成时才设置 `MIG43_CANDIDATE_DEPLOYED=1`：
+
+```bash
+cd /opt/software-group
+BASE_URL="https://<VM_IP>" CURL_CA_BUNDLE="/path/to/ca.crt" MIG43_CANDIDATE_DEPLOYED=1 \
+  bash scripts/collect-ops07-acceptance.sh
+```
+
+脚本运行三项只读检查和两个入口检查，记录北京时间、Git SHA、容器镜像 ID、每项退出码及原始输出到 `backup/ops07-acceptance-<时间>/`。`summary.md` 中五个核心检查全部为“通过”，且条件适用的 4.3 预检通过后，将实际结果、时间、Git SHA 与证据目录写回上表，再把步骤 6 标记“已完成”。若任一项失败，保留原始日志并标记“失败待查”；不得把未执行项填为通过。脚本不覆盖登录、上传下载、业务读写或生产外部端口验收，这些按各专项验收文档继续执行。

@@ -52,6 +52,11 @@ pom.xml.releaseBackup
 hs_err_pid*
 
 # Backup / temporary files
+/backup/
+/.claude/
+/docs/.ppt-build/
+/docs/output/
+__pycache__/
 *.bak
 *.bak2
 *.tmp
@@ -67,6 +72,9 @@ hs_err_pid*
 !**/.env.example
 config/*.env
 config/*.env.*
+# TLS material must live outside the repository; ignore common accidental locations.
+/nginx/tls/
+/private/
 # 本地环境配置文件（包含真实密码，绝对不能提交到Git！）
 config/config.local.properties
 config/config.test.properties

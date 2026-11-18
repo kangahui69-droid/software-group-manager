@@ -1,2 +1,8 @@
 scripts/provision-db-users.sh text eol=lf
+scripts/qa04_collect_production.sh text eol=lf
+scripts/qa04_preflight_release.sh text eol=lf
+scripts/e2e-smoke-test.sh text eol=lf
+scripts/verify-infrastructure.sh text eol=lf
+scripts/verify-mig43-production-readiness.sh text eol=lf
+scripts/check-deployment-secrets.sh text eol=lf
 migrations/20261117_db03_runtime_grants.sql text eol=lf
