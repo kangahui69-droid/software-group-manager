@@ -18,4 +18,5 @@ fi
 
 cd "$project_dir"
 docker compose --env-file "$env_file" config --quiet
+python3 "$project_dir/scripts/check-nacos-auth-config.py" --env-file "$env_file"
 echo "Private .env permissions and required Compose variables passed"

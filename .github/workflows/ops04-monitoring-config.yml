@@ -1,0 +1,28 @@
+name: OPS-04 monitoring configuration
+
+on:
+  push:
+    paths:
+      - monitoring/prometheus.yml
+      - scripts/verify-gateway-business.sh
+      - scripts/test_ops04_gateway_business.py
+      - .github/workflows/ops04-monitoring-config.yml
+  pull_request:
+    paths:
+      - monitoring/prometheus.yml
+      - scripts/verify-gateway-business.sh
+      - scripts/test_ops04_gateway_business.py
+      - .github/workflows/ops04-monitoring-config.yml
+
+jobs:
+  promtool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate scrape configuration
+        run: |
+          docker run --rm --entrypoint /bin/promtool \
+            -v "$PWD/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            prom/prometheus:v3.13.4 check config /etc/prometheus/prometheus.yml
+      - name: Test HTTPS gateway business probe
+        run: python3 scripts/test_ops04_gateway_business.py

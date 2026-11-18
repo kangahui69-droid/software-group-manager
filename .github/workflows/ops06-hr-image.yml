@@ -1,0 +1,26 @@
+name: OPS-06 HR image startup
+
+on:
+  push:
+    paths:
+      - hr-service/**
+      - common/**
+      - pom.xml
+      - scripts/test-ops06-hr-image.sh
+      - .github/workflows/ops06-hr-image.yml
+  pull_request:
+    paths:
+      - hr-service/**
+      - common/**
+      - pom.xml
+      - scripts/test-ops06-hr-image.sh
+      - .github/workflows/ops06-hr-image.yml
+  workflow_dispatch:
+
+jobs:
+  standalone-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and verify standalone HR image
+        run: bash scripts/test-ops06-hr-image.sh

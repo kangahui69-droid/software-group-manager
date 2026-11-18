@@ -68,15 +68,15 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- Session Redis 同步过滤器（阶段二中间件引入） -->
-    <filter>
-        <filter-name>sessionRedisFilter</filter-name>
-        <filter-class>filter.SessionRedisFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>sessionRedisFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+    <!-- 仅经 Nginx 本地 /ready 暴露的业务就绪检查 -->
+    <servlet>
+        <servlet-name>ReadinessServlet</servlet-name>
+        <servlet-class>servlet.ReadinessServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReadinessServlet</servlet-name>
+        <url-pattern>/internal/ready</url-pattern>
+    </servlet-mapping>
 
     <!-- 登录Servlet -->
     <servlet>

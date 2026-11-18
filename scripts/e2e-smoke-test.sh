@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Read-only gateway smoke check for the MIG-04 safe route policy.
 # Usage: BASE_URL=http://host bash scripts/e2e-smoke-test.sh
-# Run on the VM with CHECK_LOCAL_SERVICES=1 to also check loopback-only Actuator endpoints.
+# Run on the VM with CHECK_LOCAL_SERVICES=1 to also check container-local Actuator endpoints.
 set -euo pipefail
 
 BASE_URL=${BASE_URL:-http://localhost}
@@ -35,7 +35,12 @@ check_page /login.jsp 200
 BASE_URL="$BASE_URL" TIMEOUT="$TIMEOUT" bash "$SCRIPT_DIR/verify-routes.sh"
 
 if [ "${CHECK_LOCAL_SERVICES:-0}" = 1 ]; then
-  local_host=${LOCAL_SERVICE_HOST:-127.0.0.1}
+  if ! docker compose exec -T nginx wget --no-check-certificate -q --spider \
+    https://127.0.0.1/ready; then
+    echo 'FAIL Nginx: legacy WAR readiness through the gateway failed' >&2
+    exit 1
+  fi
+  echo 'PASS Nginx container-local readiness'
   for entry in \
     "file-service:${FILE_SERVICE_PORT:-8081}" \
     "user-service:${USER_SERVICE_PORT:-8082}" \
@@ -47,16 +52,12 @@ if [ "${CHECK_LOCAL_SERVICES:-0}" = 1 ]; then
     "ai-service:${AI_SERVICE_PORT:-8094}"; do
     service=${entry%%:*}
     port=${entry##*:}
-    code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time "$TIMEOUT" \
-      "http://$local_host:$port/actuator/health") || {
-      echo "FAIL $service: connection error" >&2
-      exit 1
-    }
-    if [ "$code" != 200 ]; then
-      echo "FAIL $service: expected HTTP 200, got $code" >&2
+    if ! docker compose exec -T "$service" wget -q --spider \
+      "http://127.0.0.1:$port/actuator/health"; then
+      echo "FAIL $service: container-local health check failed" >&2
       exit 1
     fi
-    echo "PASS $service local health (HTTP $code)"
+    echo "PASS $service container-local health"
   done
 fi
 

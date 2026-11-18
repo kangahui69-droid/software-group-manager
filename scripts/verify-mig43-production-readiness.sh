@@ -56,11 +56,17 @@ for entry in \
   'content-service:8087' 'ai-service:8094'; do
   service=${entry%%:*}
   container_port=${entry##*:}
-  binding=$(docker compose port "$service" "$container_port")
-  case "$binding" in
-    127.0.0.1:*) echo "PASS $service host binding is loopback" ;;
-    *) echo "FAIL $service host binding is $binding" >&2; exit 1 ;;
-  esac
+  binding=$(docker compose port "$service" "$container_port" 2>/dev/null || true)
+  if [ -n "$binding" ]; then
+    echo "FAIL $service still publishes host port $binding" >&2
+    exit 1
+  fi
+  if ! docker compose exec -T "$service" wget -q --spider \
+    "http://127.0.0.1:$container_port/actuator/health"; then
+    echo "FAIL $service container-local health check failed" >&2
+    exit 1
+  fi
+  echo "PASS $service has no host port and is healthy inside its container"
 done
 
 docker exec sg_nginx nginx -t

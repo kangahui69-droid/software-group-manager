@@ -14,7 +14,7 @@ import org.springframework.context.annotation.ComponentScan;
  * - 招聘申请管理（提交、审批、列表查询）
  * - 简历管理（CRUD、教育经历、技能、项目经历、获奖情况）
  *
- * 端口：8090
+ * 默认端口：8089
  */
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
 @EnableDiscoveryClient

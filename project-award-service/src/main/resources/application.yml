@@ -57,6 +57,15 @@ spring:
             connect-timeout: 5000
             read-timeout: 10000
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+
 # 日志配置
 logging:
   level:

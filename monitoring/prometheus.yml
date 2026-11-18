@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 30s
+  scrape_timeout: 5s
+
+scrape_configs:
+  - job_name: software-group-microservices
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - file-service:8081
+          - user-service:8082
+          - activity-service:8084
+          - project-award-service:8085
+          - hr-service:8089
+          - monitor-service:8086
+          - content-service:8087
+          - ai-service:8094
