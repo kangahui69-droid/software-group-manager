@@ -2,7 +2,7 @@
 
 > **当前唯一部署路线**：Windows Server 宿主机 → Hyper-V 中的 Ubuntu VM `sg-linux` → VM 内 Docker Engine / Docker Compose。Windows 主机只负责虚拟化、文件中转和异机备份，不在 Windows Docker 中运行本项目的 Linux 镜像。
 >
-> **文档与版本核对**：2026-11-18；最后一次核对的 GitHub `Version-2` 基线为 `1befb72ee49199c7b8681f55aa929707fb9dc339`。本地已新增尚未推送的主题提交，仍有必要文档和 QA-04 工具待整理；实际本地 HEAD 以 `git rev-parse HEAD` 为准。最近一次已记录的生产容器基线为 2026-11-09；当前候选版本尚未部署，生产运行的 Git SHA 和本节发布步骤尚未在线验证。执行发布时须重新记录实际 VM IP、Git SHA、镜像 ID 和验收时间。
+> **文档与版本核对**：2026-11-18；最后一次核对的 GitHub `Version-2` 基线为 `1befb72ee49199c7b8681f55aa929707fb9dc339`。本地修复与必要文档已拆为尚未推送的主题提交；在 `b9ca252` 干净克隆中 WAR 和微服务 Maven 构建通过，Docker 镜像尚未实测。实际本地 HEAD 以 `git rev-parse HEAD` 为准。最近一次已记录的生产容器基线为 2026-11-09；当前候选版本尚未部署，生产运行的 Git SHA 和本节发布步骤尚未在线验证。执行发布时须重新记录实际 VM IP、Git SHA、镜像 ID 和验收时间。
 >
 > 旧 Windows 主机 Docker、DockerCli 切换、Windows 防火墙端口表、`C:\software-group` 作为容器项目目录，以及早期 VM 安装过程已移入[历史附录](历史附录-Windows主机Docker与早期VM部署.md)。第十九章保存后续生产排查过程和专项补充，其中 2026-09/10 的“下一步”与旧 HTTP 命令是历史记录；当前操作从本页的步骤和专项验收文档进入。
 
