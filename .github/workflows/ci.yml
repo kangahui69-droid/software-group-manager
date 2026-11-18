@@ -1,0 +1,179 @@
+name: Project CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  war:
+    name: Legacy WAR tests and package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: mvn -B -ntp -f pom-war.xml clean verify
+      - uses: actions/upload-artifact@v7
+        with:
+          name: verified-war
+          path: target/software-group.war
+          if-no-files-found: error
+          retention-days: 7
+
+  microservices:
+    name: Microservice ${{ matrix.service }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - file-service
+          - user-service
+          - activity-service
+          - project-award-service
+          - hr-service
+          - monitor-service
+          - content-service
+          - ai-service
+    env:
+      # CiMySqlContainerTest runs only here; Docker is available on the hosted runner.
+      CI_TESTCONTAINERS: 'true'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: mvn -B -ntp -pl "${{ matrix.service }}" -am clean verify
+
+  mysql-integration:
+    name: Isolated MySQL business tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0.42
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-password"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      MIG01_MYSQL_URL: jdbc:mysql://127.0.0.1:3306/mig01_test?useSSL=false&allowPublicKeyRetrieval=true
+      MIG02_MYSQL_URL: jdbc:mysql://127.0.0.1:3306/mig02_test?useSSL=false&allowPublicKeyRetrieval=true
+      MIG03_MYSQL_URL: jdbc:mysql://127.0.0.1:3306/mig03_test?useSSL=false&allowPublicKeyRetrieval=true
+      MIG01_MYSQL_USER: root
+      MIG02_MYSQL_USER: root
+      MIG03_MYSQL_USER: root
+      MIG01_MYSQL_PASSWORD: ci-only-password
+      MIG02_MYSQL_PASSWORD: ci-only-password
+      MIG03_MYSQL_PASSWORD: ci-only-password
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Create three disposable schema-only databases
+        run: |
+          container="${{ job.services.mysql.id }}"
+          for database in mig01_test mig02_test mig03_test; do
+            docker exec -e MYSQL_PWD=ci-only-password "$container" mysql -uroot \
+              -e "CREATE DATABASE $database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            docker exec -i -e MYSQL_PWD=ci-only-password "$container" \
+              mysql -uroot "$database" < db-migrations/sql/V1__baseline_schema.sql
+          done
+      - name: Exercise project, content, and AI persistence
+        run: >-
+          mvn -B -ntp -pl project-award-service,content-service,ai-service -am
+          -Dtest=ProjectAwardMySqlTest,ContentMySqlTest,AiSessionMySqlTest
+          -Dsurefire.failIfNoSpecifiedTests=false test
+      - name: Reject silently skipped MySQL tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          suites = {
+              'project-award-service': 'ProjectAwardMySqlTest',
+              'content-service': 'ContentMySqlTest',
+              'ai-service': 'AiSessionMySqlTest',
+          }
+          for module, name in suites.items():
+              reports = list(Path(module, 'target', 'surefire-reports').glob(f'TEST-*{name}.xml'))
+              if len(reports) != 1:
+                  raise SystemExit(f'{module}: missing or duplicate {name} report')
+              suite = ET.parse(reports[0]).getroot()
+              tests = int(suite.attrib['tests'])
+              skipped = int(suite.attrib.get('skipped', '0'))
+              failures = int(suite.attrib.get('failures', '0'))
+              errors = int(suite.attrib.get('errors', '0'))
+              if tests == 0 or skipped or failures or errors:
+                  raise SystemExit(f'{module}: tests={tests} skipped={skipped} failures={failures} errors={errors}')
+              print(f'{module}: {tests} MySQL integration tests executed')
+          PY
+
+  flyway:
+    name: Flyway fresh and upgrade paths
+    uses: ./.github/workflows/db-migrations.yml
+
+  gitleaks:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+
+  vulnerabilities:
+    name: Maven dependency vulnerability scan
+    runs-on: ubuntu-24.04
+    needs: war
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: verified-war
+          path: target
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          vuln-type: library
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+  image-and-smoke:
+    name: Build images and smoke test Compose stack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    needs: [war, microservices, mysql-integration, flyway, gitleaks, vulnerabilities]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: verified-war
+          path: target
+      - run: bash scripts/ci-compose-smoke.sh
