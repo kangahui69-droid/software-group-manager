@@ -7,13 +7,11 @@ import model.User;
 import util.AuthHelper;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-@WebServlet("/study/*")
 public class StudySessionServlet extends HttpServlet {
 
     private StudySessionDAO studyDAO = new StudySessionDAO();

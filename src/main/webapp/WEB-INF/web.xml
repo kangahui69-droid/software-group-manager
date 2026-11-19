@@ -169,6 +169,17 @@
         <url-pattern>/member/password</url-pattern>
     </servlet-mapping>
 
+    <!-- 学习中心及学习记录 -->
+    <servlet>
+        <servlet-name>StudySessionServlet</servlet-name>
+        <servlet-class>servlet.StudySessionServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudySessionServlet</servlet-name>
+        <url-pattern>/study</url-pattern>
+        <url-pattern>/study/*</url-pattern>
+    </servlet-mapping>
+
     <!-- 活动Servlet -->
     <servlet>
         <servlet-name>ActivityServlet</servlet-name>

@@ -4,6 +4,10 @@ import model.StudySession;
 import util.DBUtil;
 
 import java.sql.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 /**
@@ -279,12 +283,13 @@ public class StudySessionDAO {
      * 获取本周学习时长统计
      */
     public Map<String, Object> getWeekStatistics(Integer userId) throws SQLException {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Shanghai"));
+        LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         String sql = "SELECT " +
                      "COUNT(*) as week_sessions, " +
                      "SUM(duration) as week_duration " +
                      "FROM study_session WHERE user_id = ? " +
-                     "AND session_date >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) " +
-                     "AND session_date <= CURDATE() " +
+                     "AND session_date >= ? AND session_date <= ? " +
                      "AND status = 'COMPLETED'";
 
         Map<String, Object> stats = new HashMap<>();
@@ -292,6 +297,8 @@ public class StudySessionDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userId);
+            ps.setDate(2, java.sql.Date.valueOf(monday));
+            ps.setDate(3, java.sql.Date.valueOf(today));
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
