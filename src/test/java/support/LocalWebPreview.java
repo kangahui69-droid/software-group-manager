@@ -6,7 +6,7 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * Opt-in local browser preview. Run with -Dtest=LocalWebPreview; excluded from normal suites.
- * Uses an in-memory H2 database and the test-only accounts seeded by H2Database.
+ * Uses a file-backed H2 database under .local-preview-data; ordinary tests remain in-memory.
  */
 public class LocalWebPreview {
 
@@ -20,7 +20,8 @@ public class LocalWebPreview {
         try {
             server.start();
             System.out.println("LOCAL_WEB_PREVIEW_READY=http://127.0.0.1:" + port + "/software-group/");
-            System.out.println("LOCAL_WEB_PREVIEW_TEST_USERS=admin,member1 (password: admin123)");
+            System.out.println("LOCAL_WEB_PREVIEW_DATA=.local-preview-data/preview-db.mv.db (preserved across restarts)");
+            System.out.println("LOCAL_WEB_PREVIEW_INITIAL_USERS=admin,member1 (initial password: admin123)");
             new CountDownLatch(1).await();
         } finally {
             server.stop();

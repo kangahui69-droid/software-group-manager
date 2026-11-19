@@ -32,8 +32,12 @@ public class EmbeddedTomcat {
     }
 
     public int start() throws Exception {
-        H2Database.initSchema();
-        H2Database.reset();
+        if (httpPreview) {
+            H2Database.initPersistentPreview(Path.of(".local-preview-data", "preview-db"));
+        } else {
+            H2Database.initSchema();
+            H2Database.reset();
+        }
 
         tomcat = new Tomcat();
         tomcat.setPort(requestedPort);

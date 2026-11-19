@@ -92,6 +92,7 @@ package-lock.json
 # Embedded Tomcat test runtime
 tomcat.*/
 tomcat/
+/.local-preview-data/
 
 # 项目复盘（不需要提交）
 项目复盘/
