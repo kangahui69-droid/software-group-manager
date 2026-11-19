@@ -10,17 +10,26 @@ public class EmbeddedTomcat {
 
     private Tomcat tomcat;
     private int port;
+    private final int requestedPort;
     private String contextPath = "/software-group";
     private File docBase;
     private File tempDir;
+
+    public EmbeddedTomcat() {
+        this(0);
+    }
+
+    public EmbeddedTomcat(int requestedPort) {
+        this.requestedPort = requestedPort;
+    }
 
     public int start() throws Exception {
         H2Database.initSchema();
         H2Database.reset();
 
         tomcat = new Tomcat();
-        tomcat.setPort(0);
-        tomcat.getConnector().setPort(0);
+        tomcat.setPort(requestedPort);
+        tomcat.getConnector().setPort(requestedPort);
         tomcat.setHostname("localhost");
 
         tempDir = Files.createTempDirectory("tomcat-embed-").toFile();
