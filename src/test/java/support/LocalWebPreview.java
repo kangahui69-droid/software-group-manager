@@ -16,7 +16,7 @@ public class LocalWebPreview {
         if (port < 1024 || port > 65535) {
             throw new IllegalArgumentException("preview.port must be between 1024 and 65535");
         }
-        EmbeddedTomcat server = new EmbeddedTomcat(port);
+        EmbeddedTomcat server = new EmbeddedTomcat(port, true);
         try {
             server.start();
             System.out.println("LOCAL_WEB_PREVIEW_READY=http://127.0.0.1:" + port + "/software-group/");

@@ -4,13 +4,16 @@ import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class EmbeddedTomcat {
 
     private Tomcat tomcat;
     private int port;
     private final int requestedPort;
+    private final boolean httpPreview;
     private String contextPath = "/software-group";
     private File docBase;
     private File tempDir;
@@ -20,7 +23,12 @@ public class EmbeddedTomcat {
     }
 
     public EmbeddedTomcat(int requestedPort) {
+        this(requestedPort, false);
+    }
+
+    public EmbeddedTomcat(int requestedPort, boolean httpPreview) {
         this.requestedPort = requestedPort;
+        this.httpPreview = httpPreview;
     }
 
     public int start() throws Exception {
@@ -30,6 +38,9 @@ public class EmbeddedTomcat {
         tomcat = new Tomcat();
         tomcat.setPort(requestedPort);
         tomcat.getConnector().setPort(requestedPort);
+        if (httpPreview) {
+            tomcat.getConnector().setProperty("address", "127.0.0.1");
+        }
         tomcat.setHostname("localhost");
 
         tempDir = Files.createTempDirectory("tomcat-embed-").toFile();
@@ -38,6 +49,19 @@ public class EmbeddedTomcat {
 
         docBase = findWebappDir();
         Context ctx = tomcat.addWebapp(contextPath, docBase.getAbsolutePath());
+        if (httpPreview) {
+            // The production descriptor requires HTTPS-only cookies. This isolated HTTP
+            // preview needs a session cookie for the login form's CSRF validation.
+            Path descriptor = new File(docBase, "WEB-INF/web.xml").toPath();
+            String webXml = Files.readString(descriptor, StandardCharsets.UTF_8);
+            String secureCookie = "<secure>true</secure>";
+            if (webXml.indexOf(secureCookie) < 0 || webXml.indexOf(secureCookie) != webXml.lastIndexOf(secureCookie)) {
+                throw new IllegalStateException("Expected exactly one secure session-cookie setting in web.xml");
+            }
+            Path previewDescriptor = new File(tempDir, "preview-web.xml").toPath();
+            Files.writeString(previewDescriptor, webXml.replace(secureCookie, "<secure>false</secure>"), StandardCharsets.UTF_8);
+            ctx.setAltDDName(previewDescriptor.toAbsolutePath().toString());
+        }
 
         // 设置类加载器为当前classloader，确保能加载target/classes里的类
         ctx.setParentClassLoader(Thread.currentThread().getContextClassLoader());
