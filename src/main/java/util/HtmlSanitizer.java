@@ -3,6 +3,7 @@ package util;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attribute;
 import org.jsoup.safety.Safelist;
 
 /**
@@ -14,7 +15,16 @@ public class HtmlSanitizer {
     /**
      * 富文本白名单 - 允许的HTML标签和属性
      */
-    private static final Safelist RICH_TEXT_WHITELIST = Safelist.relaxed()
+    private static final Safelist RICH_TEXT_WHITELIST = new Safelist(Safelist.relaxed()) {
+        @Override
+        public boolean isSafeAttribute(String tagName, Element el, Attribute attr) {
+            if ("img".equals(tagName) && "src".equals(attr.getKey())
+                    && attr.getValue().matches("^/(?:software-group/)?news/media/[1-9][0-9]*$")) {
+                return true;
+            }
+            return super.isSafeAttribute(tagName, el, attr);
+        }
+    }
             // 允许的标签已通过 relaxed() 包含，以下是额外配置
             // 允许的图片来源
             .addAttributes(":all", "src", "alt", "title", "width", "height")

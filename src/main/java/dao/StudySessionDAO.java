@@ -6,6 +6,7 @@ import util.DBUtil;
 import java.sql.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
@@ -14,21 +15,25 @@ import java.util.*;
  * 学习时段数据访问层
  */
 public class StudySessionDAO {
+    private static final ZoneId STUDY_ZONE = ZoneId.of("Asia/Shanghai");
+    // Old deployments could store check_in_time in a different zone. Database-managed
+    // created_at/check_out_time provide a consistent clock for those completed rows.
+    private static final String EFFECTIVE_DURATION = "CASE WHEN duration >= 0 THEN duration "
+            + "WHEN status = 'COMPLETED' AND check_out_time >= created_at "
+            + "AND TIMESTAMPDIFF(MINUTE, created_at, check_out_time) BETWEEN 0 AND 960 "
+            + "THEN TIMESTAMPDIFF(MINUTE, created_at, check_out_time) ELSE NULL END";
 
     /**
      * 开始学习（签到）
      */
     public int startStudy(StudySession session) throws SQLException {
         String sql = "INSERT INTO study_session (user_id, session_date, check_in_time, status) " +
-                     "VALUES (?, ?, ?, 'ACTIVE')";
+                     "VALUES (?, CURDATE(), NOW(), 'ACTIVE')";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, session.getUserId());
-            ps.setDate(2, new java.sql.Date(session.getSessionDate().getTime()));
-            ps.setTimestamp(3, session.getCheckInTime() != null ?
-                new Timestamp(session.getCheckInTime().getTime()) : new Timestamp(System.currentTimeMillis()));
 
             int rows = ps.executeUpdate();
             if (rows > 0) {
@@ -46,7 +51,7 @@ public class StudySessionDAO {
      */
     public int endStudy(Integer sessionId) throws SQLException {
         String sql = "UPDATE study_session SET check_out_time = NOW(), " +
-                     "duration = TIMESTAMPDIFF(MINUTE, check_in_time, NOW()), " +
+                     "duration = GREATEST(0, TIMESTAMPDIFF(MINUTE, created_at, NOW())), " +
                      "status = 'COMPLETED' WHERE id = ? AND status = 'ACTIVE'";
 
         try (Connection conn = DBUtil.getConnection();
@@ -62,7 +67,7 @@ public class StudySessionDAO {
      */
     public int endStudyForUser(Integer userId) throws SQLException {
         String sql = "UPDATE study_session SET check_out_time = NOW(), " +
-                     "duration = TIMESTAMPDIFF(MINUTE, check_in_time, NOW()), " +
+                     "duration = GREATEST(0, TIMESTAMPDIFF(MINUTE, created_at, NOW())), " +
                      "status = 'COMPLETED' WHERE user_id = ? AND session_date = CURDATE() AND status = 'ACTIVE'";
 
         try (Connection conn = DBUtil.getConnection();
@@ -78,7 +83,7 @@ public class StudySessionDAO {
      */
     public int endAllActiveSessions() throws SQLException {
         String sql = "UPDATE study_session SET check_out_time = NOW(), " +
-                     "duration = TIMESTAMPDIFF(MINUTE, check_in_time, NOW()), " +
+                     "duration = GREATEST(0, TIMESTAMPDIFF(MINUTE, created_at, NOW())), " +
                      "status = 'COMPLETED' WHERE session_date = CURDATE() AND status = 'ACTIVE'";
 
         try (Connection conn = DBUtil.getConnection();
@@ -112,7 +117,7 @@ public class StudySessionDAO {
      * 获取今日进行中的学习时段
      */
     public StudySession getTodayActiveSession(Integer userId) throws SQLException {
-        String sql = "SELECT * FROM study_session WHERE user_id = ? AND session_date = CURDATE() AND status = 'ACTIVE' ORDER BY check_in_time DESC LIMIT 1";
+        String sql = "SELECT * FROM study_session WHERE user_id = ? AND session_date = CURDATE() AND status = 'ACTIVE' ORDER BY created_at DESC LIMIT 1";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -124,6 +129,18 @@ public class StudySessionDAO {
                 return extractSession(rs);
             }
             return null;
+        }
+    }
+
+    /** Elapsed time measured by the same database clock used for starting a session. */
+    public int getActiveElapsedSeconds(Integer sessionId) throws SQLException {
+        String sql = "SELECT GREATEST(0, TIMESTAMPDIFF(SECOND, created_at, NOW())) AS elapsed_seconds "
+                + "FROM study_session WHERE id = ? AND status = 'ACTIVE'";
+        try (Connection conn = DBUtil.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, sessionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("elapsed_seconds") : 0;
+            }
         }
     }
 
@@ -221,8 +238,8 @@ public class StudySessionDAO {
                      "COUNT(*) as total_sessions, " +
                      "SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completed_sessions, " +
                      "SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_sessions, " +
-                     "SUM(duration) as total_duration, " +
-                     "AVG(duration) as avg_duration " +
+                     "SUM(" + EFFECTIVE_DURATION + ") as total_duration, " +
+                     "AVG(" + EFFECTIVE_DURATION + ") as avg_duration " +
                      "FROM study_session WHERE 1=1");
 
         List<Object> params = new ArrayList<>();
@@ -264,7 +281,7 @@ public class StudySessionDAO {
      * 获取今日学习时长
      */
     public Integer getTodayDuration(Integer userId) throws SQLException {
-        String sql = "SELECT SUM(duration) as today_duration FROM study_session WHERE user_id = ? AND session_date = CURDATE() AND status = 'COMPLETED'";
+        String sql = "SELECT SUM(" + EFFECTIVE_DURATION + ") as today_duration FROM study_session WHERE user_id = ? AND session_date = CURDATE() AND status = 'COMPLETED'";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -287,7 +304,7 @@ public class StudySessionDAO {
         LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         String sql = "SELECT " +
                      "COUNT(*) as week_sessions, " +
-                     "SUM(duration) as week_duration " +
+                     "SUM(" + EFFECTIVE_DURATION + ") as week_duration " +
                      "FROM study_session WHERE user_id = ? " +
                      "AND session_date >= ? AND session_date <= ? " +
                      "AND status = 'COMPLETED'";
@@ -407,13 +424,29 @@ public class StudySessionDAO {
         session.setId(rs.getInt("id"));
         session.setUserId(rs.getInt("user_id"));
         session.setSessionDate(rs.getDate("session_date"));
-        session.setCheckInTime(rs.getTimestamp("check_in_time"));
-        session.setCheckOutTime(rs.getTimestamp("check_out_time"));
-        session.setDuration(rs.getInt("duration"));
+        java.util.Date createdAt = beijingDateTime(rs, "created_at");
+        java.util.Date checkIn = beijingDateTime(rs, "check_in_time");
+        java.util.Date checkOut = beijingDateTime(rs, "check_out_time");
+        if (checkIn != null && createdAt != null && Math.abs(checkIn.getTime() - createdAt.getTime()) > 5 * 60_000L) {
+            checkIn = createdAt;
+        }
+        session.setCheckInTime(checkIn);
+        session.setCheckOutTime(checkOut);
+        Integer storedDuration = (Integer) rs.getObject("duration");
+        if (storedDuration != null && storedDuration < 0) {
+            long minutes = createdAt != null && checkOut != null ? (checkOut.getTime() - createdAt.getTime()) / 60_000L : -1;
+            storedDuration = minutes >= 0 && minutes <= 960 ? (int) minutes : null;
+        }
+        session.setDuration(storedDuration);
         session.setStatus(rs.getString("status"));
-        session.setCreatedAt(rs.getTimestamp("created_at"));
-        session.setUpdatedAt(rs.getTimestamp("updated_at"));
+        session.setCreatedAt(createdAt);
+        session.setUpdatedAt(beijingDateTime(rs, "updated_at"));
         return session;
+    }
+
+    private java.util.Date beijingDateTime(ResultSet rs, String column) throws SQLException {
+        LocalDateTime value = rs.getObject(column, LocalDateTime.class);
+        return value == null ? null : java.util.Date.from(value.atZone(STUDY_ZONE).toInstant());
     }
 
     /**

@@ -64,6 +64,15 @@ class SecurityFilterCsrfTest {
     }
 
     @Test
+    void redirectsInvalidLoginTokenWithoutProcessingCredentials() throws Exception {
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/software-group/login");
+        filter.doFilter(request, response, chain);
+        verify(response).sendRedirect("/software-group/login.jsp?expired=1");
+        verifyNoInteractions(chain);
+    }
+
+    @Test
     void blocksGetAndHeadMutationActionsButAllowsRead() throws Exception {
         when(request.getMethod()).thenReturn("GET");
         when(request.getParameter("action")).thenReturn("delete");

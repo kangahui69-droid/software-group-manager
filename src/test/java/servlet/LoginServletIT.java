@@ -50,14 +50,39 @@ class LoginServletIT extends TomcatTestBase {
     }
 
     @IntegrationTest
-    @DisplayName("缺少 CSRF 令牌的登录请求应拒绝")
-    void should_reject_login_without_csrf_token() throws Exception {
+    @DisplayName("缺少 CSRF 令牌的登录请求应返回新的登录页")
+    void should_refresh_login_without_csrf_token() throws Exception {
         HttpRequest.Response resp = HttpRequest.post(baseUrl() + "/login")
                 .param("username", "admin")
                 .param("password", "admin123")
                 .execute();
 
-        assertThat(resp.code()).isEqualTo(403);
+        assertThat(resp.code()).isEqualTo(302);
+        assertThat(resp.location()).contains("/login.jsp?expired=1");
+    }
+
+    @IntegrationTest
+    @DisplayName("旧令牌登录失败后可刷新页面再登录")
+    void should_recover_from_stale_login_token() throws Exception {
+        HttpRequest.Response page = HttpRequest.get(baseUrl() + "/login.jsp").execute();
+        assertThat(page.body()).contains("name=\"_csrf\"");
+        assertThat(page.header("Cache-Control")).contains("no-store");
+
+        HttpRequest.Response stale = HttpRequest.post(baseUrl() + "/login")
+                .withCookies(page.cookies()).param("_csrf", "expired-token")
+                .param("username", "admin").param("password", "admin123").execute();
+        assertThat(stale.code()).isEqualTo(302);
+        assertThat(stale.location()).contains("/login.jsp?expired=1");
+
+        HttpRequest.Response fresh = HttpRequest.get(baseUrl() + "/login.jsp?expired=1")
+                .withCookies(page.cookies()).execute();
+        Matcher token = CSRF_TOKEN.matcher(fresh.body());
+        assertThat(token.find()).isTrue();
+        HttpRequest.Response login = HttpRequest.post(baseUrl() + "/login")
+                .withCookies(page.cookies()).param("_csrf", token.group(1))
+                .param("username", "admin").param("password", "admin123").execute();
+        assertThat(login.code()).isEqualTo(302);
+        assertThat(login.location()).contains("/index.jsp");
     }
 
     private HttpRequest.Response postLogin(String username, String password) throws Exception {

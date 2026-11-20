@@ -379,8 +379,8 @@ class UserServiceTest {
         }
 
         @FastTest
-        @DisplayName("修改不可改字段（姓名）应返回错误")
-        void should_return_error_when_trying_to_change_name() {
+        @DisplayName("修改姓名应保存")
+        void should_save_changed_name() {
             User user = createUser(MEMBER_USER_ID, "member1", "pwd", ROLE_MEMBER, STATUS_ACTIVE);
             user.setName("原始姓名");
             MemberProfile existingProfile = createMemberProfile(MEMBER_USER_ID);
@@ -389,15 +389,14 @@ class UserServiceTest {
 
             Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO("新姓名", "email@test.com", null, null, null, null, null, null, null));
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("姓名");
-            assertThat(result.getMessage()).contains("不可修改");
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(user.getName()).isEqualTo("新姓名");
+            verify(userDAO).update(user);
         }
 
         @FastTest
-        @DisplayName("修改不可改字段（学号）应返回错误")
-        void should_return_error_when_trying_to_change_student_id() {
+        @DisplayName("修改学号应保存")
+        void should_save_changed_student_id() {
             User user = createUser(MEMBER_USER_ID, "member1", "pwd", ROLE_MEMBER, STATUS_ACTIVE);
             MemberProfile existingProfile = createMemberProfile(MEMBER_USER_ID);
             existingProfile.setStudentId("123456");
@@ -406,10 +405,9 @@ class UserServiceTest {
 
             Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, "NEW123", null, null, null, null));
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("学号");
-            assertThat(result.getMessage()).contains("不可修改");
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(existingProfile.getStudentId()).isEqualTo("NEW123");
+            verify(memberProfileDAO).update(existingProfile);
         }
 
         @FastTest
@@ -461,7 +459,7 @@ class UserServiceTest {
         @FastTest
         @DisplayName("简介超长应返回错误")
         void should_return_error_when_introduction_too_long() {
-            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, "a".repeat(501), null, null));
+            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, "a".repeat(5001), null, null));
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -472,7 +470,7 @@ class UserServiceTest {
         @FastTest
         @DisplayName("GitHub URL格式错误应返回错误")
         void should_return_error_when_github_url_invalid() {
-            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, null, "not-a-valid-url", null));
+            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, null, "invalid github!", null));
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);

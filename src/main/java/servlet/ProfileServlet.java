@@ -27,11 +27,13 @@ import java.io.IOException;
 public class ProfileServlet extends HttpServlet {
 
     private UserService userService;
+    private UserDAO userDAO;
+    private MemberProfileDAO memberProfileDAO;
 
     @Override
     public void init() throws ServletException {
-        UserDAO userDAO = new UserDAO();
-        MemberProfileDAO memberProfileDAO = new MemberProfileDAO();
+        userDAO = new UserDAO();
+        memberProfileDAO = new MemberProfileDAO();
         FileStorageDAO fileStorageDAO = new FileStorageDAO();
         this.userService = new UserService(userDAO, memberProfileDAO, fileStorageDAO);
     }
@@ -95,7 +97,6 @@ public class ProfileServlet extends HttpServlet {
 
         User currentUser = (User) session.getAttribute("user");
 
-        String userType = request.getParameter("userType");
         String name = request.getParameter("name");
         String phone = request.getParameter("phone");
         String email = request.getParameter("email");
@@ -104,6 +105,21 @@ public class ProfileServlet extends HttpServlet {
         String major = request.getParameter("major");
         String grade = request.getParameter("grade");
         String bio = request.getParameter("bio");
+        String github = request.getParameter("github");
+        String blog = request.getParameter("blog");
+
+        ProfileDTO profile = new ProfileDTO();
+        profile.setName(name);
+        profile.setPhone(phone);
+        profile.setEmail(email);
+        profile.setBirthday(birthday);
+        profile.setStudentId(studentId);
+        profile.setMajor(major);
+        profile.setGrade(grade);
+        profile.setIntroduction(bio);
+        profile.setGithub(github);
+        profile.setBlog(blog);
+        request.setAttribute("formProfile", profile);
 
         if (name == null || name.trim().isEmpty()) {
             request.setAttribute("error", "姓名不能为空");
@@ -134,28 +150,28 @@ public class ProfileServlet extends HttpServlet {
         }
 
         try {
-            // 更新基本信息
-            Result result = userService.updateProfile(
-                    currentUser.getId(), name, phone, email, birthday, studentId, major, grade, bio);
+            Result result = userService.updateProfile(currentUser.getId(), profile);
 
             if (result.isSuccess()) {
-                // 处理头像上传
-                Part avatarPart = request.getPart("avatar");
-                if (avatarPart != null && avatarPart.getSize() > 0) {
-                    Result avatarResult = userService.uploadAvatar(currentUser.getId(), avatarPart);
-                    if (avatarResult.isSuccess()) {
-                        // 更新session中的memberProfile
-                        MemberProfileDAO profileDAO = new MemberProfileDAO();
-                        model.MemberProfile updatedProfile = profileDAO.findByUserId(currentUser.getId());
-                        if (updatedProfile != null) {
-                            session.setAttribute("memberProfile", updatedProfile);
+                request.removeAttribute("formProfile");
+                try {
+                    Part avatarPart = request.getPart("avatar");
+                    if (avatarPart != null && avatarPart.getSize() > 0) {
+                        Result avatarResult = userService.uploadAvatar(currentUser.getId(), avatarPart);
+                        if (!avatarResult.isSuccess()) {
+                            request.setAttribute("error", "个人信息已保存，但头像上传失败: " + avatarResult.getMessage());
                         }
-                        request.setAttribute("success", "个人信息和头像更新成功");
-                    } else {
-                        request.setAttribute("error", "个人信息已更新，但头像上传失败: " + avatarResult.getMessage());
                     }
-                } else {
-                    request.setAttribute("success", "个人信息更新成功");
+                } catch (Exception e) {
+                    request.setAttribute("error", "个人信息已保存，但头像处理失败，请重试头像上传");
+                }
+                User updatedUser = userDAO.findById(currentUser.getId());
+                MemberProfile updatedProfile = memberProfileDAO.findByUserId(currentUser.getId());
+                if (updatedUser != null) session.setAttribute("user", updatedUser);
+                if (updatedProfile != null) session.setAttribute("memberProfile", updatedProfile);
+                if (request.getAttribute("error") == null) {
+                    response.sendRedirect(request.getContextPath() + "/member/profile.jsp?saved=1");
+                    return;
                 }
             } else {
                 request.setAttribute("error", result.getMessage());

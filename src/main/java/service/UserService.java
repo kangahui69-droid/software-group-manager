@@ -26,7 +26,7 @@ public class UserService {
     // ==================== 常量定义 ====================
 
     private static final int MAX_AVATAR_SIZE = 500 * 1024;
-    private static final int MAX_INTRODUCTION_LENGTH = 500;
+    private static final int MAX_INTRODUCTION_LENGTH = 5000;
     private static final int MIN_PASSWORD_LENGTH = 6;
     private static final int MAX_PASSWORD_LENGTH = 20;
     private static final int DEFAULT_PAGE_SIZE = 10;
@@ -43,9 +43,9 @@ public class UserService {
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
     private static final Pattern DATE_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
     private static final Pattern GITHUB_URL_PATTERN = Pattern.compile(
-            "^(https?://)?(www\\.)?github\\.com/[A-Za-z0-9_-]+/?$", Pattern.CASE_INSENSITIVE);
+            "^((https?://)?(www\\.)?github\\.com/)?[A-Za-z0-9_-]+/?$", Pattern.CASE_INSENSITIVE);
     private static final Pattern BLOG_URL_PATTERN = Pattern.compile(
-            "^(https?://)?[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/?$", Pattern.CASE_INSENSITIVE);
+            "^(https?://)?[A-Za-z0-9.-]+\\.[A-Za-z]{2,}(:[0-9]{1,5})?(/[A-Za-z0-9._~!$&'()*+,;=:@%/?#-]*)?$", Pattern.CASE_INSENSITIVE);
 
     // ==================== 依赖注入 ====================
 
@@ -115,11 +115,6 @@ public class UserService {
         User user = requireUserExists(userId);
         if (user == null) {
             return Result.error(404, "用户不存在");
-        }
-
-        Result immutableCheck = validateImmutableFields(user, profileDTO);
-        if (immutableCheck != null) {
-            return immutableCheck;
         }
 
         MemberProfile existingProfile = memberProfileDAO.findByUserId(userId);
@@ -270,6 +265,19 @@ public class UserService {
     }
 
     private Result validateProfileFields(ProfileDTO profileDTO) {
+        if (profileDTO.getName() != null
+                && (profileDTO.getName().trim().isEmpty() || profileDTO.getName().trim().length() > 50)) {
+            return Result.error(400, "姓名不能为空且不能超过50个字符");
+        }
+        if (profileDTO.getStudentId() != null && profileDTO.getStudentId().length() > 20) {
+            return Result.error(400, "学号不能超过20个字符");
+        }
+        if (profileDTO.getMajor() != null && profileDTO.getMajor().length() > 100) {
+            return Result.error(400, "专业不能超过100个字符");
+        }
+        if (profileDTO.getGrade() != null && profileDTO.getGrade().length() > 20) {
+            return Result.error(400, "年级不能超过20个字符");
+        }
         if (profileDTO.getEmail() != null) {
             String email = profileDTO.getEmail().trim();
             if (email.isEmpty() || !EMAIL_PATTERN.matcher(email).matches()) {
@@ -289,17 +297,23 @@ public class UserService {
 
         if (profileDTO.getIntroduction() != null
                 && profileDTO.getIntroduction().length() > MAX_INTRODUCTION_LENGTH) {
-            return Result.error(400, "简介不能超过500字符");
+            return Result.error(400, "简介不能超过5000字符");
         }
 
         if (profileDTO.getGithub() != null && !profileDTO.getGithub().trim().isEmpty()
                 && !GITHUB_URL_PATTERN.matcher(profileDTO.getGithub().trim()).matches()) {
             return Result.error(400, "GitHub链接格式错误");
         }
+        if (profileDTO.getGithub() != null && profileDTO.getGithub().length() > 100) {
+            return Result.error(400, "GitHub不能超过100个字符");
+        }
 
         if (profileDTO.getBlog() != null && !profileDTO.getBlog().trim().isEmpty()
                 && !BLOG_URL_PATTERN.matcher(profileDTO.getBlog().trim()).matches()) {
             return Result.error(400, "博客链接格式错误");
+        }
+        if (profileDTO.getBlog() != null && profileDTO.getBlog().length() > 100) {
+            return Result.error(400, "博客链接不能超过100个字符");
         }
 
         return null;
@@ -349,22 +363,12 @@ public class UserService {
         return userDAO.findById(userId);
     }
 
-    private Result validateImmutableFields(User user, ProfileDTO profileDTO) {
-        if (profileDTO.getName() != null && !profileDTO.getName().equals(user.getName())) {
-            return Result.error(400, "姓名不可修改");
-        }
-
-        MemberProfile existingProfile = memberProfileDAO.findByUserId(user.getId());
-        if (profileDTO.getStudentId() != null && existingProfile != null
-                && !profileDTO.getStudentId().equals(existingProfile.getStudentId())) {
-            return Result.error(400, "学号不可修改");
-        }
-        return null;
-    }
-
     // ==================== 业务逻辑方法 ====================
 
     private Result saveUserProfile(User user, ProfileDTO profileDTO, MemberProfile existingProfile) {
+        if (profileDTO.getName() != null) {
+            user.setName(profileDTO.getName().trim());
+        }
         if (profileDTO.getEmail() != null) {
             user.setEmail(profileDTO.getEmail());
         }
@@ -406,6 +410,7 @@ public class UserService {
         }
 
         maybeSetField(profileDTO.getMajor(), profile::setMajor);
+        maybeSetField(profileDTO.getStudentId(), profile::setStudentId);
         maybeSetField(profileDTO.getGrade(), profile::setGrade);
         maybeSetField(profileDTO.getIntroduction(), profile::setIntroduction);
         maybeSetField(profileDTO.getGithub(), profile::setGithub);

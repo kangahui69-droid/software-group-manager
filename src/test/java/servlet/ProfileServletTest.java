@@ -1,6 +1,9 @@
 package servlet;
 
 import model.User;
+import dao.UserDAO;
+import dao.MemberProfileDAO;
+import dto.ProfileDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,6 +58,12 @@ class ProfileServletTest {
     private UserService userService;
 
     @Mock
+    private UserDAO userDAO;
+
+    @Mock
+    private MemberProfileDAO memberProfileDAO;
+
+    @Mock
     private HttpServletRequest request;
 
     @Mock
@@ -78,6 +87,12 @@ class ProfileServletTest {
         Field productionService = ProfileServlet.class.getDeclaredField("userService");
         productionService.setAccessible(true);
         productionService.set(servlet, userService);
+        Field productionUserDAO = ProfileServlet.class.getDeclaredField("userDAO");
+        productionUserDAO.setAccessible(true);
+        productionUserDAO.set(servlet, userDAO);
+        Field productionProfileDAO = ProfileServlet.class.getDeclaredField("memberProfileDAO");
+        productionProfileDAO.setAccessible(true);
+        productionProfileDAO.set(servlet, memberProfileDAO);
         when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
         when(request.getParameter("action")).thenReturn("update");
     }
@@ -85,12 +100,14 @@ class ProfileServletTest {
     private void setupRealAvatarUpdate(User user, long size, String contentType) throws Exception {
         setupSession(user);
         when(request.getRequestURI()).thenReturn("/member/profile/update");
+        when(request.getContextPath()).thenReturn("/software-group");
         when(request.getParameter("name")).thenReturn("张三");
         when(request.getPart("avatar")).thenReturn(avatarPart);
         when(avatarPart.getSize()).thenReturn(size);
         when(avatarPart.getContentType()).thenReturn(contentType);
-        when(userService.updateProfile(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(userService.updateProfile(eq(user.getId()), any(ProfileDTO.class)))
                 .thenReturn(Result.ok());
+        when(userDAO.findById(user.getId())).thenReturn(user);
     }
 
     // ==================== 辅助方法 ====================
@@ -397,7 +414,7 @@ class ProfileServletTest {
             servlet.doRealPost(request, response);
 
             verify(userService).uploadAvatar(eq(1), same(avatarPart));
-            verify(request).setAttribute("success", "个人信息和头像更新成功");
+            verify(response).sendRedirect("/software-group/member/profile.jsp?saved=1");
         }
 
         @FastTest
@@ -411,7 +428,7 @@ class ProfileServletTest {
             servlet.doRealPost(request, response);
 
             verify(userService).uploadAvatar(eq(1), same(avatarPart));
-            verify(request).setAttribute("error", "个人信息已更新，但头像上传失败: 头像图片大小不能超过500KB");
+            verify(request).setAttribute("error", "个人信息已保存，但头像上传失败: 头像图片大小不能超过500KB");
         }
 
         @FastTest
@@ -425,7 +442,7 @@ class ProfileServletTest {
             servlet.doRealPost(request, response);
 
             verify(userService).uploadAvatar(eq(1), same(avatarPart));
-            verify(request).setAttribute("error", "个人信息已更新，但头像上传失败: 仅支持JPEG、JPG、PNG、GIF、WebP格式的图片");
+            verify(request).setAttribute("error", "个人信息已保存，但头像上传失败: 仅支持JPEG、JPG、PNG、GIF、WebP格式的图片");
         }
     }
 

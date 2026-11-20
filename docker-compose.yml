@@ -746,6 +746,7 @@ services:
       HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-5}
       DES_KEY: ${DES_KEY:?DES_KEY is required during legacy password migration}
       UPLOAD_BASE_DIR: /usr/local/tomcat/webapps/localstorage
+      NEWS_MEDIA_DIR: /var/lib/software-group/news-media
       # Redis 用于业务缓存及就绪检查；HttpSession 不写入 Redis。
       REDIS_HOST: redis
       REDIS_PORT: "6379"
@@ -766,6 +767,7 @@ services:
     # 解决：容器内文件上传后，删除容器文件丢失的问题
     volumes:
       - app_data:/usr/local/tomcat/webapps/localstorage
+      - news_media_data:/var/lib/software-group/news-media
 
     networks:
       - software-group-net
@@ -863,6 +865,7 @@ volumes:
   redis_data:
   rabbitmq_data:
   app_data:
+  news_media_data:
   # 阶段三新增数据卷
   nacos_data:     # Nacos 数据持久化
   nacos_logs:     # Nacos 日志持久化

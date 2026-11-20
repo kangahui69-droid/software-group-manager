@@ -191,7 +191,8 @@ public class AuthFilter implements Filter {
     }
 
     private boolean isNewsPath(String requestURI, String fullRequestUri, String contextPath) {
-        return requestURI.contains("/news/list")
+        return requestURI.startsWith(contextPath + "/news/media/")
+                || requestURI.contains("/news/list")
                 || requestURI.contains("/news?type=")
                 || requestURI.endsWith(contextPath + "/news")
                 || requestURI.endsWith(contextPath + "/news/")

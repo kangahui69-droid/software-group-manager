@@ -505,4 +505,11 @@
 </script>
 </c:if>
 
+<c:if test="${not empty sessionScope.user and sessionScope.user.role ne 'ADMIN' and not empty activity.id}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.markPublicationRead) window.markPublicationRead('ACTIVITY', ${activity.id});
+        });
+    </script>
+</c:if>
 <jsp:include page="../common/layout_bottom.jsp" />

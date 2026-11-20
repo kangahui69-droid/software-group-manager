@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="model.News" %>
 <%@ page import="model.User" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <% User user=(User) session.getAttribute("user"); if (user==null || !"ADMIN".equals(user.getRole())) { response.sendRedirect(request.getContextPath() + "/login.jsp" ); return; } News news=(News) request.getAttribute("news"); String content=(String) request.getAttribute("content"); boolean isEdit=(news !=null); %>
 <jsp:include page="../../jsp/common/layout_top.jsp">
     <jsp:param name="title" value='<%= isEdit ? "编辑新闻" : "发布新闻" %>' />
@@ -179,12 +180,13 @@
                     <i class="bi bi-pencil-square"></i><%= isEdit ? "编辑新闻" : "发布新闻" %>
                 </h3>
             </div>
-            <form action="${pageContext.request.contextPath}/news" method="POST">
+            <form id="news-editor-form" action="${pageContext.request.contextPath}/news" method="POST" data-media-url="${pageContext.request.contextPath}/news/media/upload">
                 <input type="hidden" name="action" value='<%= isEdit ? "update" : "create" %>'>
+                <input type="hidden" name="mediaToken" value="<c:out value='${mediaToken}'/>">
                 <div class="card-body-design">
                     <% if (request.getAttribute("error") != null) { %>
                         <div class="alert alert-danger" style="background: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; border-radius: var(--radius-standard); padding: 12px 16px; margin-bottom: 20px;">
-                            <%= request.getAttribute("error") %>
+                            <c:out value="${error}" />
                         </div>
                     <% } %>
                     <% if (isEdit) { %>
@@ -192,7 +194,7 @@
                     <% } %>
                     <div class="mb-4">
                         <label class="form-label-design required">新闻标题</label>
-                        <input type="text" class="input-design" name="title" value='<%= isEdit ? news.getTitle() : "" %>' placeholder="请输入新闻标题" required>
+                        <input type="text" class="input-design" name="title" value="<c:out value='${news.title}'/>" placeholder="请输入新闻标题" required>
                     </div>
                     <div class="row mb-4">
                         <div class="col-md-6">
@@ -213,7 +215,7 @@
                     </div>
                     <div class="mb-4">
                         <label class="form-label-design required">摘要</label>
-                        <textarea class="input-design" name="summary" rows="3" placeholder="简要描述新闻内容" required><%= isEdit ? news.getSummary() : "" %></textarea>
+                        <textarea class="input-design" name="summary" rows="3" placeholder="简要描述新闻内容" required><c:out value="${news.summary}" /></textarea>
                     </div>
                     <div class="mb-4">
                         <label class="form-label-design required">正文内容</label>
@@ -221,6 +223,20 @@
                             <div id="editor-container"></div>
                         </div>
                         <input type="hidden" id="content-data" name="content" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label-design" for="news-attachment-input">新闻附件（Word、PPT，最大 50 MB）</label>
+                        <input id="news-attachment-input" type="file" class="input-design" accept=".doc,.docx,.ppt,.pptx" multiple>
+                        <ul id="news-attachment-list" class="list-group mt-2">
+                            <c:forEach var="attachment" items="${attachments}">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><c:out value="${attachment.originalName}" /></span>
+                                    <input type="hidden" name="attachmentIds" value="${attachment.id}">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-remove-attachment>移除</button>
+                                </li>
+                            </c:forEach>
+                        </ul>
+                        <div id="news-media-status" role="status" aria-live="polite"></div>
                     </div>
                 </div>
                 <div class="card-footer-design">
@@ -234,20 +250,10 @@
     </div>
 </div>
 
+<textarea id="news-initial-content" hidden><c:out value="${content}" /></textarea>
 <script>
-let initialContent = "";
-<%if (isEdit && content != null && !content.isEmpty()) {
-    String escapedContent = content.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "")
-            .replace("`", "\\`");
-%>
-    initialContent = "<%= escapedContent %>";
-<% } %>
-
 document.addEventListener('DOMContentLoaded', function () {
-    initQuillEditor(initialContent);
+    initQuillEditor(document.getElementById('news-initial-content').value);
 });
 </script>
 

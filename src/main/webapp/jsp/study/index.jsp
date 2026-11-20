@@ -250,7 +250,7 @@
                                         <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">学习中</span>
                                         <div class="mt-2" style="color: var(--text-muted); font-size: 0.875rem;">
                                             <i class="bi bi-clock me-1"></i>
-                                            <fmt:formatDate value="${activeSession.checkInTime}" pattern="HH:mm:ss"/> 开始
+                                            <fmt:formatDate value="${activeSession.checkInTime}" pattern="HH:mm:ss" timeZone="Asia/Shanghai"/> 开始
                                         </div>
                                     </c:when>
                                     <c:otherwise>
@@ -400,21 +400,18 @@
 
 <script>
     var ctx = '${ctx}';
-    var checkInTime = null;
-
     <c:if test="${not empty activeSession}">
-        checkInTime = new Date('<fmt:formatDate value="${activeSession.checkInTime}" pattern="yyyy-MM-dd HH:mm:ss"/>').getTime();
+        var initialElapsedSeconds = Number('${activeElapsedSeconds}') || 0;
+        var timerStartedAt = performance.now();
+        updateCurrentDuration();
         setInterval(updateCurrentDuration, 1000);
     </c:if>
 
     function updateCurrentDuration() {
-        if (!checkInTime) return;
-
-        var now = new Date().getTime();
-        var duration = Math.floor((now - checkInTime) / 1000 / 60);
-        var hours = Math.floor(duration / 60);
-        var minutes = duration % 60;
-        var seconds = Math.floor((now - checkInTime) / 1000) % 60;
+        var elapsed = Math.max(0, initialElapsedSeconds + Math.floor((performance.now() - timerStartedAt) / 1000));
+        var hours = Math.floor(elapsed / 3600);
+        var minutes = Math.floor(elapsed % 3600 / 60);
+        var seconds = elapsed % 60;
 
         var text = '';
         if (hours > 0) {
@@ -499,7 +496,7 @@
             console.log('Response data:', data);
             if (data.success) {
                 var msg = '学习结束！';
-                if (data.duration) {
+                if (data.duration !== undefined && data.duration !== null) {
                     msg += '\n本次学习时长：' + data.duration + ' 分钟';
                 }
                 alert(msg);

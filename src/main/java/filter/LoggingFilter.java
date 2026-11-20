@@ -277,6 +277,9 @@ public class LoggingFilter implements Filter {
         if (uri.contains("/news") && "delete".equals(action)) {
             return "删除新闻";
         }
+        if (uri.contains("/news") && "hardDelete".equals(action)) {
+            return "彻底删除新闻";
+        }
 
         // 活动管理相关
         if (uri.contains("/activity") && "create".equals(action)) {

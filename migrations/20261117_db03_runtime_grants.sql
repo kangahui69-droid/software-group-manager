@@ -80,6 +80,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.group_member TO 'sg_app_s
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.group_message TO 'sg_app_svc'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.member_profile TO 'sg_app_svc'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.news TO 'sg_app_svc'@'%';
+GRANT SELECT, INSERT, UPDATE ON software_group.notification_event TO 'sg_app_svc'@'%';
+GRANT SELECT, INSERT, UPDATE ON software_group.notification_recipient TO 'sg_app_svc'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.news_asset TO 'sg_app_svc'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.operation_log TO 'sg_app_svc'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.problem_management TO 'sg_app_svc'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON software_group.problem_report TO 'sg_app_svc'@'%';

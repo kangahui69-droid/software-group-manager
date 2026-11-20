@@ -1,4 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%
+    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
+%>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -552,8 +557,14 @@
                         <span>${error}</span>
                     </div>
                 </c:if>
+                <c:if test="${param.expired eq '1'}">
+                    <div class="alert-custom alert-danger-custom" role="status">
+                        登录页面已更新，请重新点击登录。
+                    </div>
+                </c:if>
 
                 <form action="login" method="post" autocomplete="off" novalidate>
+                    <input type="hidden" name="_csrf" value="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>">
                     <div class="input-group-custom">
                         <input type="text" name="username" class="form-control" placeholder="请输入用户名" autocomplete="off" required>
                         <i class="bi bi-person input-icon"></i>

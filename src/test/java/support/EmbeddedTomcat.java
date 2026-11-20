@@ -33,7 +33,9 @@ public class EmbeddedTomcat {
 
     public int start() throws Exception {
         if (httpPreview) {
-            H2Database.initPersistentPreview(Path.of(".local-preview-data", "preview-db"));
+            System.setProperty("preview.storageBaseDir", ".local-preview-data/localstorage");
+            H2Database.initPersistentPreview(Path.of(System.getProperty("preview.databaseBase",
+                    ".local-preview-data/preview-db")));
         } else {
             H2Database.initSchema();
             H2Database.reset();

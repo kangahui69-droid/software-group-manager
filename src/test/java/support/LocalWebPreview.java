@@ -20,7 +20,8 @@ public class LocalWebPreview {
         try {
             server.start();
             System.out.println("LOCAL_WEB_PREVIEW_READY=http://127.0.0.1:" + port + "/software-group/");
-            System.out.println("LOCAL_WEB_PREVIEW_DATA=.local-preview-data/preview-db.mv.db (preserved across restarts)");
+            System.out.println("LOCAL_WEB_PREVIEW_DATA=" + System.getProperty("preview.databaseBase",
+                    ".local-preview-data/preview-db") + ".mv.db (preserved across restarts)");
             System.out.println("LOCAL_WEB_PREVIEW_INITIAL_USERS=admin,member1 (initial password: admin123)");
             new CountDownLatch(1).await();
         } finally {

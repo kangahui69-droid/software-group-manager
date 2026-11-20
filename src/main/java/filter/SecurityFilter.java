@@ -48,7 +48,12 @@ public class SecurityFilter implements Filter {
         if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)
                 || "PATCH".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)) {
             if (!CSRFTokenUtil.validateToken(httpRequest)) {
-                httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "CSRF Token 无效");
+                if ("POST".equalsIgnoreCase(method)
+                        && (httpRequest.getContextPath() + "/login").equals(httpRequest.getRequestURI())) {
+                    httpResponse.sendRedirect(httpRequest.getContextPath() + "/login.jsp?expired=1");
+                } else {
+                    httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "CSRF Token 无效");
+                }
                 return;
             }
         }

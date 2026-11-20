@@ -170,7 +170,10 @@ public class Config {
      * 支持占位符：${user.dir}（项目根目录）、${catalina.base}（Tomcat根目录）
      */
     public static String getFileStorageBaseDir() {
-        String value = getProperty("upload.baseDir", DEFAULT_UPLOAD_BASE_DIR);
+        String previewDir = "production".equalsIgnoreCase(System.getenv("APP_ENV")) ? null
+                : System.getProperty("preview.storageBaseDir");
+        String value = previewDir != null && !previewDir.trim().isEmpty() ? previewDir
+                : getProperty("upload.baseDir", DEFAULT_UPLOAD_BASE_DIR);
         value = value.replace("${user.dir}", System.getProperty("user.dir", "."));
         String catalinaBase = System.getProperty("catalina.base");
         if (catalinaBase != null) {

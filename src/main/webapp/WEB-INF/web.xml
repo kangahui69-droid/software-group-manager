@@ -80,6 +80,16 @@
 
     <!-- 登录Servlet -->
     <servlet>
+        <servlet-name>PublicationNotificationServlet</servlet-name>
+        <servlet-class>servlet.PublicationNotificationServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PublicationNotificationServlet</servlet-name>
+        <url-pattern>/notifications/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- 登录Servlet -->
+    <servlet>
         <servlet-name>LoginServlet</servlet-name>
         <servlet-class>servlet.LoginServlet</servlet-class>
     </servlet>
@@ -99,6 +109,18 @@
     </servlet-mapping>
 
     <!-- 新闻Servlet -->
+    <servlet>
+        <servlet-name>NewsMediaServlet</servlet-name>
+        <servlet-class>servlet.NewsMediaServlet</servlet-class>
+        <multipart-config>
+            <max-file-size>52428800</max-file-size>
+            <max-request-size>53477376</max-request-size>
+        </multipart-config>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>NewsMediaServlet</servlet-name>
+        <url-pattern>/news/media/*</url-pattern>
+    </servlet-mapping>
     <servlet>
         <servlet-name>NewsServlet</servlet-name>
         <servlet-class>servlet.NewsServlet</servlet-class>
@@ -170,6 +192,14 @@
     </servlet-mapping>
 
     <!-- 学习中心及学习记录 -->
+    <servlet>
+        <servlet-name>AttendanceServlet</servlet-name>
+        <servlet-class>servlet.AttendanceServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AttendanceServlet</servlet-name>
+        <url-pattern>/attendance/*</url-pattern>
+    </servlet-mapping>
     <servlet>
         <servlet-name>StudySessionServlet</servlet-name>
         <servlet-class>servlet.StudySessionServlet</servlet-class>
