@@ -27,7 +27,7 @@ public class ResumeSkillDAOImpl implements ResumeSkillDAO {
 
     @Override
     public boolean save(ResumeSkill skill) {
-        String sql = "INSERT INTO resume_skill (resume_id, skill_name, proficiency, proficiency_score, category, description, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO resume_skills (resume_id, skill_name, proficiency, proficiency_score, category, description, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -46,7 +46,7 @@ public class ResumeSkillDAOImpl implements ResumeSkillDAO {
 
     @Override
     public boolean update(ResumeSkill skill) {
-        String sql = "UPDATE resume_skill SET skill_name=?, proficiency=?, proficiency_score=?, category=?, description=? WHERE id=?";
+        String sql = "UPDATE resume_skills SET skill_name=?, proficiency=?, proficiency_score=?, category=?, description=? WHERE id=?";
         int rows = jdbcTemplate.update(sql,
                 skill.getSkillName(), skill.getProficiency(),
                 skill.getProficiencyScore(), skill.getCategory(),
@@ -56,20 +56,20 @@ public class ResumeSkillDAOImpl implements ResumeSkillDAO {
 
     @Override
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM resume_skill WHERE id=?";
+        String sql = "DELETE FROM resume_skills WHERE id=?";
         return jdbcTemplate.update(sql, id) > 0;
     }
 
     @Override
     public ResumeSkill findById(Integer id) {
-        String sql = "SELECT * FROM resume_skill WHERE id=?";
+        String sql = "SELECT * FROM resume_skills WHERE id=?";
         List<ResumeSkill> list = jdbcTemplate.query(sql, ROW_MAPPER, id);
         return list.isEmpty() ? null : list.get(0);
     }
 
     @Override
     public List<ResumeSkill> findByResumeId(Integer resumeId) {
-        String sql = "SELECT * FROM resume_skill WHERE resume_id=? ORDER BY display_order, id";
+        String sql = "SELECT * FROM resume_skills WHERE resume_id=? ORDER BY display_order, id";
         return jdbcTemplate.query(sql, ROW_MAPPER, resumeId);
     }
 }
