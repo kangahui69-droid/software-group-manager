@@ -208,6 +208,13 @@ public class AIServlet extends HttpServlet {
 
         Map<String, String> params = aiService.parseActionParams(actionString);
         Map<String, Object> result = aiService.executeAction(actionType, params, user);
+        Object redirectUrl = result.get("redirectUrl");
+        if (Boolean.TRUE.equals(result.get("success")) && redirectUrl instanceof String) {
+            String path = (String) redirectUrl;
+            if (path.startsWith("/") && !path.startsWith("//")) {
+                result.put("redirect", req.getContextPath() + path);
+            }
+        }
 
         PrintWriter out = resp.getWriter();
         out.print(gson.toJson(result));

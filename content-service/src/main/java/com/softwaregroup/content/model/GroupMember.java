@@ -11,6 +11,9 @@ public class GroupMember {
     private Integer userId;
     private String role;
     private Date joinedAt;
+    private Boolean muted;
+    private Date mutedUntil;
+    private String muteReason;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -26,4 +29,10 @@ public class GroupMember {
 
     public Date getJoinedAt() { return joinedAt; }
     public void setJoinedAt(Date joinedAt) { this.joinedAt = joinedAt; }
+    public Boolean isMuted() { return muted; }
+    public void setMuted(Boolean muted) { this.muted = muted; }
+    public Date getMutedUntil() { return mutedUntil; }
+    public void setMutedUntil(Date mutedUntil) { this.mutedUntil = mutedUntil; }
+    public String getMuteReason() { return muteReason; }
+    public void setMuteReason(String muteReason) { this.muteReason = muteReason; }
 }

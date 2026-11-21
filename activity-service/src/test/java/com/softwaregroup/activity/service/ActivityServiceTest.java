@@ -133,7 +133,7 @@ class ActivityServiceTest {
         filter.setKeyword("测试");
 
         // When
-        Result result = activityService.listActivities(filter);
+        Result result = activityService.listActivities(filter, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
         // Then
         assertTrue(result.isSuccess());
@@ -148,7 +148,7 @@ class ActivityServiceTest {
         when(registrationDAO.getParticipantCount(eq(1), anyString())).thenReturn(10);
 
         // When
-        Result result = activityService.getActivityDetail(1, null);
+        Result result = activityService.getActivityDetail(1, null, true);
 
         // Then
         assertTrue(result.isSuccess());
@@ -163,7 +163,7 @@ class ActivityServiceTest {
         when(activityDAO.findById(999)).thenReturn(null);
 
         // When
-        Result result = activityService.getActivityDetail(999, null);
+        Result result = activityService.getActivityDetail(999, null, true);
 
         // Then
         assertFalse(result.isSuccess());
@@ -253,7 +253,7 @@ class ActivityServiceTest {
         when(registrationDAO.findByActivityId(1)).thenReturn(Arrays.asList());
 
         // When
-        Result result = activityService.getActivityParticipants(1);
+        Result result = activityService.getActivityParticipants(1, 1);
 
         // Then
         assertTrue(result.isSuccess());

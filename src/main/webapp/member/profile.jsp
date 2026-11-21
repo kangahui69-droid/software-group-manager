@@ -1,19 +1,14 @@
 <%@ page language="java" contentType="text/html;" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <%@ page import="dao.MemberProfileDAO" %>
 <%@ page import="model.MemberProfile" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Date" %>
 <%
-    if (session.getAttribute("memberProfile") == null) {
-        model.User user = (model.User)session.getAttribute("user");
-        if (user != null) {
-            MemberProfileDAO profileDAO = new MemberProfileDAO();
-            MemberProfile profile = profileDAO.findByUserId(user.getId());
-            if (profile != null) {
-                session.setAttribute("memberProfile", profile);
-            }
-        }
+    model.User currentUser = (model.User)session.getAttribute("user");
+    if (currentUser != null) {
+        MemberProfile profile = new MemberProfileDAO().findByUserId(currentUser.getId());
+        session.setAttribute("memberProfile", profile);
     }
     String birthdayDisplay = "";
     Object birthdayObj = session.getAttribute("memberProfile");
@@ -261,6 +256,9 @@
 
 <div class="page-body">
     <div class="container-xl">
+        <c:if test="${param.saved eq '1'}">
+            <div class="alert alert-success" role="status">个人资料已保存。</div>
+        </c:if>
         <div class="profile-hero">
             <div class="row align-items-center">
                 <div class="col-auto profile-avatar-section">

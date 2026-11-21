@@ -1,6 +1,6 @@
 package com.softwaregroup.user.controller;
 
-import com.softwaregroup.common.util.JwtUtil;
+import com.softwaregroup.common.security.AuthenticatedUser;
 import com.softwaregroup.common.util.Result;
 import com.softwaregroup.user.model.dto.LoginRequest;
 import com.softwaregroup.user.model.dto.ProfileDTO;
@@ -55,7 +55,7 @@ public class AuthController {
      * PUT /api/users/password
      */
     @PutMapping("/password")
-    public Result changePassword(@RequestHeader("X-User-Id") Integer userId,
+    public Result changePassword(@AuthenticatedUser Integer userId,
                                   @RequestBody Map<String, String> passwordData) {
         String oldPwd = passwordData.get("oldPassword");
         String newPwd = passwordData.get("newPassword");
@@ -67,7 +67,7 @@ public class AuthController {
      * GET /api/users/profile
      */
     @GetMapping("/profile")
-    public Result getProfile(@RequestHeader("X-User-Id") Integer userId) {
+    public Result getProfile(@AuthenticatedUser Integer userId) {
         return authService.getUserDetail(userId);
     }
 
@@ -76,7 +76,7 @@ public class AuthController {
      * PUT /api/users/profile
      */
     @PutMapping("/profile")
-    public Result updateProfile(@RequestHeader("X-User-Id") Integer userId,
+    public Result updateProfile(@AuthenticatedUser Integer userId,
                                  @RequestBody ProfileDTO profileDTO) {
         return authService.updateProfile(userId, profileDTO);
     }

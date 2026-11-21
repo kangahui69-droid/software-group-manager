@@ -12,11 +12,14 @@ import com.softwaregroup.project.model.dto.ProgressDTO;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -25,15 +28,17 @@ import java.util.regex.Pattern;
 @Service
 public class ProjectService {
 
-    public static final String STATUS_PENDING = "pending";
-    public static final String STATUS_APPROVED = "approved";
-    public static final String STATUS_IN_PROGRESS = "in_progress";
-    public static final String STATUS_COMPLETED = "completed";
+    public static final String STATUS_PENDING = Project.STATUS_PENDING;
+    public static final String STATUS_APPROVED = Project.STATUS_APPROVED;
+    public static final String STATUS_IN_PROGRESS = Project.STATUS_IN_PROGRESS;
+    public static final String STATUS_COMPLETED = Project.STATUS_COMPLETED;
 
-    private static final int MAX_NAME_LENGTH = 200;
+    private static final int MAX_NAME_LENGTH = 100;
     private static final int MAX_DESCRIPTION_LENGTH = 5000;
     private static final int MAX_REASON_LENGTH = 500;
     private static final int MAX_YEARLY_PROJECTS = 3;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
 
     @Autowired
     private ProjectDAO projectDAO;
@@ -54,6 +59,7 @@ public class ProjectService {
     public String getStatusInProgress() { return STATUS_IN_PROGRESS; }
     public String getStatusCompleted() { return STATUS_COMPLETED; }
 
+    @Transactional
     public Result createProject(ProjectDTO dto, Integer userId) {
         Result validationResult = validateCreateProjectInput(dto, userId);
         if (validationResult != null) {
@@ -78,7 +84,7 @@ public class ProjectService {
         }
 
         if (project.getId() == null) {
-            project.setId(1);
+            return Result.error(500, "创建项目未返回ID");
         }
         projectDAO.addMember(project.getId(), userId, "LEADER", userId);
         projectDAO.addHistory(project.getId(), "CREATE", userId, "创建项目", "", null, null);
@@ -104,6 +110,9 @@ public class ProjectService {
         }
         if (dto.getCategory() == null || dto.getCategory().trim().isEmpty()) {
             return Result.error(400, "项目分类不能为空");
+        }
+        if (dto.getCategory().length() > 50) {
+            return Result.error(400, "项目分类不能超过50字符");
         }
         if (dto.getExpectedStartDate() != null && dto.getExpectedEndDate() != null
                 && dto.getExpectedStartDate().after(dto.getExpectedEndDate())) {
@@ -181,7 +190,7 @@ public class ProjectService {
         if (userId == null) {
             return Result.error(400, "用户ID不能为空");
         }
-        return null;
+        return validateCreateProjectInput(dto, userId);
     }
 
     private void applyDTOToProject(Project project, ProjectDTO dto) {
@@ -362,6 +371,11 @@ public class ProjectService {
             return Result.error(404, "项目不存在");
         }
 
+        if (operatorId == null || (!operatorId.equals(project.getLeaderId())
+                && !operatorId.equals(project.getAdminId()))) {
+            return Result.error(403, "无权审批此项目的成员申请");
+        }
+
         boolean approved = projectDAO.approveMemberApplication(applicationId, operatorId, null);
         if (!approved) {
             return Result.error(500, "审批失败");
@@ -385,6 +399,11 @@ public class ProjectService {
             return Result.error(404, "项目不存在");
         }
 
+        if (operatorId == null || (!operatorId.equals(project.getLeaderId())
+                && !operatorId.equals(project.getAdminId()))) {
+            return Result.error(403, "无权审批此项目的成员申请");
+        }
+
         boolean rejected = projectDAO.rejectMemberApplication(applicationId, operatorId, reason, null);
         if (!rejected) {
             return Result.error(500, "驳回失败");
@@ -399,6 +418,9 @@ public class ProjectService {
         }
         if (dto.getTitle() == null || dto.getTitle().trim().isEmpty()) {
             return Result.error(400, "计划标题不能为空");
+        }
+        if (dto.getStartDate() == null || dto.getEndDate() == null) {
+            return Result.error(400, "计划开始和结束时间不能为空");
         }
         if (dto.getStartDate() != null && dto.getEndDate() != null
                 && dto.getStartDate().after(dto.getEndDate())) {
@@ -446,7 +468,7 @@ public class ProjectService {
             return Result.error(403, "无权限");
         }
 
-        boolean added = projectDAO.addProgress(projectId, dto);
+        boolean added = projectDAO.addProgress(projectId, dto, userId);
         if (!added) {
             return Result.error(500, "添加进度失败");
         }
@@ -454,16 +476,47 @@ public class ProjectService {
         return Result.ok();
     }
 
-    public Result listProjects(ProjectFilterDTO filter, int page, int pageSize) {
+    public Result listProjects(ProjectFilterDTO filter, int page, int pageSize,
+                               com.softwaregroup.common.security.CurrentUser user) {
         String keyword = filter != null ? filter.getKeyword() : null;
-        String status = filter != null ? filter.getStatus() : null;
+        String status = filter != null && filter.getStatus() != null
+                ? filter.getStatus().trim().toLowerCase(java.util.Locale.ROOT) : null;
         Integer year = filter != null ? filter.getYear() : null;
 
-        List<Project> projects = projectDAO.findByConditions(keyword, status, year);
-        return Result.ok(projects);
+        int size = normalizePageSize(pageSize);
+        boolean publicOnly = user == null || !"ADMIN".equals(user.role());
+        try {
+            int total = projectDAO.countByConditions(keyword, status, year, publicOnly);
+            int currentPage = clampPage(page, size, total);
+            List<Project> projects = total == 0 ? List.of()
+                    : projectDAO.findPageByConditions(keyword, status, year, publicOnly,
+                    size, (currentPage - 1) * size);
+            return Result.ok(projectPage(projects, total, currentPage, size));
+        } catch (RuntimeException e) {
+            return Result.error(500, "查询项目失败");
+        }
     }
 
-    public Result getProjectDetail(Integer projectId, Integer userId) {
+    private int normalizePageSize(int pageSize) {
+        return pageSize < 1 ? DEFAULT_PAGE_SIZE : Math.min(pageSize, MAX_PAGE_SIZE);
+    }
+
+    private int clampPage(int page, int pageSize, int total) {
+        int pages = total == 0 ? 0 : (total - 1) / pageSize + 1;
+        return pages == 0 ? 1 : Math.min(Math.max(page, 1), pages);
+    }
+
+    private Map<String, Object> projectPage(List<Project> list, int total, int page, int pageSize) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("list", list);
+        data.put("total", total);
+        data.put("page", page);
+        data.put("pageSize", pageSize);
+        data.put("totalPages", total == 0 ? 0 : (total - 1) / pageSize + 1);
+        return data;
+    }
+
+    public Result getProjectDetail(Integer projectId, Integer userId, boolean isAdmin) {
         if (projectId == null || projectId <= 0) {
             return Result.error(400, "项目ID不能为空");
         }
@@ -473,26 +526,60 @@ public class ProjectService {
             return Result.error(404, "项目不存在");
         }
 
-        if (!STATUS_APPROVED.equals(project.getStatus()) && !project.getLeaderId().equals(userId)) {
+        if (!isAdmin && !STATUS_APPROVED.equals(project.getStatus()) && !STATUS_IN_PROGRESS.equals(project.getStatus())
+                && !STATUS_COMPLETED.equals(project.getStatus())
+                && !java.util.Objects.equals(project.getLeaderId(), userId)
+                && !java.util.Objects.equals(project.getAdminId(), userId)) {
             return Result.error(403, "无权限");
         }
 
-        projectDAO.getProjectMembers(projectId);
-        projectDAO.getLabels(projectId);
-        projectDAO.getPlans(projectId);
-        projectDAO.getProgressList(projectId);
-        projectDAO.getHistory(projectId);
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("project", project);
+        detail.put("members", projectDAO.getProjectMembers(projectId));
+        detail.put("labels", projectDAO.getLabels(projectId));
+        detail.put("plans", projectDAO.getPlans(projectId));
+        detail.put("progress", projectDAO.getProgressList(projectId));
+        detail.put("history", projectDAO.getHistory(projectId));
+        if (userId != null) {
+            boolean member = projectDAO.isMember(projectId, userId);
+            detail.put("isMember", member);
+            detail.put("currentUserRole", isAdmin || java.util.Objects.equals(project.getLeaderId(), userId)
+                    || java.util.Objects.equals(project.getAdminId(), userId) ? "ADMIN" : member ? "MEMBER" : null);
+        }
 
-        return Result.ok(project);
+        return Result.ok(detail);
     }
 
     public Result getMyProjects(Integer userId, int page, int pageSize) {
-        if (userId == null) {
+        if (userId == null || userId <= 0) {
             return Result.error(400, "用户ID不能为空");
         }
+        int size = normalizePageSize(pageSize);
+        try {
+            int total = projectDAO.countProjectsByUserId(userId);
+            int currentPage = clampPage(page, size, total);
+            List<Project> projects = total == 0 ? List.of()
+                    : projectDAO.findPageByUserId(userId, size, (currentPage - 1) * size);
+            return Result.ok(projectPage(projects, total, currentPage, size));
+        } catch (RuntimeException e) {
+            return Result.error(500, "查询我的项目失败");
+        }
+    }
 
-        List<Project> projects = projectDAO.findProjectsByUserId(userId);
-        return Result.ok(projects);
+    public Result getCreatedByMeProjects(Integer userId, int page, int pageSize) {
+        if (userId == null || userId <= 0) {
+            return Result.error(400, "用户ID不能为空");
+        }
+        int size = normalizePageSize(pageSize);
+        try {
+            int total = projectDAO.countProjectsByLeaderId(userId);
+            int currentPage = clampPage(page, size, total);
+            List<Project> projects = total == 0 ? List.of()
+                    : projectDAO.findPageByLeaderId(userId, size, (currentPage - 1) * size);
+            return Result.ok(projectPage(projects, total, currentPage, size));
+        } catch (RuntimeException e) {
+            return Result.error(500, "查询我负责的项目失败");
+        }
     }
 
     private boolean isValidRepoUrl(String url) {

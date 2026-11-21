@@ -1,25 +1,24 @@
 package servlet;
 
 import dao.StudySessionDAO;
-import dao.UserDAO;
 import model.StudySession;
 import model.User;
 import util.AuthHelper;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
-@WebServlet("/study/*")
 public class StudySessionServlet extends HttpServlet {
 
     private StudySessionDAO studyDAO = new StudySessionDAO();
-    private UserDAO userDAO = new UserDAO();
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    private SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm:ss");
+    private static final ZoneId STUDY_ZONE = ZoneId.of("Asia/Shanghai");
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -60,16 +59,7 @@ public class StudySessionServlet extends HttpServlet {
             // 获取今日进行中的学习时段
             StudySession activeSession = studyDAO.getTodayActiveSession(currentUser.getId());
 
-            // 检查是否需要自动结束（22:00自动结束，不影响后续签到）
-            Calendar now = Calendar.getInstance();
-            int hour = now.get(Calendar.HOUR_OF_DAY);
-            if (activeSession != null && hour >= 22) {
-                studyDAO.endStudy(activeSession.getId());
-                activeSession = null; // 刷新状态
-            }
-
-            // 重新获取时段（可能刚才被自动结束）
-            activeSession = studyDAO.getTodayActiveSession(currentUser.getId());
+            // 22:00 自动结束由 StudySessionScheduler 执行，GET 只读取状态。
 
             // 获取今日学习时长（只统计已完成的）
             Integer todayDuration = studyDAO.getTodayDuration(currentUser.getId());
@@ -89,6 +79,7 @@ public class StudySessionServlet extends HttpServlet {
             int consecutiveDays = studyDAO.getConsecutiveDays(currentUser.getId());
 
             req.setAttribute("activeSession", activeSession);
+            req.setAttribute("activeElapsedSeconds", activeSession == null ? 0 : studyDAO.getActiveElapsedSeconds(activeSession.getId()));
             req.setAttribute("todayDuration", todayDuration != null ? todayDuration : 0);
             req.setAttribute("completedToday", completedToday);
             req.setAttribute("todayStats", stats);
@@ -119,8 +110,8 @@ public class StudySessionServlet extends HttpServlet {
             String endDateStr = req.getParameter("endDate");
             String pageStr = req.getParameter("page");
 
-            Date startDate = startDateStr != null && !startDateStr.isEmpty() ? sdf.parse(startDateStr) : null;
-            Date endDate = endDateStr != null && !endDateStr.isEmpty() ? sdf.parse(endDateStr) : null;
+            Date startDate = startDateStr != null && !startDateStr.isEmpty() ? java.sql.Date.valueOf(LocalDate.parse(startDateStr)) : null;
+            Date endDate = endDateStr != null && !endDateStr.isEmpty() ? java.sql.Date.valueOf(LocalDate.parse(endDateStr)) : null;
             int page = pageStr != null ? Integer.parseInt(pageStr) : 1;
             int pageSize = 20;
             int offset = (page - 1) * pageSize;
@@ -153,63 +144,7 @@ public class StudySessionServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login.jsp");
             return;
         }
-
-        try {
-            String startDateStr = req.getParameter("startDate");
-            String endDateStr = req.getParameter("endDate");
-            String userIdStr = req.getParameter("userId");
-            String pageStr = req.getParameter("page");
-
-            // 默认显示今日记录
-            Calendar today = Calendar.getInstance();
-            today.set(Calendar.HOUR_OF_DAY, 0);
-            today.set(Calendar.MINUTE, 0);
-            today.set(Calendar.SECOND, 0);
-            today.set(Calendar.MILLISECOND, 0);
-            Date defaultStart = today.getTime();
-            today.set(Calendar.HOUR_OF_DAY, 23);
-            today.set(Calendar.MINUTE, 59);
-            today.set(Calendar.SECOND, 59);
-            Date defaultEnd = today.getTime();
-
-            Date startDate = startDateStr != null && !startDateStr.isEmpty() ? sdf.parse(startDateStr) : defaultStart;
-            Date endDate = endDateStr != null && !endDateStr.isEmpty() ? sdf.parse(endDateStr) : defaultEnd;
-            Integer userId = userIdStr != null && !userIdStr.isEmpty() ? Integer.parseInt(userIdStr) : null;
-            int page = pageStr != null ? Integer.parseInt(pageStr) : 1;
-            int pageSize = 30;
-            int offset = (page - 1) * pageSize;
-
-            List<StudySession> list = studyDAO.getAllSessions(startDate, endDate, userId, offset, pageSize);
-            int total = studyDAO.getTotalCount(userId, startDate, endDate);
-            int totalPages = (int) Math.ceil((double) total / pageSize);
-
-            // 获取统计数据
-            Map<String, Object> stats = studyDAO.getStatistics(userId, startDate, endDate);
-
-            // 获取所有成员列表（用于下拉选择）
-            List<User> userList = userDAO.findAll();
-
-            // 格式化日期用于前端显示
-            String displayStartDate = startDateStr != null ? startDateStr : sdf.format(startDate);
-            String displayEndDate = endDateStr != null ? endDateStr : sdf.format(endDate);
-
-            req.setAttribute("sessionList", list);
-            req.setAttribute("startDate", displayStartDate);
-            req.setAttribute("endDate", displayEndDate);
-            req.setAttribute("selectedUserId", userIdStr);
-            req.setAttribute("currentPage", page);
-            req.setAttribute("totalPages", totalPages);
-            req.setAttribute("totalCount", total);
-            req.setAttribute("statistics", stats);
-            req.setAttribute("userList", userList);
-            req.setAttribute("currentUser", currentUser);
-
-            req.getRequestDispatcher("/jsp/admin/study/manage.jsp").forward(req, resp);
-        } catch (Exception e) {
-            e.printStackTrace();
-            req.setAttribute("error", "获取学习记录失败: " + e.getMessage());
-            req.getRequestDispatcher("/jsp/admin/study/manage.jsp").forward(req, resp);
-        }
+        resp.sendRedirect(req.getContextPath() + "/attendance/manage");
     }
 
     // 开始学习
@@ -222,9 +157,8 @@ public class StudySessionServlet extends HttpServlet {
         }
 
         try {
-            Calendar now = Calendar.getInstance();
-            int hour = now.get(Calendar.HOUR_OF_DAY);
-            int minute = now.get(Calendar.MINUTE);
+            LocalTime now = LocalTime.now(STUDY_ZONE);
+            int hour = now.getHour();
 
             // 检查是否有进行中的学习时段
             StudySession activeSession = studyDAO.getTodayActiveSession(currentUser.getId());
@@ -267,7 +201,7 @@ public class StudySessionServlet extends HttpServlet {
             }
 
             resp.setContentType("application/json;charset=UTF-8");
-            resp.getWriter().write("{\"success\":true,\"message\":\"" + message + "\",\"startTime\":\"" + sdfTime.format(new Date()) + "\",\"status\":\"" + checkStatus + "\"}");
+            resp.getWriter().write("{\"success\":true,\"message\":\"" + message + "\",\"startTime\":\"" + LocalTime.now(STUDY_ZONE).format(TIME_FORMAT) + "\",\"status\":\"" + checkStatus + "\"}");
         } catch (Exception e) {
             e.printStackTrace();
             resp.setContentType("application/json;charset=UTF-8");
@@ -294,9 +228,9 @@ public class StudySessionServlet extends HttpServlet {
             }
 
             // 判断签退状态
-            Calendar now = Calendar.getInstance();
-            int hour = now.get(Calendar.HOUR_OF_DAY);
-            int minute = now.get(Calendar.MINUTE);
+            LocalTime now = LocalTime.now(STUDY_ZONE);
+            int hour = now.getHour();
+            int minute = now.getMinute();
 
             String checkStatus = "NORMAL"; // 正常
             if (hour < 21 || (hour == 21 && minute < 30)) {
@@ -308,10 +242,15 @@ public class StudySessionServlet extends HttpServlet {
             }
 
             // 结束学习
-            studyDAO.endStudy(activeSession.getId());
+            if (studyDAO.endStudy(activeSession.getId()) != 1) {
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().write("{\"success\":false,\"message\":\"学习时段已结束，请刷新页面\"}");
+                return;
+            }
 
-            // 获取更新后的学习时长
-            Integer duration = studyDAO.getTodayDuration(currentUser.getId());
+            StudySession endedSession = studyDAO.findById(activeSession.getId());
+            Integer duration = endedSession != null ? endedSession.getDuration() : 0;
+            Integer todayDuration = studyDAO.getTodayDuration(currentUser.getId());
 
             // 根据状态返回不同消息
             String message = "学习结束！";
@@ -320,7 +259,7 @@ public class StudySessionServlet extends HttpServlet {
             }
 
             resp.setContentType("application/json;charset=UTF-8");
-            resp.getWriter().write("{\"success\":true,\"message\":\"" + message + "\",\"duration\":" + (duration != null ? duration : 0) + ",\"status\":\"" + checkStatus + "\"}");
+            resp.getWriter().write("{\"success\":true,\"message\":\"" + message + "\",\"duration\":" + (duration != null ? duration : 0) + ",\"todayDuration\":" + (todayDuration != null ? todayDuration : 0) + ",\"status\":\"" + checkStatus + "\"}");
         } catch (Exception e) {
             e.printStackTrace();
             resp.setContentType("application/json;charset=UTF-8");

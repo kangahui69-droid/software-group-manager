@@ -44,7 +44,7 @@ public class ResumeEducationServlet extends HttpServlet {
         } else if ("edit".equals(action)) {
             showEditForm(req, resp, user.getId());
         } else if ("delete".equals(action)) {
-            deleteEducation(req, resp, user.getId());
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         } else {
             listEducations(req, resp, user.getId());
         }
@@ -69,6 +69,8 @@ public class ResumeEducationServlet extends HttpServlet {
             createEducation(req, resp, user.getId());
         } else if ("update".equals(action)) {
             updateEducation(req, resp, user.getId());
+        } else if ("delete".equals(action)) {
+            deleteEducation(req, resp, user.getId());
         } else {
             resp.sendRedirect(req.getContextPath() + "/resume/education?action=list");
         }

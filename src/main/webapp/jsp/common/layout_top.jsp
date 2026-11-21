@@ -1,10 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+    <%@ taglib uri="jakarta.tags.core" prefix="c" %>
         <!DOCTYPE html>
         <html lang="zh-CN">
 
         <head>
             <meta charset="UTF-8">
+            <meta name="csrf-token" content="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>">
+            <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
             <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
             <meta http-equiv="X-UA-Compatible" content="ie=edge" />
             <title>${param.title} - 软件小组管理系统</title>
@@ -73,6 +75,12 @@
                 .navbar-nav .nav-link:active {
                 }
                 .navbar-nav .nav-item.active .nav-link {
+                }
+
+                .publication-notification-bell {
+                    flex-shrink: 0;
+                    padding: 0.5rem;
+                    color: inherit;
                 }
                 
                 /* 空状态图标动画效果 */
@@ -228,6 +236,19 @@
                 <!-- Sidebar or Top Navbar -->
                 <header class="navbar navbar-expand-md navbar-light d-print-none" style="margin-bottom: 0 !important; border-bottom: none !important;">
                     <div class="container-xl">
+                        <c:if test="${not empty sessionScope.user and sessionScope.user.role != 'ADMIN'}">
+                            <a id="publicationNotificationBell"
+                               class="publication-notification-bell nav-link position-relative d-inline-flex align-items-center justify-content-center me-3"
+                               href="${pageContext.request.contextPath}/notifications"
+                               data-context="${pageContext.request.contextPath}"
+                               aria-label="我的通知">
+                                <i class="bi bi-bell fs-2"></i>
+                                <span id="publicationNotificationCount"
+                                      class="badge publication-notification-unread position-absolute top-0 start-100 translate-middle d-none"
+                                      style="background-color: #f4cbd1 !important; color: #923446 !important; border: 1px solid #e3a7b1;"
+                                      aria-live="polite"></span>
+                            </a>
+                        </c:if>
                         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                             data-bs-target="#navbar-menu">
                             <span class="navbar-toggler-icon"></span>
@@ -249,7 +270,7 @@
                                 <img src="${pageContext.request.contextPath}/images/IMG_20260419_175314.jpg" alt="Logo" class="avatar avatar-sm me-2">软件小组
                             </a>
                         </h1>
-                        <div class="navbar-nav flex-row order-md-last">
+                        <div class="navbar-nav flex-row order-md-last me-2 me-md-3">
                             <div class="nav-item">
                                 <c:choose>
                                     <c:when test="${not empty sessionScope.user}">
@@ -394,7 +415,7 @@
                                                     <a class="dropdown-item ${param.active == 'myActivities' ? 'active' : ''}" href="${pageContext.request.contextPath}/activity?action=myCreatedActivities">
                                                         <i class="bi bi-calendar-plus me-1"></i>活动申请
                                                     </a>
-                                                    <a class="dropdown-item ${param.active == 'myProjects' ? 'active' : ''}" href="${pageContext.request.contextPath}/project?action=list">
+                                                    <a class="dropdown-item ${param.active == 'myProjects' ? 'active' : ''}" href="${pageContext.request.contextPath}/project?action=myProjects">
                                                         <i class="bi bi-kanban me-1"></i>项目申请
                                                     </a>
                                                     <a class="dropdown-item ${param.active == 'award' ? 'active' : ''}" href="${pageContext.request.contextPath}/award?action=myAwards">

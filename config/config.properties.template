@@ -21,11 +21,11 @@
 #db.url=jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
 
 # 数据库用户名
-db.username=root
+db.username=sg_app_svc
 
 # 数据库密码
 # 警告：请将此文件添加到 .gitignore，不要将真实密码提交到Git！
-db.password=your_password_here
+db.password=
 
 # ============================================
 # 文件存储配置
@@ -80,7 +80,7 @@ mail.from=your_email@example.com
 
 # 发件人密码或授权码
 # 警告：不要将真实密码提交到Git！
-mail.password=your_email_password
+mail.password=
 
 # 是否启用SSL
 mail.smtp.ssl=true
@@ -92,7 +92,7 @@ mail.smtp.ssl=true
 # DES加密密钥（用于密码加密）
 # 警告：生产环境请务必修改此密钥！
 # 建议：16位随机字符串
-encryption.des.key=(^&%gasie_%^
+encryption.des.key=
 
 # 登录失败最大尝试次数（0表示不限制）
 security.login.max.attempts=5

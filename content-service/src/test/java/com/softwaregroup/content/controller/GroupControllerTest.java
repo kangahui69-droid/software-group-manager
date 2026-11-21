@@ -1,6 +1,8 @@
 package com.softwaregroup.content.controller;
 
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import com.softwaregroup.content.model.dto.GroupDTO;
 import com.softwaregroup.content.service.GroupService;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class GroupControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private GroupService groupService;
@@ -36,7 +40,9 @@ class GroupControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(groupController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(groupController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
     }
 
     @Test
@@ -81,7 +87,7 @@ class GroupControllerTest {
 
     @Test
     void getGroupDetail_withoutPermission_shouldReturn403() throws Exception {
-        when(groupService.getGroupDetail(eq(1), eq(2))).thenReturn(Result.error(403, "无权限查看群组详情"));
+        when(groupService.getGroupDetail(eq(1), eq(1))).thenReturn(Result.error(403, "无权限查看群组详情"));
 
         mockMvc.perform(get("/api/groups/1")
                         .param("userId", "2"))
@@ -195,7 +201,7 @@ class GroupControllerTest {
 
     @Test
     void getMessages_shouldReturnMessages() throws Exception {
-        when(groupService.getMessages(eq(1), eq(1))).thenReturn(Result.ok(List.of()));
+        when(groupService.getMessages(eq(1), eq(1), eq(1))).thenReturn(Result.ok(List.of()));
 
         mockMvc.perform(get("/api/groups/1/messages")
                         .param("page", "1"))
@@ -226,11 +232,44 @@ class GroupControllerTest {
 
     @Test
     void muteMember_shouldReturnSuccess() throws Exception {
-        when(groupService.muteMember(eq(1), eq(2), isNull(), eq("违反规定"))).thenReturn(Result.ok(null));
+        when(groupService.muteMember(eq(1), eq(2), isNull(), eq("违反规定"), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(post("/api/groups/1/mute")
                         .contentType("application/json")
                         .content("{\"targetUserId\":2,\"reason\":\"违反规定\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+    }
+
+    @Test
+    void muteMember_shouldPassExpiryToService() throws Exception {
+        java.util.Date until = java.util.Date.from(java.time.Instant.parse("2030-01-01T10:00:00Z"));
+        when(groupService.muteMember(eq(1), eq(2), eq(until), eq("违规发言"), eq(1)))
+                .thenReturn(Result.ok(null));
+
+        mockMvc.perform(post("/api/groups/1/mute")
+                        .contentType("application/json")
+                        .content("{\"targetUserId\":2,\"reason\":\"违规发言\",\"mutedUntil\":\"2030-01-01T10:00:00Z\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+    }
+
+    @Test
+    void muteSpecificMember_shouldUseTargetInPath() throws Exception {
+        when(groupService.muteMember(eq(1), eq(2), isNull(), eq("spam"), eq(1)))
+                .thenReturn(Result.ok(null));
+
+        mockMvc.perform(post("/api/groups/1/members/2/mute")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"spam\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+    }
+
+    @Test
+    void unmuteSpecificMember_shouldUseTargetId() throws Exception {
+        when(groupService.unmuteMember(1, 2, 1)).thenReturn(Result.ok(null));
+        mockMvc.perform(delete("/api/groups/1/members/2/mute"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
     }

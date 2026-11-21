@@ -2,6 +2,7 @@ package servlet;
 
 import dao.UserDAO;
 import model.User;
+import util.CSRFTokenUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -31,6 +32,8 @@ public class LoginServlet extends HttpServlet {
         User user = userDAO.findByUsernameAndPassword(username, password);
         if (user != null) {
             HttpSession session = request.getSession();
+            request.changeSessionId();
+            CSRFTokenUtil.storeTokenInSession(session);
             session.setAttribute("user", user);
             session.setAttribute("username", user.getUsername());
             session.setAttribute("role", user.getRole());

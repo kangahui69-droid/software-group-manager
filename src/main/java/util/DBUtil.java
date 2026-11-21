@@ -47,7 +47,7 @@ public class DBUtil {
 
         config.setJdbcUrl(Config.getProperty("db.url",
             "jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"));
-        config.setUsername(Config.getProperty("db.username", "root"));
+        config.setUsername(Config.getProperty("db.username", "sg_app_svc"));
         config.setPassword(Config.getProperty("db.password", ""));
         config.setDriverClassName(Config.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
 
@@ -57,6 +57,14 @@ public class DBUtil {
         config.setIdleTimeout(parseIntProperty("hikaricp.idleTimeout", (int) DEFAULT_IDLE_TIMEOUT));
 
         config.setPoolName("SoftwareGroup-HikariPool");
+        // DATETIME/CURRENT_TIMESTAMP are interpreted in the MySQL session time zone.
+        // H2 is used by local tests and does not support MySQL's time_zone variable.
+        if (config.getJdbcUrl().startsWith("jdbc:mysql:")) {
+            config.setConnectionInitSql("SET time_zone = '+08:00'");
+        } else if (config.getJdbcUrl().startsWith("jdbc:h2:")) {
+            // Keep the test/preview SQL clock aligned with production on UTC CI hosts.
+            config.setConnectionInitSql("SET TIME ZONE '+08:00'");
+        }
         config.setAutoCommit(true);
         config.setConnectionTestQuery("SELECT 1");
 

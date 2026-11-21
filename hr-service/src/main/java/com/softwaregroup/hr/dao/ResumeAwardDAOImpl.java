@@ -27,7 +27,7 @@ public class ResumeAwardDAOImpl implements ResumeAwardDAO {
 
     @Override
     public boolean save(ResumeAward award) {
-        String sql = "INSERT INTO resume_award (resume_id, award_name, competition_name, award_level, award_date, award_org, description, display_order, is_from_system) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO resume_awards (resume_id, award_name, competition_name, award_level, award_date, award_org, description, display_order, is_from_system) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -48,7 +48,7 @@ public class ResumeAwardDAOImpl implements ResumeAwardDAO {
 
     @Override
     public boolean update(ResumeAward award) {
-        String sql = "UPDATE resume_award SET award_name=?, competition_name=?, award_level=?, award_date=?, award_org=?, description=? WHERE id=?";
+        String sql = "UPDATE resume_awards SET award_name=?, competition_name=?, award_level=?, award_date=?, award_org=?, description=? WHERE id=?";
         int rows = jdbcTemplate.update(sql,
                 award.getAwardName(), award.getCompetitionName(),
                 award.getAwardLevel(), award.getAwardDate(),
@@ -58,20 +58,20 @@ public class ResumeAwardDAOImpl implements ResumeAwardDAO {
 
     @Override
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM resume_award WHERE id=?";
+        String sql = "DELETE FROM resume_awards WHERE id=?";
         return jdbcTemplate.update(sql, id) > 0;
     }
 
     @Override
     public ResumeAward findById(Integer id) {
-        String sql = "SELECT * FROM resume_award WHERE id=?";
+        String sql = "SELECT * FROM resume_awards WHERE id=?";
         List<ResumeAward> list = jdbcTemplate.query(sql, ROW_MAPPER, id);
         return list.isEmpty() ? null : list.get(0);
     }
 
     @Override
     public List<ResumeAward> findByResumeId(Integer resumeId) {
-        String sql = "SELECT * FROM resume_award WHERE resume_id=? ORDER BY display_order, id";
+        String sql = "SELECT * FROM resume_awards WHERE resume_id=? ORDER BY display_order, id";
         return jdbcTemplate.query(sql, ROW_MAPPER, resumeId);
     }
 }

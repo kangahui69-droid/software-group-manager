@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <jsp:include page="../../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="操作日志" />
 </jsp:include>
@@ -140,30 +139,34 @@
         
         <div class="search-card">
             <form method="get" action="${pageContext.request.contextPath}/admin/log/list" class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" class="form-control" name="keyword" value="${keyword}" placeholder="搜索用户名/描述/IP" style="border-radius: 10px; padding: 12px 16px;">
+                <div class="col-lg-3 col-md-4">
+                    <input type="text" class="form-control" name="keyword" value="<c:out value='${keyword}'/>" placeholder="搜索用户名/描述/IP/请求ID" style="border-radius: 10px; padding: 12px 16px;">
                 </div>
-                <div class="col-md-2">
+                <div class="col-lg-2 col-md-4">
                     <select class="form-select" name="operation" style="border-radius: 10px; padding: 12px;">
                         <option value="">全部</option>
-                        <option value="POST" ${operation == 'POST' ? 'selected' : ''}>POST</option>
-                        <option value="GET" ${operation == 'GET' ? 'selected' : ''}>GET</option>
-                        <option value="DELETE" ${operation == 'DELETE' ? 'selected' : ''}>DELETE</option>
-                        <option value="PUT" ${operation == 'PUT' ? 'selected' : ''}>PUT</option>
+                        <c:forEach var="item" items="${operationOptions}">
+                            <option value="${item}" ${operation == item ? 'selected' : ''}>${item}</option>
+                        </c:forEach>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-lg-2 col-md-4">
                     <select class="form-select" name="module" style="border-radius: 10px; padding: 12px;">
                         <option value="">全部</option>
-                        <option value="用户" ${module == '用户' ? 'selected' : ''}>用户</option>
-                        <option value="新闻" ${module == '新闻' ? 'selected' : ''}>新闻</option>
-                        <option value="项目" ${module == '项目' ? 'selected' : ''}>项目</option>
-                        <option value="活动" ${module == '活动' ? 'selected' : ''}>活动</option>
-                        <option value="奖项" ${module == '奖项' ? 'selected' : ''}>奖项</option>
-                        <option value="其他" ${module == '其他' ? 'selected' : ''}>其他</option>
+                        <c:forEach var="item" items="${moduleOptions}">
+                            <option value="${item.value}" ${module == item.value ? 'selected' : ''}>${item.value}</option>
+                        </c:forEach>
                     </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label" for="logStartTime">开始（北京时间，含）</label>
+                    <input id="logStartTime" type="datetime-local" class="form-control" name="startTime" value="<c:out value='${startTime}'/>" aria-label="开始时间（北京时间，含）">
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label" for="logEndTime">结束（北京时间，不含）</label>
+                    <input id="logEndTime" type="datetime-local" class="form-control" name="endTime" value="<c:out value='${endTime}'/>" aria-label="截止时间（北京时间，不含）">
+                </div>
+                <div class="col-lg-1 col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn-search w-100">搜索</button>
                 </div>
             </form>
@@ -180,7 +183,10 @@
                             <th>操作</th>
                             <th>模块</th>
                             <th>描述</th>
-                            <th>IP地址</th>
+                            <th>结果 / 状态</th>
+                            <th>耗时</th>
+                            <th>请求与目标</th>
+                            <th>客户端 / 代理 IP</th>
                             <th>时间</th>
                         </tr>
                     </thead>
@@ -191,17 +197,29 @@
                                 <td>${log.username}</td>
                                 <td><span class="status-badge status-primary">${log.operation}</span></td>
                                 <td>${log.module}</td>
-                                <td class="text-muted"><small>${log.description}</small></td>
-                                <td class="text-muted">${log.ipAddress}</td>
+                                <td class="text-muted"><small><c:out value="${log.description}" /></small></td>
+                                <td>
+                                    <c:out value="${empty log.result ? '—' : log.result}" />
+                                    <c:if test="${not empty log.httpStatus}"><br><small>HTTP <c:out value="${log.httpStatus}" /></small></c:if>
+                                    <c:if test="${not empty log.errorCode}"><br><small><c:out value="${log.errorCode}" /></small></c:if>
+                                </td>
+                                <td><c:if test="${not empty log.durationMs}"><c:out value="${log.durationMs}" /> ms</c:if></td>
                                 <td class="text-muted">
-                                    <fmt:formatDate value="${log.createdAt}"
-                                        pattern="yyyy-MM-dd HH:mm:ss" />
+                                    <c:if test="${not empty log.requestId}"><small>请求 <code><c:out value="${log.requestId}" /></code></small></c:if>
+                                    <c:if test="${not empty log.targetType}"><br><small>请求目标 <c:out value="${log.targetType}" /><c:if test="${not empty log.targetId}"> #<c:out value="${log.targetId}" /></c:if></small></c:if>
+                                </td>
+                                <td class="text-muted">
+                                    <c:out value="${log.ipAddress}" />
+                                    <c:if test="${not empty log.proxyIp}"><br><small>代理 <c:out value="${log.proxyIp}" /></small></c:if>
+                                </td>
+                                <td class="text-muted">
+                                    <c:out value="${log.createdAtBeijing}" />
                                 </td>
                             </tr>
                         </c:forEach>
                         <c:if test="${empty logs}">
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-8">暂无日志记录</td>
+                                <td colspan="10" class="text-center text-muted py-8">暂无日志记录</td>
                             </tr>
                         </c:if>
                     </tbody>
@@ -211,7 +229,7 @@
                 <div class="card-footer d-flex align-items-center flex-wrap" style="background: #f8fafc; border-top: none; padding: 16px 20px;">
                     <div class="d-flex align-items-center me-3">
                         <span class="text-muted me-2">每页</span>
-                        <select class="form-select form-select-sm" style="width: auto; border-radius: 8px;" onchange="window.location.href='?page=1&pageSize='+this.value">
+                        <select class="form-select form-select-sm" style="width: auto; border-radius: 8px;" onchange="return navigateToLogPage(1, this.value)">
                             <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
                             <option value="20" ${pageSize == 20 ? 'selected' : ''}>20</option>
                             <option value="50" ${pageSize == 50 ? 'selected' : ''}>50</option>
@@ -222,14 +240,14 @@
                     <ul class="pagination m-0 ms-auto">
                         <c:if test="${currentPage > 1}">
                             <li class="page-item">
-                                <a class="page-link" href="?page=${currentPage - 1}&pageSize=${pageSize}">上一页</a>
+                                <a class="page-link" href="?page=${currentPage - 1}&amp;pageSize=${pageSize}" onclick="return navigateToLogPage(${currentPage - 1}, ${pageSize})">上一页</a>
                             </li>
                         </c:if>
                         <c:choose>
                             <c:when test="${totalPages <= 10}">
                                 <c:forEach var="i" begin="1" end="${totalPages}">
                                     <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                        <a class="page-link" href="?page=${i}&pageSize=${pageSize}">${i}</a>
+                                        <a class="page-link" href="?page=${i}&amp;pageSize=${pageSize}" onclick="return navigateToLogPage(${i}, ${pageSize})">${i}</a>
                                     </li>
                                 </c:forEach>
                             </c:when>
@@ -248,27 +266,27 @@
                                     <c:set var="startPage" value="2"/>
                                 </c:if>
                                 <li class="page-item ${currentPage == 1 ? 'active' : ''}">
-                                    <a class="page-link" href="?page=1&pageSize=${pageSize}">1</a>
+                                    <a class="page-link" href="?page=1&amp;pageSize=${pageSize}" onclick="return navigateToLogPage(1, ${pageSize})">1</a>
                                 </li>
                                 <c:if test="${startPage > 2}">
                                     <li class="page-item disabled"><span class="page-link">...</span></li>
                                 </c:if>
                                 <c:forEach var="i" begin="${startPage}" end="${endPage}">
                                     <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                        <a class="page-link" href="?page=${i}&pageSize=${pageSize}">${i}</a>
+                                        <a class="page-link" href="?page=${i}&amp;pageSize=${pageSize}" onclick="return navigateToLogPage(${i}, ${pageSize})">${i}</a>
                                     </li>
                                 </c:forEach>
                                 <c:if test="${endPage < totalPages - 1}">
                                     <li class="page-item disabled"><span class="page-link">...</span></li>
                                 </c:if>
                                 <li class="page-item ${currentPage == totalPages ? 'active' : ''}">
-                                    <a class="page-link" href="?page=${totalPages}&pageSize=${pageSize}">${totalPages}</a>
+                                    <a class="page-link" href="?page=${totalPages}&amp;pageSize=${pageSize}" onclick="return navigateToLogPage(${totalPages}, ${pageSize})">${totalPages}</a>
                                 </li>
                             </c:otherwise>
                         </c:choose>
                         <c:if test="${currentPage < totalPages}">
                             <li class="page-item">
-                                <a class="page-link" href="?page=${currentPage + 1}&pageSize=${pageSize}">下一页</a>
+                                <a class="page-link" href="?page=${currentPage + 1}&amp;pageSize=${pageSize}" onclick="return navigateToLogPage(${currentPage + 1}, ${pageSize})">下一页</a>
                             </li>
                         </c:if>
                     </ul>
@@ -278,4 +296,13 @@
     </div>
 </div>
 
+<script>
+function navigateToLogPage(page, pageSize) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', page);
+    url.searchParams.set('pageSize', pageSize);
+    window.location.assign(url.toString());
+    return false;
+}
+</script>
 <jsp:include page="../../jsp/common/layout_bottom.jsp" />

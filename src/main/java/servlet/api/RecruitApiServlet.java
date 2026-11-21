@@ -45,13 +45,20 @@ public class RecruitApiServlet extends BaseApiServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        User currentUser = requireAuth(req, resp);
         String pathInfo = derivePathInfo(req);
+
+        if (isYearsPath(pathInfo)) {
+            handleGetYears(resp);
+            return;
+        }
+
+        User currentUser = requireAuth(req, resp);
+        if (currentUser == null || !requireAdmin(currentUser, resp)) {
+            return;
+        }
 
         if (isListPath(pathInfo)) {
             handleListApplications(req, resp);
-        } else if (isYearsPath(pathInfo)) {
-            handleGetYears(resp);
         } else if (isCountPath(pathInfo)) {
             handleGetCount(resp);
         } else {
@@ -61,12 +68,16 @@ public class RecruitApiServlet extends BaseApiServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        User currentUser = requireAuth(req, resp);
         String pathInfo = derivePathInfo(req);
         String uri = req.getRequestURI();
 
         if (isCreatePath(uri, pathInfo)) {
             handleSubmitApplication(req, resp);
+            return;
+        }
+
+        User currentUser = requireAuth(req, resp);
+        if (currentUser == null || !requireAdmin(currentUser, resp)) {
             return;
         }
 
@@ -88,6 +99,9 @@ public class RecruitApiServlet extends BaseApiServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         User currentUser = requireAuth(req, resp);
+        if (currentUser == null || !requireAdmin(currentUser, resp)) {
+            return;
+        }
         String pathInfo = derivePathInfo(req);
         try {
             RecruitPathInfo pi = parseAndValidatePathInfo(pathInfo);
@@ -115,6 +129,14 @@ public class RecruitApiServlet extends BaseApiServlet {
             return null;
         }
         return currentUser;
+    }
+
+    private boolean requireAdmin(User currentUser, HttpServletResponse resp) throws IOException {
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            sendForbidden(resp, "需要管理员权限");
+            return false;
+        }
+        return true;
     }
 
     // ==================== 路径验证 ====================
@@ -150,15 +172,15 @@ public class RecruitApiServlet extends BaseApiServlet {
     }
 
     private boolean isYearsPath(String pathInfo) {
-        return pathInfo != null && pathInfo.endsWith("/years");
+        return "/years".equals(pathInfo);
     }
 
     private boolean isCountPath(String pathInfo) {
-        return pathInfo != null && pathInfo.endsWith("/count");
+        return "/count".equals(pathInfo);
     }
 
     private boolean isCreatePath(String uri, String pathInfo) {
-        return uri.endsWith("/api/recruit") || (pathInfo != null && pathInfo.equals("/"));
+        return (uri != null && uri.endsWith("/api/recruit")) || "/".equals(pathInfo);
     }
 
     // ==================== 处理器方法 ====================
@@ -234,7 +256,7 @@ public class RecruitApiServlet extends BaseApiServlet {
         if (uri == null || !uri.contains("/api/recruit/")) {
             return null;
         }
-        String pathInfo = uri.substring(uri.indexOf("/api/recruit/") + 14);
+        String pathInfo = uri.substring(uri.indexOf("/api/recruit/") + "/api/recruit".length());
         if (pathInfo.isEmpty()) {
             return null;
         }

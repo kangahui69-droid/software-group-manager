@@ -9,13 +9,11 @@ import model.User;
 import util.AuthHelper;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-@WebServlet("/attendance/*")
 public class AttendanceServlet extends HttpServlet {
 
     private AttendanceDAO attendanceDAO = new AttendanceDAO();

@@ -60,7 +60,12 @@ public class HttpRequest {
 
         int code = conn.getResponseCode();
         Map<String, String> respCookies = new LinkedHashMap<>();
-        List<String> setCookies = conn.getHeaderFields().getOrDefault("Set-Cookie", Collections.emptyList());
+        List<String> setCookies = new ArrayList<>();
+        conn.getHeaderFields().forEach((name, values) -> {
+            if (name != null && name.equalsIgnoreCase("Set-Cookie") && values != null) {
+                setCookies.addAll(values);
+            }
+        });
         for (String sc : setCookies) {
             String part = sc.split(";")[0];
             int eq = part.indexOf('=');
@@ -80,8 +85,9 @@ public class HttpRequest {
                 }
             }
         } catch (IOException e) { respBody = ""; }
+        Map<String, List<String>> responseHeaders = conn.getHeaderFields();
         conn.disconnect();
-        return new Response(code, respBody, location, respCookies);
+        return new Response(code, respBody, location, respCookies, responseHeaders);
     }
 
     private String buildFormString() throws UnsupportedEncodingException {
@@ -110,12 +116,22 @@ public class HttpRequest {
         private final String body;
         private final String location;
         private final Map<String, String> cookies;
-        public Response(int code, String body, String location, Map<String, String> cookies) {
+        private final Map<String, List<String>> headers;
+        public Response(int code, String body, String location, Map<String, String> cookies,
+                        Map<String, List<String>> headers) {
             this.code = code; this.body = body; this.location = location; this.cookies = cookies;
+            this.headers = headers;
         }
         public int code() { return code; }
         public String body() { return body; }
-        public String header(String name) { return "Location".equalsIgnoreCase(name) ? location : null; }
+        public String header(String name) {
+            for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(name)) {
+                    return entry.getValue().isEmpty() ? null : entry.getValue().get(0);
+                }
+            }
+            return null;
+        }
         public String location() { return location; }
         public Map<String, String> cookies() { return cookies; }
         public String cookie(String name) { return cookies.get(name); }

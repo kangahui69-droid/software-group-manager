@@ -27,7 +27,7 @@ public class ResumeProjectDAOImpl implements ResumeProjectDAO {
 
     @Override
     public boolean save(ResumeProject project) {
-        String sql = "INSERT INTO resume_project (resume_id, project_name, role, team_size, start_date, end_date, is_current, description, responsibilities, technologies, project_url, achievements, display_order, is_from_system) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO resume_projects (resume_id, project_name, role, team_size, start_date, end_date, is_current, description, responsibilities, technologies, project_url, achievements, display_order, is_from_system) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -53,7 +53,7 @@ public class ResumeProjectDAOImpl implements ResumeProjectDAO {
 
     @Override
     public boolean update(ResumeProject project) {
-        String sql = "UPDATE resume_project SET project_name=?, role=?, team_size=?, start_date=?, end_date=?, is_current=?, description=?, responsibilities=?, technologies=?, project_url=?, achievements=? WHERE id=?";
+        String sql = "UPDATE resume_projects SET project_name=?, role=?, team_size=?, start_date=?, end_date=?, is_current=?, description=?, responsibilities=?, technologies=?, project_url=?, achievements=? WHERE id=?";
         int rows = jdbcTemplate.update(sql,
                 project.getProjectName(), project.getRole(), project.getTeamSize(),
                 project.getStartDate(), project.getEndDate(), project.getIsCurrent(),
@@ -65,20 +65,20 @@ public class ResumeProjectDAOImpl implements ResumeProjectDAO {
 
     @Override
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM resume_project WHERE id=?";
+        String sql = "DELETE FROM resume_projects WHERE id=?";
         return jdbcTemplate.update(sql, id) > 0;
     }
 
     @Override
     public ResumeProject findById(Integer id) {
-        String sql = "SELECT * FROM resume_project WHERE id=?";
+        String sql = "SELECT * FROM resume_projects WHERE id=?";
         List<ResumeProject> list = jdbcTemplate.query(sql, ROW_MAPPER, id);
         return list.isEmpty() ? null : list.get(0);
     }
 
     @Override
     public List<ResumeProject> findByResumeId(Integer resumeId) {
-        String sql = "SELECT * FROM resume_project WHERE resume_id=? ORDER BY display_order, id";
+        String sql = "SELECT * FROM resume_projects WHERE resume_id=? ORDER BY display_order, id";
         return jdbcTemplate.query(sql, ROW_MAPPER, resumeId);
     }
 }

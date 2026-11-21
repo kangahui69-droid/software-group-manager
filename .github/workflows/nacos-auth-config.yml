@@ -1,0 +1,23 @@
+name: Nacos authentication configuration
+
+on:
+  push:
+    paths:
+      - docker-compose.yml
+      - scripts/check-nacos-auth-config.py
+      - '*-service/src/main/resources/*.yml'
+      - .github/workflows/nacos-auth-config.yml
+  pull_request:
+    paths:
+      - docker-compose.yml
+      - scripts/check-nacos-auth-config.py
+      - '*-service/src/main/resources/*.yml'
+      - .github/workflows/nacos-auth-config.yml
+
+jobs:
+  auth-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject disabled auth and missing client credentials
+        run: python3 scripts/check-nacos-auth-config.py

@@ -1,5 +1,7 @@
 package com.softwaregroup.user.controller;
 
+import com.softwaregroup.common.security.AuthenticatedUser;
+import com.softwaregroup.common.security.RequireRole;
 import com.softwaregroup.common.util.Result;
 import com.softwaregroup.user.service.MemberService;
 import org.slf4j.Logger;
@@ -16,6 +18,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/members")
+@RequireRole("ADMIN")
 public class MemberController {
 
     private static final Logger log = LoggerFactory.getLogger(MemberController.class);
@@ -54,7 +57,7 @@ public class MemberController {
      */
     @PostMapping
     public Result createMember(@RequestBody Map<String, Object> memberData,
-                                @RequestHeader("X-User-Id") Integer operatorId) {
+                                @AuthenticatedUser Integer operatorId) {
         return memberService.createMember(memberData, operatorId);
     }
 
@@ -65,7 +68,7 @@ public class MemberController {
     @PutMapping("/{id}")
     public Result updateMember(@PathVariable("id") Integer id,
                                 @RequestBody Map<String, Object> memberData,
-                                @RequestHeader("X-User-Id") Integer operatorId) {
+                                @AuthenticatedUser Integer operatorId) {
         return memberService.updateMember(id, memberData, operatorId);
     }
 
@@ -75,7 +78,7 @@ public class MemberController {
      */
     @DeleteMapping("/{id}")
     public Result deleteMember(@PathVariable("id") Integer id,
-                                @RequestHeader("X-User-Id") Integer operatorId) {
+                                @AuthenticatedUser Integer operatorId) {
         return memberService.deleteMember(id, operatorId);
     }
 
@@ -85,7 +88,7 @@ public class MemberController {
      */
     @PutMapping("/{id}/enable")
     public Result enableMember(@PathVariable("id") Integer id,
-                                @RequestHeader("X-User-Id") Integer operatorId) {
+                                @AuthenticatedUser Integer operatorId) {
         return memberService.enableMember(id, operatorId);
     }
 
@@ -95,7 +98,7 @@ public class MemberController {
      */
     @PutMapping("/{id}/disable")
     public Result disableMember(@PathVariable("id") Integer id,
-                                 @RequestHeader("X-User-Id") Integer operatorId) {
+                                 @AuthenticatedUser Integer operatorId) {
         return memberService.disableMember(id, operatorId);
     }
 
@@ -105,7 +108,7 @@ public class MemberController {
      */
     @PutMapping("/{id}/reset-password")
     public Result resetPassword(@PathVariable("id") Integer id,
-                                 @RequestHeader("X-User-Id") Integer operatorId) {
+                                 @AuthenticatedUser Integer operatorId) {
         return memberService.resetPassword(id, operatorId);
     }
 }

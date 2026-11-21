@@ -3,6 +3,8 @@ package com.softwaregroup.hr.controller;
 import com.softwaregroup.hr.model.dto.*;
 import com.softwaregroup.hr.service.ResumeService;
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ResumeControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private ResumeService resumeService;
@@ -36,7 +40,9 @@ class ResumeControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(resumeController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(resumeController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
     }
 
     @Test
@@ -44,7 +50,7 @@ class ResumeControllerTest {
         ResumeDTO dto = new ResumeDTO();
         dto.setResumeName("我的简历");
 
-        when(resumeService.createResume(any(ResumeDTO.class), isNull())).thenReturn(Result.ok(Map.of("id", 1)));
+        when(resumeService.createResume(any(ResumeDTO.class), eq(1))).thenReturn(Result.ok(Map.of("id", 1)));
 
         mockMvc.perform(post("/api/resumes")
                         .contentType("application/json")
@@ -73,7 +79,7 @@ class ResumeControllerTest {
         ResumeDTO dto = new ResumeDTO();
         dto.setResumeName("更新后的简历");
 
-        when(resumeService.updateResume(eq(1), any(ResumeDTO.class), isNull())).thenReturn(Result.ok(dto));
+        when(resumeService.updateResume(eq(1), any(ResumeDTO.class), eq(1))).thenReturn(Result.ok(dto));
 
         mockMvc.perform(put("/api/resumes/1")
                         .contentType("application/json")
@@ -84,7 +90,7 @@ class ResumeControllerTest {
 
     @Test
     void getResumeDetail_withValidId_shouldReturnDetail() throws Exception {
-        when(resumeService.getResumeDetail(eq(1), isNull())).thenReturn(Result.ok(Map.of("id", 1, "resumeName", "简历")));
+        when(resumeService.getResumeDetail(eq(1), eq(1))).thenReturn(Result.ok(Map.of("id", 1, "resumeName", "简历")));
 
         mockMvc.perform(get("/api/resumes/1"))
                 .andExpect(status().isOk())
@@ -94,7 +100,7 @@ class ResumeControllerTest {
 
     @Test
     void getResumeDetail_withNotFound_shouldReturn404() throws Exception {
-        when(resumeService.getResumeDetail(eq(999), isNull())).thenReturn(Result.error(404, "简历不存在"));
+        when(resumeService.getResumeDetail(eq(999), eq(1))).thenReturn(Result.error(404, "简历不存在"));
 
         mockMvc.perform(get("/api/resumes/999"))
                 .andExpect(status().isOk())
@@ -103,7 +109,7 @@ class ResumeControllerTest {
 
     @Test
     void deleteResume_shouldReturnSuccess() throws Exception {
-        when(resumeService.deleteResume(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.deleteResume(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/resumes/1"))
                 .andExpect(status().isOk())
@@ -112,7 +118,7 @@ class ResumeControllerTest {
 
     @Test
     void setDefaultResume_shouldReturnSuccess() throws Exception {
-        when(resumeService.setDefaultResume(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.setDefaultResume(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(put("/api/resumes/1/default"))
                 .andExpect(status().isOk())
@@ -130,7 +136,7 @@ class ResumeControllerTest {
 
     @Test
     void getRecycleBin_shouldReturnList() throws Exception {
-        when(resumeService.getRecycleBin(isNull())).thenReturn(Result.ok(List.of()));
+        when(resumeService.getRecycleBin(eq(1))).thenReturn(Result.ok(List.of()));
 
         mockMvc.perform(get("/api/resumes/recycle-bin"))
                 .andExpect(status().isOk())
@@ -139,7 +145,7 @@ class ResumeControllerTest {
 
     @Test
     void restoreResume_shouldReturnSuccess() throws Exception {
-        when(resumeService.restoreResume(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.restoreResume(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(post("/api/resumes/1/restore"))
                 .andExpect(status().isOk())
@@ -148,7 +154,7 @@ class ResumeControllerTest {
 
     @Test
     void permanentDelete_shouldReturnSuccess() throws Exception {
-        when(resumeService.permanentDelete(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.permanentDelete(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/resumes/1/permanent"))
                 .andExpect(status().isOk())
@@ -161,7 +167,7 @@ class ResumeControllerTest {
         dto.setSchoolName("测试大学");
         dto.setMajor("软件工程");
 
-        when(resumeService.addEducation(eq(1), any(ResumeEducationDTO.class), isNull())).thenReturn(Result.ok(Map.of("id", 1)));
+        when(resumeService.addEducation(eq(1), any(ResumeEducationDTO.class), eq(1))).thenReturn(Result.ok(Map.of("id", 1)));
 
         mockMvc.perform(post("/api/resumes/1/education")
                         .contentType("application/json")
@@ -175,7 +181,7 @@ class ResumeControllerTest {
         ResumeEducationDTO dto = new ResumeEducationDTO();
         dto.setSchoolName("新大学");
 
-        when(resumeService.updateEducation(eq(1), any(ResumeEducationDTO.class), isNull())).thenReturn(Result.ok(dto));
+        when(resumeService.updateEducation(eq(1), any(ResumeEducationDTO.class), eq(1))).thenReturn(Result.ok(dto));
 
         mockMvc.perform(put("/api/resumes/education/1")
                         .contentType("application/json")
@@ -186,7 +192,7 @@ class ResumeControllerTest {
 
     @Test
     void deleteEducation_shouldReturnSuccess() throws Exception {
-        when(resumeService.deleteEducation(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.deleteEducation(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/resumes/education/1"))
                 .andExpect(status().isOk())
@@ -199,7 +205,7 @@ class ResumeControllerTest {
         dto.setSkillName("Java");
         dto.setProficiency("熟练");
 
-        when(resumeService.addSkill(eq(1), any(ResumeSkillDTO.class), isNull())).thenReturn(Result.ok(Map.of("id", 1)));
+        when(resumeService.addSkill(eq(1), any(ResumeSkillDTO.class), eq(1))).thenReturn(Result.ok(Map.of("id", 1)));
 
         mockMvc.perform(post("/api/resumes/1/skill")
                         .contentType("application/json")
@@ -213,7 +219,7 @@ class ResumeControllerTest {
         ResumeSkillDTO dto = new ResumeSkillDTO();
         dto.setProficiency("精通");
 
-        when(resumeService.updateSkill(eq(1), any(ResumeSkillDTO.class), isNull())).thenReturn(Result.ok(dto));
+        when(resumeService.updateSkill(eq(1), any(ResumeSkillDTO.class), eq(1))).thenReturn(Result.ok(dto));
 
         mockMvc.perform(put("/api/resumes/skill/1")
                         .contentType("application/json")
@@ -224,7 +230,7 @@ class ResumeControllerTest {
 
     @Test
     void deleteSkill_shouldReturnSuccess() throws Exception {
-        when(resumeService.deleteSkill(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.deleteSkill(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/resumes/skill/1"))
                 .andExpect(status().isOk())
@@ -236,7 +242,7 @@ class ResumeControllerTest {
         ResumeProjectDTO dto = new ResumeProjectDTO();
         dto.setProjectName("测试项目");
 
-        when(resumeService.addProject(eq(1), any(ResumeProjectDTO.class), isNull())).thenReturn(Result.ok(Map.of("id", 1)));
+        when(resumeService.addProject(eq(1), any(ResumeProjectDTO.class), eq(1))).thenReturn(Result.ok(Map.of("id", 1)));
 
         mockMvc.perform(post("/api/resumes/1/project")
                         .contentType("application/json")
@@ -250,7 +256,7 @@ class ResumeControllerTest {
         ResumeProjectDTO dto = new ResumeProjectDTO();
         dto.setProjectName("更新项目");
 
-        when(resumeService.updateProject(eq(1), any(ResumeProjectDTO.class), isNull())).thenReturn(Result.ok(dto));
+        when(resumeService.updateProject(eq(1), any(ResumeProjectDTO.class), eq(1))).thenReturn(Result.ok(dto));
 
         mockMvc.perform(put("/api/resumes/project/1")
                         .contentType("application/json")
@@ -261,7 +267,7 @@ class ResumeControllerTest {
 
     @Test
     void deleteProject_shouldReturnSuccess() throws Exception {
-        when(resumeService.deleteProject(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.deleteProject(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/resumes/project/1"))
                 .andExpect(status().isOk())
@@ -273,7 +279,7 @@ class ResumeControllerTest {
         ResumeAwardDTO dto = new ResumeAwardDTO();
         dto.setAwardName("一等奖");
 
-        when(resumeService.addAward(eq(1), any(ResumeAwardDTO.class), isNull())).thenReturn(Result.ok(Map.of("id", 1)));
+        when(resumeService.addAward(eq(1), any(ResumeAwardDTO.class), eq(1))).thenReturn(Result.ok(Map.of("id", 1)));
 
         mockMvc.perform(post("/api/resumes/1/award")
                         .contentType("application/json")
@@ -287,7 +293,7 @@ class ResumeControllerTest {
         ResumeAwardDTO dto = new ResumeAwardDTO();
         dto.setAwardName("特等奖");
 
-        when(resumeService.updateAward(eq(1), any(ResumeAwardDTO.class), isNull())).thenReturn(Result.ok(dto));
+        when(resumeService.updateAward(eq(1), any(ResumeAwardDTO.class), eq(1))).thenReturn(Result.ok(dto));
 
         mockMvc.perform(put("/api/resumes/award/1")
                         .contentType("application/json")
@@ -298,7 +304,7 @@ class ResumeControllerTest {
 
     @Test
     void deleteAward_shouldReturnSuccess() throws Exception {
-        when(resumeService.deleteAward(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(resumeService.deleteAward(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/resumes/award/1"))
                 .andExpect(status().isOk())
@@ -324,8 +330,8 @@ class ResumeControllerTest {
     }
 
     @Test
-    void listResumesRoot_withoutUserId_shouldReturnList() throws Exception {
-        when(resumeService.listResumes(eq(0), eq(1))).thenReturn(Result.ok(List.of()));
+    void listResumesRoot_withoutIdentityHeader_usesTokenIdentity() throws Exception {
+        when(resumeService.listResumes(eq(1), eq(1))).thenReturn(Result.ok(List.of()));
 
         mockMvc.perform(get("/api/resumes"))
                 .andExpect(status().isOk())

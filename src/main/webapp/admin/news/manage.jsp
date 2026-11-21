@@ -239,6 +239,14 @@
             </a>
         </div>
 
+        <% if ("done".equals(request.getParameter("purge"))) { %>
+            <div class="alert alert-success" role="status">新闻及其数据库记录已彻底删除。</div>
+        <% } else if ("unavailable".equals(request.getParameter("purge"))) { %>
+            <div class="alert alert-warning" role="alert">只能彻底删除状态为“已删除”的新闻；请刷新后重试。</div>
+        <% } else if ("files-pending".equals(request.getParameter("purge"))) { %>
+            <div class="alert alert-warning" role="alert">新闻及其数据库记录已删除，但部分文件清理失败，请联系管理员检查服务器日志。</div>
+        <% } %>
+
         <div class="card-design mb-4" style="padding: 20px 24px;">
             <form method="get" action="${pageContext.request.contextPath}/news" class="row g-3">
                 <input type="hidden" name="action" value="manage">
@@ -312,6 +320,15 @@
                                                 <form action="${pageContext.request.contextPath}/news?action=delete&id=<%= news.getId() %>" method="POST" class="d-inline" onsubmit="return confirm('确定要删除这条新闻吗？');">
                                                     <button type="submit" class="btn-danger-outline">
                                                         <i class="bi bi-trash"></i>删除
+                                                    </button>
+                                                </form>
+                                            <% } else if (news.getStatus() == 0) { %>
+                                                <form action="${pageContext.request.contextPath}/news" method="POST" class="d-inline" onsubmit="return confirm('确定要彻底删除这条新闻吗？数据库记录、正文和关联文件将删除，且无法恢复。');">
+                                                    <input type="hidden" name="_csrf" value="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>">
+                                                    <input type="hidden" name="action" value="hardDelete">
+                                                    <input type="hidden" name="id" value="<%= news.getId() %>">
+                                                    <button type="submit" class="btn-danger-outline">
+                                                        <i class="bi bi-trash3"></i>彻底删除
                                                     </button>
                                                 </form>
                                             <% } %>

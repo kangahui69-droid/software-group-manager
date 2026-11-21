@@ -1,5 +1,6 @@
 package com.softwaregroup.user.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.Size;
 /**
  * 注册请求DTO
  */
+@JsonIgnoreProperties("role")
 public class RegisterRequest {
 
     @NotBlank(message = "用户名不能为空")
@@ -24,9 +26,6 @@ public class RegisterRequest {
 
     @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phone;
-
-    @NotBlank(message = "角色不能为空")
-    private String role; // MEMBER, ADMIN, TEACHER
 
     public RegisterRequest() {
     }
@@ -71,11 +70,4 @@ public class RegisterRequest {
         this.phone = phone;
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
 }

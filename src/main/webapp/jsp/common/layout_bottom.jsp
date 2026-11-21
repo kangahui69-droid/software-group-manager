@@ -23,6 +23,7 @@
     </div>
     <!-- Tabler Core JS -->
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
+    <script src="${pageContext.request.contextPath}/js/publication-notifications.js"></script>
     </body>
 
     </html>

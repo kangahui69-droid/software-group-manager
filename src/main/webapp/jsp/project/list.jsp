@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+    <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<jsp:useBean id="projectStatuses" class="model.ProjectStatusCodes" scope="page" />
         <jsp:include page="../common/layout_top.jsp">
             <jsp:param name="title" value="项目管理" />
         </jsp:include>
@@ -39,19 +40,19 @@
                                         </td>
                                         <td>
                                             <c:choose>
-                                                <c:when test="${p.status == 'pending'}">
+                                                <c:when test="${p.status == projectStatuses.pending}">
                                                     <span class="badge bg-warning text-warning-fg">待审批</span>
                                                 </c:when>
-                                                <c:when test="${p.status == 'approved'}">
+                                                <c:when test="${p.status == projectStatuses.approved}">
                                                     <span class="badge bg-success text-success-fg">已批准</span>
                                                 </c:when>
-                                                <c:when test="${p.status == 'in_progress'}">
+                                                <c:when test="${p.status == projectStatuses.inProgress}">
                                                     <span class="badge bg-primary">进行中</span>
                                                 </c:when>
-                                                <c:when test="${p.status == 'completed'}">
+                                                <c:when test="${p.status == projectStatuses.completed}">
                                                     <span class="badge bg-success">已完成</span>
                                                 </c:when>
-                                                <c:when test="${p.status == 'canceled'}">
+                                                <c:when test="${p.status == projectStatuses.canceled}">
                                                     <span class="badge bg-danger">已取消</span>
                                                 </c:when>
                                             </c:choose>
@@ -60,7 +61,7 @@
                                             ${p.year}
                                         </td>
                                         <td>
-                                            <c:if test="${p.status == 'pending'}">
+                                            <c:if test="${p.status == projectStatuses.pending}">
                                                 <div class="btn-list flex-nowrap">
                                                     <form action="${pageContext.request.contextPath}/project"
                                                         method="post" class="d-inline">

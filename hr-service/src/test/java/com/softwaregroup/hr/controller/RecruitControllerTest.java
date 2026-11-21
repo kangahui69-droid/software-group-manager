@@ -3,6 +3,8 @@ package com.softwaregroup.hr.controller;
 import com.softwaregroup.hr.model.dto.RecruitApplicationDTO;
 import com.softwaregroup.hr.service.RecruitService;
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RecruitControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private RecruitService recruitService;
@@ -36,7 +40,9 @@ class RecruitControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(recruitController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(recruitController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
     }
 
     @Test
@@ -69,7 +75,7 @@ class RecruitControllerTest {
 
     @Test
     void approveApplication_shouldReturnSuccess() throws Exception {
-        when(recruitService.approveApplication(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(recruitService.approveApplication(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(post("/api/recruit/1/approve"))
                 .andExpect(status().isOk())
@@ -88,7 +94,7 @@ class RecruitControllerTest {
 
     @Test
     void approveApplication_withNotFound_shouldReturn404() throws Exception {
-        when(recruitService.approveApplication(eq(999), isNull())).thenReturn(Result.error(404, "申请不存在"));
+        when(recruitService.approveApplication(eq(999), eq(1))).thenReturn(Result.error(404, "申请不存在"));
 
         mockMvc.perform(post("/api/recruit/999/approve"))
                 .andExpect(status().isOk())
@@ -97,7 +103,7 @@ class RecruitControllerTest {
 
     @Test
     void rejectApplication_shouldReturnSuccess() throws Exception {
-        when(recruitService.rejectApplication(eq(1), isNull())).thenReturn(Result.ok(null));
+        when(recruitService.rejectApplication(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(post("/api/recruit/1/reject"))
                 .andExpect(status().isOk())
@@ -106,7 +112,7 @@ class RecruitControllerTest {
 
     @Test
     void rejectApplication_withNotFound_shouldReturn404() throws Exception {
-        when(recruitService.rejectApplication(eq(999), isNull())).thenReturn(Result.error(404, "申请不存在"));
+        when(recruitService.rejectApplication(eq(999), eq(1))).thenReturn(Result.error(404, "申请不存在"));
 
         mockMvc.perform(post("/api/recruit/999/reject"))
                 .andExpect(status().isOk())
@@ -163,7 +169,7 @@ class RecruitControllerTest {
 
     @Test
     void deleteApplication_shouldReturnSuccess() throws Exception {
-        when(recruitService.deleteApplication(eq(1))).thenReturn(Result.ok(null));
+        when(recruitService.deleteApplication(eq(1), eq(1))).thenReturn(Result.ok(null));
 
         mockMvc.perform(delete("/api/recruit/1"))
                 .andExpect(status().isOk())
@@ -172,7 +178,7 @@ class RecruitControllerTest {
 
     @Test
     void deleteApplication_withNotFound_shouldReturn404() throws Exception {
-        when(recruitService.deleteApplication(eq(999))).thenReturn(Result.error(404, "申请不存在"));
+        when(recruitService.deleteApplication(eq(999), eq(1))).thenReturn(Result.error(404, "申请不存在"));
 
         mockMvc.perform(delete("/api/recruit/999"))
                 .andExpect(status().isOk())

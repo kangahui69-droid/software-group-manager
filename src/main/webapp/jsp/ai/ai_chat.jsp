@@ -1,9 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>">
+    <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI助手 - 黄山学院软件小组管理系统</title>
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" rel="stylesheet" />

@@ -539,6 +539,13 @@ body {
     animation: pulse 2s ease-in-out infinite;
 }
 
+/* Publication notifications use a quiet unread indicator. */
+.publication-notification-unread {
+    background-color: #f4cbd1;
+    color: #923446;
+    border: 1px solid #e3a7b1;
+}
+
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }

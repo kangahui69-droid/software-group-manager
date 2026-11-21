@@ -1,0 +1,3 @@
+-- Retired by DB-03 on 2026-11-17. This file intentionally has no executable SQL.
+-- The old account names and broad grants must not be applied to a new deployment.
+-- Use scripts/provision-db-users.sh and migrations/20261117_db03_runtime_grants.sql.

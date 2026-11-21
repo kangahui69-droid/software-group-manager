@@ -6,9 +6,13 @@ import util.DBUtil;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class H2Database {
@@ -18,6 +22,37 @@ public class H2Database {
     public static synchronized void initSchema() {
         if (initialized) return;
         Config.reloadConfig();
+        createSchema(true);
+    }
+
+    public static synchronized void initPersistentPreview(Path databaseBase) {
+        if (initialized) return;
+        if ("production".equalsIgnoreCase(System.getenv("APP_ENV"))) {
+            throw new IllegalStateException("The local H2 preview cannot run with APP_ENV=production");
+        }
+        Path base = databaseBase.toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(base.getParent());
+            boolean newDatabase = !Files.exists(Path.of(base + ".mv.db"));
+            Config.reloadConfig();
+            String testUrl = Config.getProperty("db.url");
+            if (!"org.h2.Driver".equals(Config.getProperty("db.driver"))
+                    || testUrl == null || !testUrl.startsWith("jdbc:h2:mem:")) {
+                throw new IllegalStateException("The local preview requires the H2 test configuration");
+            }
+            String options = testUrl.contains(";") ? testUrl.substring(testUrl.indexOf(';')) : "";
+            String fileUrl = "jdbc:h2:file:" + base.toString().replace('\\', '/') + options;
+            Field field = Config.class.getDeclaredField("properties");
+            field.setAccessible(true);
+            ((Properties) field.get(null)).setProperty("db.url", fileUrl);
+            createSchema(newDatabase);
+            System.out.println("[H2Database] 持久化预览数据库: " + base + ".mv.db");
+        } catch (Exception e) {
+            throw new RuntimeException("H2预览数据库初始化失败", e);
+        }
+    }
+
+    private static void createSchema(boolean seedData) {
         try (Connection conn = DBUtil.getConnection();
              Statement stmt = conn.createStatement()) {
             // 先禁用外键检查，允许无序创建表
@@ -30,7 +65,9 @@ public class H2Database {
                 }
             }
             stmt.execute("SET REFERENTIAL_INTEGRITY TRUE");
-            insertBaseData(stmt);
+            if (seedData) {
+                insertBaseData(stmt);
+            }
             initialized = true;
             System.out.println("[H2Database] 测试库初始化完成");
         } catch (Exception e) {
@@ -48,7 +85,8 @@ public class H2Database {
                 "recruit_application", "project_progress", "project_plan",
                 "project_member_application", "project_member", "project_label",
                 "project_image", "project_history", "project_file", "project",
-                "problem_report", "problem_management", "operation_log", "news",
+                "problem_report", "problem_management", "operation_log", "notification_recipient",
+                "notification_event", "news_asset", "news",
                 "member_profile", "group_message", "group_member", "file_storage",
                 "dictionary", "award_member", "award_image", "award",
                 "attendance_makeup", "attendance_config", "attendance",

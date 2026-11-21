@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    time-zone: Asia/Shanghai
   main:
     allow-bean-definition-overriding: true
   application:
@@ -6,17 +8,18 @@ spring:
   cloud:
     nacos:
       server-addr: ${NACOS_HOST:-localhost}:8848
-      username: nacos
-      password: nacos
+      username: ${NACOS_USERNAME:}
+      password: ${NACOS_PASSWORD:}
       discovery:
         namespace: ${NACOS_NAMESPACE:-public}
         group: DEFAULT_GROUP
   datasource:
-    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:root}
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+    username: ${DB_USER:sg_ai_svc}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
+      connection-init-sql: SET time_zone = '+08:00'
       maximum-pool-size: 10
       minimum-idle: 2
       connection-timeout: 30000
@@ -31,7 +34,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always

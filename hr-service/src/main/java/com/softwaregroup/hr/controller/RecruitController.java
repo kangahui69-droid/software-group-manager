@@ -2,6 +2,8 @@ package com.softwaregroup.hr.controller;
 
 import com.softwaregroup.hr.model.dto.RecruitApplicationDTO;
 import com.softwaregroup.hr.service.RecruitService;
+import com.softwaregroup.common.security.AuthenticatedUser;
+import com.softwaregroup.common.security.RequireRole;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,18 +26,21 @@ public class RecruitController {
     }
 
     @PostMapping("/{id}/approve")
+    @RequireRole("ADMIN")
     public Result approveApplication(@PathVariable Integer id,
-                                     @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                     @AuthenticatedUser Integer operatorId) {
         return recruitService.approveApplication(id, operatorId);
     }
 
     @PostMapping("/{id}/reject")
+    @RequireRole("ADMIN")
     public Result rejectApplication(@PathVariable Integer id,
-                                     @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                     @AuthenticatedUser Integer operatorId) {
         return recruitService.rejectApplication(id, operatorId);
     }
 
     @GetMapping("/list")
+    @RequireRole("ADMIN")
     public Result listApplications(@RequestParam(required = false) Integer year,
                                    @RequestParam(required = false) String status,
                                    @RequestParam(required = false) String keyword,
@@ -44,16 +49,20 @@ public class RecruitController {
     }
 
     @GetMapping("/{id}")
+    @RequireRole("ADMIN")
     public Result getApplicationDetail(@PathVariable Integer id) {
         return recruitService.getApplicationDetail(id);
     }
 
     @DeleteMapping("/{id}")
-    public Result deleteApplication(@PathVariable Integer id) {
-        return recruitService.deleteApplication(id);
+    @RequireRole("ADMIN")
+    public Result deleteApplication(@PathVariable Integer id,
+                                    @AuthenticatedUser Integer operatorId) {
+        return recruitService.deleteApplication(id, operatorId);
     }
 
     @GetMapping("/pending/count")
+    @RequireRole("ADMIN")
     public Result countPending() {
         return recruitService.countPending();
     }
@@ -73,6 +82,7 @@ public class RecruitController {
      * GET /api/recruit
      */
     @GetMapping
+    @RequireRole("ADMIN")
     public Result listApplicationsRoot(@RequestParam(required = false) Integer year,
                                        @RequestParam(required = false) String status,
                                        @RequestParam(required = false) String keyword,

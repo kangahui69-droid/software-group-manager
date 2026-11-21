@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `groupId/artifactId/version`: `software.group/software-group/1.0.0`, final WAR name `software-group`
 - Context path: `/software-group`, default port 8080
-- Default admin: `admin` / `admin123`; member: `member1` / `member123`
+- H2 test fixtures include example accounts; production accounts have no repository-provided default password.
 - **Project constitution (项目宪法)**: `RULES.md` — 8 mandatory rules. Read it before writing code.
 
 ## Refactoring Phases
@@ -160,8 +160,8 @@ Helpers: `getProperty(key[,default])`, `getDesKey()`, `getMaxFileSize()`, `getSe
 4. **File-path duality** — legacy servlets still use `getRealPath()`. New code must use FileUtil.
 5. **Mixed servlet/filter registration** across web.xml AND `@WebServlet`/`@WebFilter`. Always check both.
 6. **`config.local.properties` contains real credentials** (gitignored). Never print or commit it.
-7. **UserDAO logs plaintext/encrypted passwords to stdout** during login.
-8. **DES is weak crypto** with hardcoded default key `(^&%gasie_%^)`; changing breaks existing hashes.
+7. **Password storage uses Argon2id**; legacy DES values upgrade after a successful login. Never log raw passwords, hashes, or the DES key.
+8. **Legacy DES compatibility remains during migration**; keep the existing production DES key until all old records are upgraded and the compatibility path is removed.
 9. **NON_KEYWORDS must NOT include SQL syntax keywords** (especially `SET`) — only identifier/table/column names.
 10. **Regenerate H2 schema after DDL change**: `sql/software_group.sql` → `python bin/convert_mysql_to_h2.py` → add tables to `H2Database.reset()` → `mvn verify`.
 11. **Package layout is flat** — test classes in `src/test/java/{util,dao,servlet,support}/` (no `software.group` prefix).

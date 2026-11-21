@@ -1,9 +1,23 @@
 # Git 版本控制
 .git
 .gitignore
+.claude/
+private/
+nginx/tls/
+**/__pycache__/
 
-# Maven 构建产物（排除 target/ 但保留 WAR 文件）
-target/
+# Never send private environment files or local configuration to Docker build context
+.env
+.env.*
+**/.env
+**/.env.*
+config/*.env
+config/*.env.*
+**/config.local.properties
+
+# Maven 构建产物（排除 target/ 内容但保留 WAR 文件）
+# 注意：不能整体排除 target/，否则 !target/*.war 无法把子项重新纳入构建上下文
+target/*
 !target/*.war
 pom.xml.tag
 pom.xml.releaseBackup
@@ -39,6 +53,7 @@ docker-compose*
 .dockerignore
 
 # 临时文件和备份
+backup/
 *~
 *.swp
 *.swo

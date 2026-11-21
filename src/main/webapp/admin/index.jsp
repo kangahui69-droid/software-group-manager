@@ -297,7 +297,7 @@
                 </a>
             </div>
             <div class="col-sm-6 col-lg-4 col-xl-3">
-                <a href="<%= contextPath %>/project/list" class="admin-card">
+                <a href="<%= contextPath %>/project?action=manage" class="admin-card">
                     <div class="admin-card-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
                         <i class="bi bi-kanban"></i>
                     </div>

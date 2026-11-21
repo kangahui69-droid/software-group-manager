@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 /**
  * AI服务应用程序
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.softwaregroup.ai", "com.softwaregroup.common"})
 @EnableFeignClients
 public class AIServiceApplication {
     public static void main(String[] args) {

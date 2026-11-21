@@ -1,2 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="/"/>
+<Context path="/">
+    <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor" sameSiteCookies="lax" />
+</Context>

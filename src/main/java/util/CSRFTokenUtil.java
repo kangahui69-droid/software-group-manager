@@ -3,6 +3,8 @@ package util;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.security.SecureRandom;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
@@ -124,7 +126,8 @@ public class CSRFTokenUtil {
         }
 
         // 比较 Token 是否匹配
-        return sessionToken.equals(requestToken);
+        return MessageDigest.isEqual(sessionToken.getBytes(StandardCharsets.UTF_8),
+                requestToken.getBytes(StandardCharsets.UTF_8));
     }
 
 

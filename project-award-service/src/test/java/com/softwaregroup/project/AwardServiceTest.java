@@ -426,7 +426,7 @@ class AwardServiceTest {
         void should_return_all_awards() {
             when(awardDAO.findAll()).thenReturn(Arrays.asList(testAward));
 
-            Result result = awardService.listAwards(null, 1);
+            Result result = awardService.listAwards(null, 1, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData()).isInstanceOf(List.class);
@@ -437,7 +437,7 @@ class AwardServiceTest {
         void should_filter_by_pending_status() {
             when(awardDAO.findByStatus("PENDING")).thenReturn(Arrays.asList(testAward));
 
-            Result result = awardService.listAwards("PENDING", 1);
+            Result result = awardService.listAwards("PENDING", 1, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
             verify(awardDAO, times(1)).findByStatus("PENDING");
@@ -448,7 +448,7 @@ class AwardServiceTest {
         void should_filter_by_approved_status() {
             when(awardDAO.findByStatus("APPROVED")).thenReturn(Arrays.asList());
 
-            Result result = awardService.listAwards("APPROVED", 1);
+            Result result = awardService.listAwards("APPROVED", 1, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -458,7 +458,7 @@ class AwardServiceTest {
         void should_filter_by_rejected_status() {
             when(awardDAO.findByStatus("REJECTED")).thenReturn(Arrays.asList());
 
-            Result result = awardService.listAwards("REJECTED", 1);
+            Result result = awardService.listAwards("REJECTED", 1, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
         }
@@ -468,7 +468,7 @@ class AwardServiceTest {
         void should_treat_empty_string_as_all() {
             when(awardDAO.findAll()).thenReturn(Arrays.asList(testAward));
 
-            Result result = awardService.listAwards("", 1);
+            Result result = awardService.listAwards("", 1, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
             verify(awardDAO, times(1)).findAll();
@@ -559,7 +559,7 @@ class AwardServiceTest {
         void should_return_award_detail() {
             when(awardDAO.findById(1)).thenReturn(testAward);
 
-            Result result = awardService.getAwardDetail(1);
+            Result result = awardService.getAwardDetail(1, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData()).isInstanceOf(Award.class);
@@ -568,7 +568,7 @@ class AwardServiceTest {
         @Test
         @DisplayName("异常场景：奖项ID为空应返回错误")
         void should_return_error_when_id_is_null() {
-            Result result = awardService.getAwardDetail(null);
+            Result result = awardService.getAwardDetail(null, null);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -579,7 +579,7 @@ class AwardServiceTest {
         void should_return_404_when_award_not_found() {
             when(awardDAO.findById(999)).thenReturn(null);
 
-            Result result = awardService.getAwardDetail(999);
+            Result result = awardService.getAwardDetail(999, null);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(404);
@@ -596,9 +596,10 @@ class AwardServiceTest {
             AwardImage image = new AwardImage();
             image.setId(1);
             image.setAwardId(1);
+            when(awardDAO.findById(1)).thenReturn(testAward);
             when(awardImageDAO.findByAwardId(1)).thenReturn(Arrays.asList(image));
 
-            Result result = awardService.getAwardImages(1);
+            Result result = awardService.getAwardImages(1, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData()).isInstanceOf(List.class);
@@ -607,7 +608,7 @@ class AwardServiceTest {
         @Test
         @DisplayName("异常场景：奖项ID为空应返回错误")
         void should_return_error_when_award_id_is_null() {
-            Result result = awardService.getAwardImages(null);
+            Result result = awardService.getAwardImages(null, null);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);

@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="学习管理" />
@@ -337,18 +337,18 @@
                             <c:otherwise>
                                 <c:forEach items="${sessionList}" var="sess">
                                     <tr>
-                                        <td><fmt:formatDate value="${sess.sessionDate}" pattern="yyyy-MM-dd"/></td>
+                                        <td><fmt:formatDate value="${sess.sessionDate}" pattern="yyyy-MM-dd" timeZone="Asia/Shanghai"/></td>
                                         <td>${sess.userName}</td>
-                                        <td><fmt:formatDate value="${sess.checkInTime}" pattern="HH:mm:ss"/></td>
+                                        <td><fmt:formatDate value="${sess.checkInTime}" pattern="HH:mm:ss" timeZone="Asia/Shanghai"/></td>
                                         <td>
                                             <c:if test="${not empty sess.checkOutTime}">
-                                                <fmt:formatDate value="${sess.checkOutTime}" pattern="HH:mm:ss"/>
+                                                <fmt:formatDate value="${sess.checkOutTime}" pattern="HH:mm:ss" timeZone="Asia/Shanghai"/>
                                             </c:if>
                                             <c:if test="${empty sess.checkOutTime}">--</c:if>
                                         </td>
                                         <td>
                                             <c:if test="${not empty sess.duration}">${sess.duration} 分钟</c:if>
-                                            <c:if test="${empty sess.duration}"><span class="text-warning">进行中</span></c:if>
+                                            <c:if test="${empty sess.duration}"><span class="text-warning">${sess.status == 'ACTIVE' ? '进行中' : '待校正'}</span></c:if>
                                         </td>
                                         <td>
                                             <c:choose>

@@ -69,7 +69,7 @@ public class GroupServlet extends HttpServlet {
 
         if (pathInfo == null || pathInfo.equals("/")) {
             if ("deleteGroup".equals(action)) {
-                deleteGroup(request, response, currentUser);
+                response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             } else if ("createForActivity".equals(action)) {
                 showCreateForActivityForm(request, response, currentUser);
             } else if ("myGroups".equals(action)) {
@@ -92,7 +92,7 @@ public class GroupServlet extends HttpServlet {
         } else if (pathInfo.equals("/downloadFile")) {
             downloadFile(request, response, currentUser);
         } else if ("deleteGroup".equals(action)) {
-            deleteGroup(request, response, currentUser);
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -113,7 +113,11 @@ public class GroupServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         if (pathInfo == null || pathInfo.equals("/") || pathInfo.equals("/create")) {
-            createGroup(request, response, currentUser);
+            if ("deleteGroup".equals(request.getParameter("action"))) {
+                deleteGroup(request, response, currentUser);
+            } else {
+                createGroup(request, response, currentUser);
+            }
         } else if (pathInfo.equals("/send")) {
             sendMessage(request, response, currentUser);
         } else if (pathInfo.equals("/sendFile")) {
@@ -122,6 +126,20 @@ public class GroupServlet extends HttpServlet {
             deleteGroup(request, response, currentUser);
         } else if (pathInfo.equals("/addMultiple")) {
             addMultipleMembers(request, response, currentUser);
+        } else if (pathInfo.equals("/read")) {
+            int groupId;
+            try {
+                groupId = Integer.parseInt(request.getParameter("groupId"));
+            } catch (NumberFormatException e) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+            if (!memberDAO.isMember(groupId, currentUser.getId())) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+            memberDAO.updateLastReadAt(groupId, currentUser.getId());
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -153,8 +171,6 @@ public class GroupServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "您不是群成员");
             return;
         }
-
-        memberDAO.updateLastReadAt(groupId, currentUser.getId());
 
         List<GroupMember> members = memberDAO.findByGroupId(groupId);
         List<GroupMessage> messages = messageDAO.findRecentByGroupId(groupId, 50);

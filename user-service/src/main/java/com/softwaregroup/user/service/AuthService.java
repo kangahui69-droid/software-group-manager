@@ -1,6 +1,6 @@
 package com.softwaregroup.user.service;
 
-import com.softwaregroup.common.util.JwtUtil;
+import com.softwaregroup.common.util.JwtService;
 import com.softwaregroup.common.util.Result;
 import com.softwaregroup.user.dao.MemberProfileDAO;
 import com.softwaregroup.user.dao.UserDAO;
@@ -10,7 +10,7 @@ import com.softwaregroup.user.model.dto.RegisterRequest;
 import com.softwaregroup.user.model.dto.UserDTO;
 import com.softwaregroup.user.model.entity.MemberProfile;
 import com.softwaregroup.user.model.entity.User;
-import com.softwaregroup.user.util.DESUtil;
+import com.softwaregroup.user.util.PasswordHasher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +36,7 @@ public class AuthService {
     private static final int STATUS_NORMAL = 1;
     private static final int STATUS_DISABLED = 0;
     private static final String ADMIN_ROLE = "ADMIN";
+    private static final String PUBLIC_REGISTRATION_ROLE = "MEMBER";
 
     private static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
     private static final String PHONE_PATTERN = "^1[3-9]\\d{9}$";
@@ -45,15 +46,18 @@ public class AuthService {
 
     private final UserDAO userDAO;
     private final MemberProfileDAO memberProfileDAO;
-    private final DESUtil desUtil;
+    private final PasswordHasher passwordHasher;
+    private final JwtService jwtService;
 
     @Value("${spring.jwt.expiration-ms:86400000}")
     private long jwtExpirationMs;
 
-    public AuthService(UserDAO userDAO, MemberProfileDAO memberProfileDAO, DESUtil desUtil) {
+    public AuthService(UserDAO userDAO, MemberProfileDAO memberProfileDAO, PasswordHasher passwordHasher,
+                       JwtService jwtService) {
         this.userDAO = userDAO;
         this.memberProfileDAO = memberProfileDAO;
-        this.desUtil = desUtil;
+        this.passwordHasher = passwordHasher;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -69,9 +73,7 @@ public class AuthService {
             return Result.error(404, "用户名或密码错误");
         }
 
-        // 密码加密后比对
-        String encryptedPassword = desUtil.encrypt(request.getPassword());
-        User user = userDAO.findByUsernameAndPassword(request.getUsername(), encryptedPassword);
+        User user = userDAO.findByUsernameAndPassword(request.getUsername(), request.getPassword());
         if (user == null) {
             return Result.error(400, "密码错误");
         }
@@ -81,7 +83,7 @@ public class AuthService {
         }
 
         // 生成JWT Token
-        String token = JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
+        String token = jwtService.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
 
         return Result.ok(Map.of(
                 "token", token,
@@ -112,11 +114,11 @@ public class AuthService {
         // 构建用户
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(desUtil.encrypt(request.getPassword()));
+        user.setPassword(request.getPassword());
         user.setName(request.getName() != null ? request.getName() : request.getUsername());
         user.setEmail(request.getEmail() != null ? request.getEmail() : request.getUsername() + "@default.com");
         user.setPhone(request.getPhone());
-        user.setRole(request.getRole());
+        user.setRole(PUBLIC_REGISTRATION_ROLE);
         user.setStatus(STATUS_NORMAL);
 
         // 保存用户
@@ -127,7 +129,7 @@ public class AuthService {
         user.setId(userId);
 
         // 生成JWT Token
-        String token = JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
+        String token = jwtService.generateToken(user.getId(), user.getUsername(), user.getRole(), jwtExpirationMs);
 
         return Result.ok(Map.of(
                 "token", token,
@@ -164,14 +166,12 @@ public class AuthService {
         }
 
         // 验证旧密码
-        String oldEncrypted = desUtil.encrypt(oldPwd);
-        if (!oldEncrypted.equals(user.getPassword())) {
+        if (!passwordHasher.matches(oldPwd, user.getPassword())) {
             return Result.error(400, "旧密码错误");
         }
 
         // 更新密码
-        String newEncrypted = desUtil.encrypt(newPwd);
-        boolean updated = userDAO.updatePassword(userId, newEncrypted);
+        boolean updated = userDAO.updatePassword(userId, newPwd);
         if (!updated) {
             return Result.error(500, "密码修改失败");
         }
@@ -252,12 +252,6 @@ public class AuthService {
         if (isBlank(request.getPassword())) {
             return Result.error(400, "密码不能为空");
         }
-        if (isBlank(request.getRole())) {
-            return Result.error(400, "角色不能为空");
-        }
-        if (!isValidRole(request.getRole())) {
-            return Result.error(400, "无效的角色");
-        }
         if (request.getUsername().length() > 32) {
             return Result.error(400, "用户名不能超过32个字符");
         }
@@ -328,10 +322,6 @@ public class AuthService {
         maybeSetField(dto.getBlog(), profile::setBlog);
 
         return profile;
-    }
-
-    private boolean isValidRole(String role) {
-        return "ADMIN".equals(role) || "MEMBER".equals(role) || "TEACHER".equals(role);
     }
 
     private boolean isBlank(String str) {

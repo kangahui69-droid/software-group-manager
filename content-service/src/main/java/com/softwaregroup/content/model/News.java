@@ -11,6 +11,7 @@ public class News {
     private String type;
     private String summary;
     private String contentPath;
+    private String content;
     private Integer authorId;
     private Integer status;
     private Date createdAt;
@@ -33,6 +34,8 @@ public class News {
 
     public String getContentPath() { return contentPath; }
     public void setContentPath(String contentPath) { this.contentPath = contentPath; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 
     public Integer getAuthorId() { return authorId; }
     public void setAuthorId(Integer authorId) { this.authorId = authorId; }

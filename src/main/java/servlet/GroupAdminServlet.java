@@ -53,11 +53,9 @@ public class GroupAdminServlet extends HttpServlet {
                 showGroupMessages(req, resp);
                 break;
             case "delete":
-                deleteGroup(req, resp);
-                break;
             case "joinAsAdmin":
-                joinAsAdmin(req, resp);
-                break;
+                resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+                return;
             default:
                 listGroups(req, resp);
         }
@@ -85,6 +83,9 @@ public class GroupAdminServlet extends HttpServlet {
                 break;
             case "delete":
                 deleteGroup(req, resp);
+                break;
+            case "joinAsAdmin":
+                joinAsAdmin(req, resp);
                 break;
             default:
                 resp.sendRedirect(req.getContextPath() + "/group/admin?action=list");

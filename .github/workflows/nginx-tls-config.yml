@@ -1,0 +1,31 @@
+name: Nginx TLS configuration
+
+on:
+  push:
+    paths:
+      - nginx/nginx.conf
+      - docker-compose.yml
+      - .github/workflows/nginx-tls-config.yml
+  pull_request:
+    paths:
+      - nginx/nginx.conf
+      - docker-compose.yml
+      - .github/workflows/nginx-tls-config.yml
+
+jobs:
+  nginx-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create disposable TLS certificate
+        run: |
+          mkdir -p /tmp/sg-test-tls
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+            -keyout /tmp/sg-test-tls/privkey.pem \
+            -out /tmp/sg-test-tls/fullchain.pem -subj /CN=localhost
+      - name: Check Nginx configuration syntax
+        run: |
+          docker run --rm --add-host app:127.0.0.1 \
+            -v "$PWD/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            -v /tmp/sg-test-tls:/etc/nginx/tls:ro \
+            nginx:alpine nginx -t

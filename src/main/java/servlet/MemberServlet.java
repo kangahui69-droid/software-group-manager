@@ -50,7 +50,7 @@ public class MemberServlet extends HttpServlet {
         } else if ("view".equals(action)) {
             viewMember(request, response);
         } else if ("delete".equals(action)) {
-            deleteMember(request, response);
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
     }
 

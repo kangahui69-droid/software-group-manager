@@ -7,6 +7,7 @@ import com.softwaregroup.content.model.User;
 import com.softwaregroup.content.model.dto.NewsDTO;
 import com.softwaregroup.content.model.dto.NewsFilterDTO;
 import com.softwaregroup.content.service.NewsService;
+import com.softwaregroup.content.service.NewsContentStorage;
 import com.softwaregroup.common.util.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,11 +36,15 @@ class NewsServiceIT {
     @Mock
     private UserDAO userDAO;
 
+    @Mock
+    private NewsContentStorage contentStorage;
+
     private NewsService newsService;
 
     @BeforeEach
     void setUp() {
-        newsService = new NewsService(newsDAO, userDAO);
+        newsService = new NewsService(newsDAO, userDAO, contentStorage);
+        lenient().when(contentStorage.exists(anyString())).thenReturn(true);
     }
 
     @Test

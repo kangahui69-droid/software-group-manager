@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ page import="dao.MemberProfileDAO" %>
 <%@ page import="model.MemberProfile" %>
 <%@ page import="java.text.SimpleDateFormat" %>
@@ -9,15 +9,10 @@
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
-    if (session.getAttribute("memberProfile") == null) {
-        model.User user = (model.User)session.getAttribute("user");
-        if (user != null) {
-            MemberProfileDAO profileDAO = new MemberProfileDAO();
-            MemberProfile profile = profileDAO.findByUserId(user.getId());
-            if (profile != null) {
-                session.setAttribute("memberProfile", profile);
-            }
-        }
+    model.User currentUser = (model.User)session.getAttribute("user");
+    if (currentUser != null) {
+        MemberProfile profile = new MemberProfileDAO().findByUserId(currentUser.getId());
+        session.setAttribute("memberProfile", profile);
     }
     String birthdayValue = "";
     Object birthdayObj = session.getAttribute("memberProfile");
@@ -359,9 +354,17 @@ textarea.form-control-custom {
             <p class="edit-hero-subtitle">完善您的个人信息，让更多人了解您</p>
         </div>
 
+        <c:if test="${not empty requestScope.success}">
+            <div class="alert alert-success" role="status"><c:out value="${requestScope.success}" /></div>
+        </c:if>
+        <c:if test="${not empty requestScope.error}">
+            <div class="alert alert-danger" role="alert"><c:out value="${requestScope.error}" /></div>
+        </c:if>
+
         <div class="row g-4">
             <div class="col-lg-8">
                 <form id="profileForm" method="post" action="${pageContext.request.contextPath}/member/profile/update" enctype="multipart/form-data">
+                    <input type="hidden" name="_csrf" value="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>">
                     <div class="avatar-edit-section">
                         <c:choose>
                             <c:when test="${memberProfile != null && memberProfile.avatarFileId != null}">
@@ -399,15 +402,15 @@ textarea.form-control-custom {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">姓名 <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control form-control-custom" name="name" value="${user.name}" placeholder="请输入姓名" required>
+                                    <input type="text" class="form-control form-control-custom" name="name" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.name : user.name}'/>" maxlength="50" placeholder="请输入姓名" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">电话</label>
-                                    <input type="tel" class="form-control form-control-custom" name="phone" value="${user.phone}" placeholder="请输入电话号码">
+                                    <input type="tel" class="form-control form-control-custom" name="phone" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.phone : user.phone}'/>" placeholder="请输入电话号码">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">邮箱 <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control form-control-custom" name="email" value="${user.email}" placeholder="请输入邮箱" required>
+                                    <input type="email" class="form-control form-control-custom" name="email" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.email : user.email}'/>" placeholder="请输入邮箱" required>
                                 </div>
                                 <c:if test="${sessionScope.user.role == 'ADMIN'}">
                                     <div class="col-md-6">
@@ -432,33 +435,36 @@ textarea.form-control-custom {
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label-custom">生日</label>
-                                    <input type="date" class="form-control form-control-custom" name="birthday" value="${birthdayValue}" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
+                                    <input type="date" class="form-control form-control-custom" name="birthday" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.birthday : birthdayValue}'/>" min="1900-01-01" max="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">学号</label>
-                                    <input type="text" class="form-control form-control-custom" name="studentId" value="${memberProfile.studentId}" placeholder="请输入学号">
+                                    <input type="text" class="form-control form-control-custom" name="studentId" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.studentId : memberProfile.studentId}'/>" maxlength="20" placeholder="请输入学号">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">专业</label>
-                                    <input type="text" class="form-control form-control-custom" name="major" value="${memberProfile.major}" placeholder="请输入专业">
+                                    <input type="text" class="form-control form-control-custom" name="major" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.major : memberProfile.major}'/>" maxlength="100" placeholder="请输入专业">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">年级</label>
+                                    <c:set var="profileGrade" value="${requestScope.formProfile != null ? requestScope.formProfile.grade : memberProfile.grade}" />
                                     <select class="form-control form-control-custom" name="grade">
                                         <option value="">请选择年级</option>
-                                        <option value="2026" ${memberProfile.grade eq '2026' ? 'selected' : ''}>2026级</option>
-                                        <option value="2025" ${memberProfile.grade eq '2025' ? 'selected' : ''}>2025级</option>
-                                        <option value="2024" ${memberProfile.grade eq '2024' ? 'selected' : ''}>2024级</option>
-                                        <option value="2023" ${memberProfile.grade eq '2023' ? 'selected' : ''}>2023级</option>
-                                        <option value="2022" ${memberProfile.grade eq '2022' ? 'selected' : ''}>2022级</option>
-                                        <option value="2021" ${memberProfile.grade eq '2021' ? 'selected' : ''}>2021级</option>
-                                        <option value="2020" ${memberProfile.grade eq '2020' ? 'selected' : ''}>2020级</option>
+                                        <option value="2026" ${profileGrade eq '2026' ? 'selected' : ''}>2026级</option>
+                                        <option value="2025" ${profileGrade eq '2025' ? 'selected' : ''}>2025级</option>
+                                        <option value="2024" ${profileGrade eq '2024' ? 'selected' : ''}>2024级</option>
+                                        <option value="2023" ${profileGrade eq '2023' ? 'selected' : ''}>2023级</option>
+                                        <option value="2022" ${profileGrade eq '2022' ? 'selected' : ''}>2022级</option>
+                                        <option value="2021" ${profileGrade eq '2021' ? 'selected' : ''}>2021级</option>
+                                        <option value="2020" ${profileGrade eq '2020' ? 'selected' : ''}>2020级</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label-custom">个人简介</label>
+                                    <p class="text-muted small mb-2">最多 5000 字符；编辑器无法加载时可使用文本框填写。</p>
                                     <div id="editor-container"></div>
-                                    <input type="hidden" name="bio" id="bio-hidden" value="${memberProfile.introduction}">
+                                    <input type="hidden" name="bio" id="bio-hidden" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.introduction : memberProfile.introduction}'/>">
+                                    <textarea id="bio-fallback" class="form-control form-control-custom" style="display: none; min-height: 120px;" aria-label="个人简介"><c:out value="${requestScope.formProfile != null ? requestScope.formProfile.introduction : memberProfile.introduction}" /></textarea>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">GitHub</label>
@@ -466,7 +472,7 @@ textarea.form-control-custom {
                                         <span class="input-group-text" style="background: var(--primary-light); border: 1px solid var(--border-gray); border-right: none; border-radius: var(--radius-standard) 0 0 var(--radius-standard);">
                                             <i class="bi bi-github"></i>
                                         </span>
-                                        <input type="text" class="form-control form-control-custom" name="github" value="${memberProfile.github}" placeholder="请输入GitHub用户名" style="border-radius: 0 var(--radius-standard) var(--radius-standard) 0;">
+                                        <input type="text" class="form-control form-control-custom" name="github" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.github : memberProfile.github}'/>" maxlength="100" placeholder="请输入GitHub用户名或主页链接" style="border-radius: 0 var(--radius-standard) var(--radius-standard) 0;">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -475,7 +481,7 @@ textarea.form-control-custom {
                                         <span class="input-group-text" style="background: var(--primary-light); border: 1px solid var(--border-gray); border-right: none; border-radius: var(--radius-standard) 0 0 var(--radius-standard);">
                                             <i class="bi bi-globe2"></i>
                                         </span>
-                                        <input type="text" class="form-control form-control-custom" name="blog" value="${memberProfile.blog}" placeholder="请输入博客地址" style="border-radius: 0 var(--radius-standard) var(--radius-standard) 0;">
+                                        <input type="text" class="form-control form-control-custom" name="blog" value="<c:out value='${requestScope.formProfile != null ? requestScope.formProfile.blog : memberProfile.blog}'/>" maxlength="100" placeholder="请输入博客地址（可带路径）" style="border-radius: 0 var(--radius-standard) var(--radius-standard) 0;">
                                     </div>
                                 </div>
                             </div>
@@ -495,6 +501,11 @@ textarea.form-control-custom {
                             <i class="bi bi-check-lg"></i>保存修改
                         </button>
                     </div>
+                    <c:if test="${not empty requestScope.error}">
+                        <div id="profileSaveError" class="alert alert-danger mt-3" role="alert" tabindex="-1">
+                            保存结果：<c:out value="${requestScope.error}" />。请检查后重试；如需上传头像，请重新选择文件。
+                        </div>
+                    </c:if>
                 </form>
             </div>
 
@@ -534,6 +545,11 @@ textarea.form-control-custom {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var saveError = document.getElementById('profileSaveError');
+    if (saveError) {
+        saveError.scrollIntoView({block: 'center'});
+        saveError.focus({preventScroll: true});
+    }
     var avatarUpload = document.getElementById('avatarUpload');
     if (avatarUpload) {
         avatarUpload.addEventListener('change', function() {
@@ -567,6 +583,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    var hiddenInput = document.getElementById('bio-hidden');
+    var fallback = document.getElementById('bio-fallback');
+    var form = document.getElementById('profileForm');
+    if (typeof Quill === 'undefined') {
+        document.getElementById('editor-container').style.display = 'none';
+        fallback.style.display = 'block';
+        fallback.value = new DOMParser().parseFromString(fallback.value, 'text/html').body.textContent || '';
+        fallback.name = 'bio';
+        hiddenInput.disabled = true;
+        return;
+    }
+
     var quill = new Quill('#editor-container', {
         theme: 'snow',
         placeholder: '请输入个人简介...',
@@ -584,12 +612,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    var hiddenInput = document.getElementById('bio-hidden');
     if (hiddenInput && hiddenInput.value) {
         quill.root.innerHTML = hiddenInput.value;
     }
     
-    var form = document.getElementById('profileForm');
     if (form) {
         form.addEventListener('submit', function() {
             if (hiddenInput) {

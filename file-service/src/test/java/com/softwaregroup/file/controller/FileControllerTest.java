@@ -1,6 +1,8 @@
 package com.softwaregroup.file.controller;
 
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import com.softwaregroup.file.model.entity.FileStorage;
 import com.softwaregroup.file.service.FileService;
 import io.minio.MinioClient;
@@ -28,6 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FileControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService jwtService = new JwtService("file-controller-test-key-32-bytes-long", "v1", "software-group", "software-group-api");
+    private final String token = jwtService.generateToken(1, "member", "MEMBER");
 
     @Mock
     private FileService fileService;
@@ -37,7 +41,8 @@ class FileControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(fileController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(fileController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(jwtService)).build();
     }
 
     @Test
@@ -55,7 +60,7 @@ class FileControllerTest {
         mockMvc.perform(multipart("/api/files/upload")
                         .file(file)
                         .param("category", "general")
-                        .header("X-User-Id", "1"))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").value(1));
@@ -69,8 +74,7 @@ class FileControllerTest {
         mockMvc.perform(multipart("/api/files/upload")
                         .file(file)
                         .param("category", "general"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(401));
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -103,16 +107,27 @@ class FileControllerTest {
                 .thenReturn(Result.ok(List.of()));
 
         mockMvc.perform(get("/api/files")
-                        .header("X-User-Id", "1"))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
     }
 
     @Test
     void listFiles_withoutUserId_shouldReturnUnauthorized() throws Exception {
-        mockMvc.perform(get("/api/files"))
+        mockMvc.perform(get("/api/files").header("X-User-Id", "999"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deleteFile_ignoresForgedQueryAndIdentityHeader() throws Exception {
+        when(fileService.deleteFile(7, 1, false)).thenReturn(Result.ok());
+
+        mockMvc.perform(delete("/api/files/7")
+                        .param("userId", "999")
+                        .header("X-User-Id", "999")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(401));
+                .andExpect(jsonPath("$.code").value(0));
     }
 
     @Test

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<jsp:useBean id="projectStatuses" class="model.ProjectStatusCodes" scope="page" />
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="项目管理" />
 </jsp:include>
@@ -208,6 +209,8 @@
 
         <div class="card-design mb-4" style="padding: 20px 24px;">
             <form method="get" action="${pageContext.request.contextPath}/project" class="row g-3">
+                <input type="hidden" name="action" value="manage">
+                <input type="hidden" name="pageSize" value="${pageSize}">
                 <div class="col-md-4">
                     <label class="form-label-design">关键词</label>
                     <input type="text" class="input-design" name="keyword" value="${keyword}" placeholder="搜索标题/描述/团队名">
@@ -216,9 +219,9 @@
                     <label class="form-label-design">状态</label>
                     <select class="input-design" name="status">
                         <option value="">全部</option>
-                        <option value="pending" ${status == 'pending' ? 'selected' : ''}>待审核</option>
-                        <option value="approved" ${status == 'approved' ? 'selected' : ''}>已通过</option>
-                        <option value="rejected" ${status == 'rejected' ? 'selected' : ''}>已拒绝</option>
+                        <option value="${projectStatuses.pending}" ${status == projectStatuses.pending ? 'selected' : ''}>待审核</option>
+                        <option value="${projectStatuses.approved}" ${status == projectStatuses.approved ? 'selected' : ''}>已通过</option>
+                        <option value="${projectStatuses.rejected}" ${status == projectStatuses.rejected ? 'selected' : ''}>已拒绝</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -256,22 +259,22 @@
                             <td style="color: var(--text-secondary);">${p.leaderName}</td>
                             <td>
                                 <c:choose>
-                                    <c:when test="${p.status == 'pending'}">
+                                    <c:when test="${p.status == projectStatuses.pending}">
                                         <span class="badge-design" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">待审核</span>
                                     </c:when>
-                                    <c:when test="${p.status == 'approved'}">
+                                    <c:when test="${p.status == projectStatuses.approved}">
                                         <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #059669;">已通过</span>
                                     </c:when>
-                                    <c:when test="${p.status == 'in_progress'}">
+                                    <c:when test="${p.status == projectStatuses.inProgress}">
                                         <span class="badge-design" style="background: rgba(59, 130, 246, 0.1); color: #2563eb;">进行中</span>
                                     </c:when>
-                                    <c:when test="${p.status == 'completed'}">
+                                    <c:when test="${p.status == projectStatuses.completed}">
                                         <span class="badge-design" style="background: rgba(16, 185, 129, 0.1); color: #059669;">已完成</span>
                                     </c:when>
-                                    <c:when test="${p.status == 'canceled'}">
+                                    <c:when test="${p.status == projectStatuses.canceled}">
                                         <span class="badge-design" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">已取消</span>
                                     </c:when>
-                                    <c:when test="${p.status == 'rejected'}">
+                                    <c:when test="${p.status == projectStatuses.rejected}">
                                         <span class="badge-design" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">已拒绝</span>
                                     </c:when>
                                     <c:otherwise>
@@ -292,7 +295,7 @@
                                             <i class="bi bi-trash"></i>删除
                                         </button>
                                     </form>
-                                    <c:if test="${p.status == 'pending'}">
+                                    <c:if test="${p.status == projectStatuses.pending}">
                                         <form action="${pageContext.request.contextPath}/project" method="POST">
                                             <input type="hidden" name="action" value="approve">
                                             <input type="hidden" name="id" value="${p.id}">
@@ -314,6 +317,33 @@
             </table>
         </div>
     </div>
+    <c:if test="${totalPages > 1}">
+        <nav class="d-flex align-items-center justify-content-center gap-3 mt-3" aria-label="项目分页">
+            <c:if test="${currentPage > 1}">
+                <c:url var="previousProjectPage" value="/project">
+                    <c:param name="action" value="manage"/>
+                    <c:param name="keyword" value="${keyword}"/>
+                    <c:param name="status" value="${status}"/>
+                    <c:param name="year" value="${year}"/>
+                    <c:param name="pageSize" value="${pageSize}"/>
+                    <c:param name="page" value="${currentPage - 1}"/>
+                </c:url>
+                <a href="${previousProjectPage}" class="btn btn-outline-primary btn-sm">上一页</a>
+            </c:if>
+            <span>第 ${currentPage} / ${totalPages} 页，共 ${totalCount} 条</span>
+            <c:if test="${currentPage < totalPages}">
+                <c:url var="nextProjectPage" value="/project">
+                    <c:param name="action" value="manage"/>
+                    <c:param name="keyword" value="${keyword}"/>
+                    <c:param name="status" value="${status}"/>
+                    <c:param name="year" value="${year}"/>
+                    <c:param name="pageSize" value="${pageSize}"/>
+                    <c:param name="page" value="${currentPage + 1}"/>
+                </c:url>
+                <a href="${nextProjectPage}" class="btn btn-outline-primary btn-sm">下一页</a>
+            </c:if>
+        </nav>
+    </c:if>
 </div>
 
 <jsp:include page="../../common/layout_bottom.jsp" />

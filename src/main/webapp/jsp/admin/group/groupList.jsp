@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <jsp:include page="../../common/layout_top.jsp">
     <jsp:param name="title" value="群聊管理" />
 </jsp:include>
@@ -311,7 +311,7 @@
 <script>
 function confirmDelete(groupId, groupName) {
     if (confirm('确定要删除群聊"' + groupName + '"吗？此操作不可恢复！')) {
-        window.location.href = '${pageContext.request.contextPath}/group/admin?action=delete&groupId=' + groupId;
+        window.csrfPost('${pageContext.request.contextPath}/group/admin?action=delete&groupId=' + groupId);
     }
 }
 </script>

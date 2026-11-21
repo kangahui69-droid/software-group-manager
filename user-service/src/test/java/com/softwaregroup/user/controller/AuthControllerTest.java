@@ -63,12 +63,11 @@ class AuthControllerTest {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("newuser");
         request.setPassword("password123");
-        request.setRole("MEMBER");
 
         when(authService.register(any(RegisterRequest.class)))
                 .thenReturn(Result.ok(Map.of("token", "jwt-token", "user", Map.of("id", 100, "username", "newuser"))));
 
-        Result result = authService.register(request);
+        Result result = authController.register(request);
 
         assertTrue(result.isSuccess());
     }

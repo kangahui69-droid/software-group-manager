@@ -240,7 +240,7 @@ public class ActivityService {
             return Result.error(CODE_BAD_REQUEST, "活动ID和用户ID不能为空");
         }
 
-        Result adminCheck = requireAdmin(activityId, operatorId);
+        Result adminCheck = requireOrganizerOrAdmin(activityId, operatorId);
         if (!adminCheck.isSuccess()) return adminCheck;
 
         Activity activity = (Activity) adminCheck.getData();
@@ -270,7 +270,7 @@ public class ActivityService {
             return Result.error(CODE_BAD_REQUEST, "活动ID和用户ID不能为空");
         }
 
-        Result adminCheck = requireAdmin(activityId, operatorId);
+        Result adminCheck = requireOrganizerOrAdmin(activityId, operatorId);
         if (!adminCheck.isSuccess()) return adminCheck;
 
         String status = registrationDAO.getRegistrationStatus(activityId, userId);
@@ -293,7 +293,7 @@ public class ActivityService {
             return Result.ok();
         }
 
-        Result adminCheck = requireAdmin(activityId, operatorId);
+        Result adminCheck = requireOrganizerOrAdmin(activityId, operatorId);
         if (!adminCheck.isSuccess()) return adminCheck;
 
         Activity activity = (Activity) adminCheck.getData();
@@ -321,7 +321,7 @@ public class ActivityService {
             return Result.ok();
         }
 
-        Result adminCheck = requireAdmin(activityId, operatorId);
+        Result adminCheck = requireOrganizerOrAdmin(activityId, operatorId);
         if (!adminCheck.isSuccess()) return adminCheck;
 
         int count = registrationDAO.batchUpdateStatus(userIds, activityId, REG_STATUS_REJECTED);
@@ -398,11 +398,12 @@ public class ActivityService {
     /**
      * 活动列表
      */
-    public Result listActivities(ActivityFilterDTO filter) {
+    public Result listActivities(ActivityFilterDTO filter, com.softwaregroup.common.security.CurrentUser user) {
         String keyword = filter != null ? filter.getKeyword() : null;
         String activityType = filter != null ? filter.getActivityType() : null;
         String status = filter != null ? filter.getStatus() : null;
-        String approvalStatus = filter != null ? filter.getApprovalStatus() : null;
+        String approvalStatus = user != null && "ADMIN".equals(user.role())
+                ? filter != null ? filter.getApprovalStatus() : null : APPROVAL_APPROVED;
 
         List<Activity> list = activityDAO.findByConditions(keyword, activityType, status, approvalStatus);
         return Result.ok(list);
@@ -411,13 +412,18 @@ public class ActivityService {
     /**
      * 活动详情
      */
-    public Result getActivityDetail(Integer id, Integer userId) {
+    public Result getActivityDetail(Integer id, Integer userId, boolean isAdmin) {
         if (id == null) {
             return Result.error(CODE_BAD_REQUEST, "活动ID不能为空");
         }
 
         Activity activity = activityDAO.findById(id);
         if (activity == null) {
+            return Result.error(CODE_NOT_FOUND, "活动不存在");
+        }
+
+        if (!APPROVAL_APPROVED.equals(activity.getApprovalStatus()) && !isAdmin
+                && !java.util.Objects.equals(activity.getCreatorId(), userId)) {
             return Result.error(CODE_NOT_FOUND, "活动不存在");
         }
 
@@ -460,7 +466,7 @@ public class ActivityService {
     /**
      * 获取活动的报名列表
      */
-    public Result getActivityParticipants(Integer activityId) {
+    public Result getActivityParticipants(Integer activityId, Integer operatorId) {
         if (activityId == null) {
             return Result.error(CODE_BAD_REQUEST, "活动ID不能为空");
         }
@@ -468,6 +474,11 @@ public class ActivityService {
         Activity activity = activityDAO.findById(activityId);
         if (activity == null) {
             return Result.error(CODE_NOT_FOUND, "活动不存在");
+        }
+
+        Result permission = checkModifyPermission(activity, operatorId);
+        if (!permission.isSuccess()) {
+            return permission;
         }
 
         List<Registration> registrations = registrationDAO.findByActivityId(activityId);
@@ -513,6 +524,15 @@ public class ActivityService {
         }
 
         return Result.error(CODE_FORBIDDEN, "无权修改此活动");
+    }
+
+    private Result requireOrganizerOrAdmin(Integer activityId, Integer operatorId) {
+        if (activityId == null) {
+            return Result.error(CODE_BAD_REQUEST, "活动ID不能为空");
+        }
+        Activity activity = activityDAO.findById(activityId);
+        return activity == null ? Result.error(CODE_NOT_FOUND, "活动不存在")
+                : checkModifyPermission(activity, operatorId);
     }
 
     private Result requireAdmin(Integer activityId, Integer operatorId) {

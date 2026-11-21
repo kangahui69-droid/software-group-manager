@@ -350,20 +350,33 @@ public class ActivityDAO {
      * 审批通过活动
      */
     public boolean approveActivity(Integer activityId) {
-        String sql = "UPDATE activity SET approval_status = 'approved' WHERE id = ?";
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = DBUtil.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, activityId);
-            return pstmt.executeUpdate() > 0;
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                Activity activity = findByIdForUpdate(activityId, conn);
+                if (activity == null || !"pending".equals(activity.getApprovalStatus())) {
+                    conn.rollback();
+                    return false;
+                }
+                try (PreparedStatement update = conn.prepareStatement(
+                        "UPDATE activity SET approval_status = 'approved' WHERE id = ? AND approval_status = 'pending'")) {
+                    update.setInt(1, activityId);
+                    if (update.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+                new PublicationNotificationDAO().recordPublication(conn,
+                        PublicationNotificationDAO.ACTIVITY, activityId, activity.getTitle());
+                conn.commit();
+                return true;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closeResources(conn, pstmt, null);
+            throw new IllegalStateException("审批活动并发送通知失败", e);
         }
-        return false;
     }
 
     /**

@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="修改密码" />
 </jsp:include>
@@ -167,6 +167,7 @@ body {
             <div class="card">
                 <div class="card-body">
                     <form id="passwordForm" method="post" action="${pageContext.request.contextPath}/member/password">
+                        <input type="hidden" name="_csrf" value="<%= util.CSRFTokenUtil.getOrCreateToken(request) %>">
                         <div class="mb-4">
                             <h3 class="card-title">密码设置</h3>
                             <div class="row">

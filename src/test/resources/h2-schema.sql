@@ -313,6 +313,21 @@ CREATE TABLE IF NOT EXISTS news (
     PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS news_asset (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    news_id INT DEFAULT NULL,
+    uploaded_by INT NOT NULL,
+    upload_token CHAR(36) NOT NULL,
+    kind VARCHAR(16) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    stored_name VARCHAR(100) NOT NULL UNIQUE,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size BIGINT NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS operation_log (
     id INT NOT NULL AUTO_INCREMENT,
     user_id INT DEFAULT NULL,
@@ -323,6 +338,14 @@ CREATE TABLE IF NOT EXISTS operation_log (
     ip_address varchar(50) DEFAULT NULL,
     user_agent varchar(500) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    result varchar(16) DEFAULT NULL,
+    http_status SMALLINT DEFAULT NULL,
+    duration_ms BIGINT DEFAULT NULL,
+    request_id CHAR(36) DEFAULT NULL,
+    error_code varchar(64) DEFAULT NULL,
+    target_type varchar(32) DEFAULT NULL,
+    target_id varchar(64) DEFAULT NULL,
+    proxy_ip varchar(45) DEFAULT NULL,
     PRIMARY KEY (id)
 );
 
@@ -606,7 +629,7 @@ CREATE TABLE IF NOT EXISTS study_session (
 CREATE TABLE IF NOT EXISTS user (
     id INT NOT NULL AUTO_INCREMENT,
     username varchar(50) NOT NULL,
-    password varchar(100) NOT NULL,
+    password varchar(255) NOT NULL,
     name varchar(50) NOT NULL DEFAULT 'Unknown',
     email varchar(100) NOT NULL,
     phone varchar(20) DEFAULT NULL,
@@ -628,3 +651,23 @@ CREATE TABLE IF NOT EXISTS user_group (
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_group (user_id,group_id)
 );
+
+CREATE TABLE IF NOT EXISTS notification_event (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    source_type VARCHAR(16) NOT NULL,
+    source_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    active TINYINT NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_notification_source ON notification_event (source_type, source_id, active);
+
+CREATE TABLE IF NOT EXISTS notification_recipient (
+    notification_id BIGINT NOT NULL,
+    user_id INT NOT NULL,
+    read_at TIMESTAMP DEFAULT NULL,
+    PRIMARY KEY (notification_id, user_id),
+    CONSTRAINT fk_notification_event FOREIGN KEY (notification_id) REFERENCES notification_event(id) ON DELETE CASCADE,
+    CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_notification_user_read ON notification_recipient (user_id, read_at, notification_id);

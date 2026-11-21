@@ -4,6 +4,7 @@ import model.User;
 import org.junit.jupiter.api.*;
 import support.FastTest;
 import support.H2Database;
+import util.PasswordHasher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,6 +45,8 @@ class UserDAOTest {
         User user = userDAO.findByUsernameAndPassword("admin", "admin123");
         assertThat(user).isNotNull();
         assertThat(user.getUsername()).isEqualTo("admin");
+        assertThat(userDAO.findById(user.getId()).getPassword()).startsWith("$argon2id$");
+        assertThat(userDAO.findByUsernameAndPassword("admin", "admin123")).isNotNull();
     }
 
     @FastTest
@@ -51,5 +54,34 @@ class UserDAOTest {
     void should_return_null_with_wrong_password() {
         User user = userDAO.findByUsernameAndPassword("admin", "wrongpass");
         assertThat(user).isNull();
+        assertThat(userDAO.findById(1).getPassword()).doesNotStartWith("$argon2id$");
+    }
+
+    @FastTest
+    void newAndChangedPasswordsUseArgon2() {
+        User member = new User();
+        member.setUsername("new-member");
+        member.setPassword("initial123");
+        member.setName("Test Member");
+        member.setEmail("new-member@example.test");
+        member.setRole("MEMBER");
+        member.setStatus(1);
+
+        assertThat(userDAO.insert(member)).isTrue();
+        String firstHash = userDAO.findById(member.getId()).getPassword();
+        assertThat(firstHash).startsWith("$argon2id$");
+        assertThat(PasswordHasher.matches("initial123", firstHash)).isTrue();
+
+        assertThat(userDAO.updatePassword(member.getId(), "changed123")).isTrue();
+        String secondHash = userDAO.findById(member.getId()).getPassword();
+        assertThat(secondHash).startsWith("$argon2id$").isNotEqualTo(firstHash);
+        assertThat(userDAO.findByUsernameAndPassword("new-member", "initial123")).isNull();
+        assertThat(userDAO.findByUsernameAndPassword("new-member", "changed123")).isNotNull();
+
+        assertThat(userDAO.resetPassword(member.getId(), "reset123")).isTrue();
+        User reset = userDAO.findById(member.getId());
+        assertThat(reset.getPassword()).startsWith("$argon2id$");
+        assertThat(reset.getMustChangePassword()).isTrue();
+        assertThat(PasswordHasher.matches("reset123", reset.getPassword())).isTrue();
     }
 }

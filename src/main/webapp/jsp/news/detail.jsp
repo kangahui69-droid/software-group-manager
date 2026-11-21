@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <jsp:include page="../common/layout_top.jsp">
     <jsp:param name="title" value="${news.title}" />
 </jsp:include>
@@ -82,6 +82,13 @@
     .news-content p {
         margin-bottom: 16px;
     }
+
+    .news-content img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 16px 0;
+    }
     
     .back-btn {
         background: var(--bg-light-gray);
@@ -150,6 +157,16 @@
                         <div class="news-content">
                             ${content}
                         </div>
+                        <c:if test="${not empty attachments}">
+                            <section class="mt-4" aria-label="新闻附件">
+                                <h3>附件下载</h3>
+                                <ul>
+                                    <c:forEach var="attachment" items="${attachments}">
+                                        <li><a href="${pageContext.request.contextPath}/news/media/${attachment.id}/download"><c:out value="${attachment.originalName}" /></a>（${attachment.fileSize} 字节）</li>
+                                    </c:forEach>
+                                </ul>
+                            </section>
+                        </c:if>
                     </div>
                     <div class="card-footer" style="background: var(--bg-white); border: none; padding: 24px 32px;">
                         <div class="d-flex justify-content-between align-items-center">
@@ -167,6 +184,14 @@
         </div>
     </div>
 </div>
+
+<c:if test="${not empty sessionScope.user and sessionScope.user.role ne 'ADMIN' and news.status eq 1}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.markPublicationRead) window.markPublicationRead('NEWS', ${news.id});
+        });
+    </script>
+</c:if>
 
 <jsp:include page="../common/layout_bottom.jsp" />
 

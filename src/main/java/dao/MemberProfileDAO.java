@@ -70,7 +70,7 @@ public class MemberProfileDAO {
         if (profile.getUserId() == null) {
             throw new RuntimeException("插入档案失败：用户ID不能为空");
         }
-        String sql = "INSERT INTO member_profile (user_id, birthday, student_id, major, grade, avatar_file_id, introduction) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO member_profile (user_id, birthday, student_id, major, grade, avatar_file_id, introduction, github, blog) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);
@@ -81,6 +81,8 @@ public class MemberProfileDAO {
             pstmt.setString(5, profile.getGrade() != null ? profile.getGrade() : "");
             pstmt.setObject(6, profile.getAvatarFileId());
             pstmt.setString(7, profile.getIntroduction());
+            pstmt.setString(8, profile.getGithub());
+            pstmt.setString(9, profile.getBlog());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

@@ -3,6 +3,7 @@ package com.softwaregroup.monitor.service;
 import org.springframework.stereotype.Service;
 import com.softwaregroup.monitor.dao.OperationLogDAO;
 import com.softwaregroup.monitor.model.OperationLog;
+import com.softwaregroup.monitor.model.LogTimeRange;
 import com.softwaregroup.common.util.Result;
 
 import java.util.*;
@@ -45,9 +46,20 @@ public class LogService {
                 String operation = getStringValue(filter, "operation");
                 String module = getStringValue(filter, "module");
                 String dateRange = getStringValue(filter, "dateRange");
+                String startTime = getStringValue(filter, "startTime");
+                String endTime = getStringValue(filter, "endTime");
 
-                logs = operationLogDAO.findByConditions(keyword, operation, module, dateRange, page, pageSize);
-                total = operationLogDAO.countByConditions(keyword, operation, module, dateRange);
+                if (hasValue(startTime) || hasValue(endTime)) {
+                    LogTimeRange range = LogTimeRange.explicit(startTime, endTime);
+                    logs = operationLogDAO.findByTimeRange(keyword, operation, module,
+                            range.getStart(), range.getEnd(), page, pageSize);
+                    total = operationLogDAO.countByTimeRange(keyword, operation, module,
+                            range.getStart(), range.getEnd());
+                } else {
+                    LogTimeRange.legacy(dateRange);
+                    logs = operationLogDAO.findByConditions(keyword, operation, module, dateRange, page, pageSize);
+                    total = operationLogDAO.countByConditions(keyword, operation, module, dateRange);
+                }
             }
 
             if (logs == null) {
@@ -67,6 +79,8 @@ public class LogService {
             result.put("totalPages", totalPages);
 
             return Result.ok(result);
+        } catch (IllegalArgumentException e) {
+            return Result.error(CODE_BAD_REQUEST, "日期范围参数无效");
         } catch (Exception e) {
             return Result.error(CODE_INTERNAL_ERROR, "数据库错误");
         }
@@ -101,5 +115,9 @@ public class LogService {
             return null;
         }
         return String.valueOf(value);
+    }
+
+    private boolean hasValue(String value) {
+        return value != null && !value.isBlank();
     }
 }

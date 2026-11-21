@@ -2,6 +2,8 @@ server:
   port: ${SERVER_PORT:8086}
 
 spring:
+  jackson:
+    time-zone: Asia/Shanghai
   mvc:
     redirect-trailing-slash: false
   servlet:
@@ -11,11 +13,12 @@ spring:
       enabled: true
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:root}
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:software_group}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+    username: ${DB_USER:sg_monitor_svc}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
+      connection-init-sql: SET time_zone = '+08:00'
       maximum-pool-size: 10
       minimum-idle: 2
       connection-timeout: 30000
@@ -26,7 +29,7 @@ spring:
   redis:
     host: ${REDIS_HOST:redis}
     port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:-redis123}
+    password: ${REDIS_PASSWORD}
     database: 4
     timeout: 5000
     jedis:
@@ -59,7 +62,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always

@@ -2,7 +2,7 @@ package dao;
 
 import model.User;
 import util.DBUtil;
-import util.DESUtil;
+import util.PasswordHasher;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -29,9 +29,16 @@ public class UserDAO {
 
             if (rs.next()) {
                 String storedPassword = rs.getString("password");
-                String encryptedPassword = DESUtil.encrypt(password);
-                if (storedPassword.equals(encryptedPassword)) {
-                    return mapResultSetToUser(rs);
+                if (PasswordHasher.matches(password, storedPassword)) {
+                    User user = mapResultSetToUser(rs);
+                    if (PasswordHasher.needsUpgrade(storedPassword)) {
+                        String upgraded = PasswordHasher.hash(password);
+                        if (!updatePasswordIfCurrent(user.getId(), storedPassword, upgraded)) {
+                            return null;
+                        }
+                        user.setPassword(upgraded);
+                    }
+                    return user;
                 }
             }
         } catch (SQLException e) {
@@ -144,7 +151,7 @@ public class UserDAO {
         try {
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, DESUtil.encrypt(user.getPassword()));
+            pstmt.setString(2, PasswordHasher.hash(user.getPassword()));
             pstmt.setString(3, user.getName());
             pstmt.setString(4, user.getEmail());
             pstmt.setString(5, user.getPhone());
@@ -243,17 +250,15 @@ public class UserDAO {
         }
     }
 
-    /**
-     * 更新用户密码（自动加密）
-     */
+    /** Update a password from raw input; never persist a reversible value. */
     public boolean updatePassword(Integer userId, String newPassword) {
-        String sql = "UPDATE user SET password = ? WHERE id = ?";
+        String sql = "UPDATE user SET password = ?, must_change_password = 0 WHERE id = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, DESUtil.encrypt(newPassword));
+            pstmt.setString(1, PasswordHasher.hash(newPassword));
             pstmt.setInt(2, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -277,7 +282,7 @@ public class UserDAO {
         try {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, DESUtil.encrypt(newPassword));
+            pstmt.setString(1, PasswordHasher.hash(newPassword));
             pstmt.setInt(2, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -310,18 +315,17 @@ public class UserDAO {
         return false;
     }
 
-    /**
-     * 直接更新密码（不加密，用于密码加密方式转换）
-     */
-    public boolean updatePasswordDirect(Integer userId, String encryptedPassword) {
-        String sql = "UPDATE user SET password = ? WHERE id = ?";
+    /** Upgrade a legacy DES value only if no concurrent password change occurred. */
+    public boolean updatePasswordIfCurrent(Integer userId, String currentStoredPassword, String newHash) {
+        String sql = "UPDATE user SET password = ? WHERE id = ? AND password = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, encryptedPassword);
+            pstmt.setString(1, newHash);
             pstmt.setInt(2, userId);
+            pstmt.setString(3, currentStoredPassword);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -335,25 +339,14 @@ public class UserDAO {
      * 验证用户密码
      */
     public boolean verifyPassword(Integer userId, String password) {
-        String sql = "SELECT COUNT(*) FROM user WHERE id = ? AND password = ?";
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = DBUtil.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, userId);
-            pstmt.setString(2, DESUtil.encrypt(password));
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closeResources(conn, pstmt, rs);
+        User user = findById(userId);
+        if (user == null || !PasswordHasher.matches(password, user.getPassword())) {
+            return false;
         }
-        return false;
+        if (PasswordHasher.needsUpgrade(user.getPassword())) {
+            return updatePasswordIfCurrent(userId, user.getPassword(), PasswordHasher.hash(password));
+        }
+        return true;
     }
 
     /**

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -99,7 +100,10 @@ class ProjectServiceTest {
         void should_create_project_when_member() {
             when(userDAO.findById(2)).thenReturn(testUser);
             when(projectDAO.countProjectsByMemberAndYear(2, 2026)).thenReturn(0);
-            when(projectDAO.insert(any(Project.class))).thenReturn(true);
+            when(projectDAO.insert(any(Project.class))).thenAnswer(call -> {
+                ((Project) call.getArgument(0)).setId(7);
+                return true;
+            });
             doNothing().when(projectDAO).addMember(anyInt(), anyInt(), anyString(), any());
             doNothing().when(projectDAO).addHistory(anyInt(), anyString(), anyInt(), anyString(), anyString(), any(), any());
 
@@ -153,15 +157,15 @@ class ProjectServiceTest {
         }
 
         @Test
-        @DisplayName("边界情况：项目名称超过200字符应返回错误")
+        @DisplayName("边界情况：项目名称超过数据库100字符限制应返回错误")
         void should_return_error_when_name_too_long() {
-            testProjectDTO.setName("a".repeat(201));
+            testProjectDTO.setName("a".repeat(101));
 
             Result result = projectService.createProject(testProjectDTO, 2);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("200");
+            assertThat(result.getMessage()).contains("100");
         }
 
         @Test
@@ -256,7 +260,10 @@ class ProjectServiceTest {
             testProjectDTO.setRepoUrl(null);
             when(userDAO.findById(2)).thenReturn(testUser);
             when(projectDAO.countProjectsByMemberAndYear(2, 2026)).thenReturn(0);
-            when(projectDAO.insert(any(Project.class))).thenReturn(true);
+            when(projectDAO.insert(any(Project.class))).thenAnswer(call -> {
+                ((Project) call.getArgument(0)).setId(7);
+                return true;
+            });
 
             Result result = projectService.createProject(testProjectDTO, 2);
 
@@ -355,9 +362,6 @@ class ProjectServiceTest {
         @Test
         @DisplayName("异常场景：项目名称为空应返回错误")
         void should_return_error_when_name_is_empty() {
-            testProject.setStatus("pending");
-            when(projectDAO.findById(1)).thenReturn(testProject);
-
             ProjectDTO updateDTO = new ProjectDTO();
             updateDTO.setName("");
             updateDTO.setCategory("CATEGORY");
@@ -787,6 +791,8 @@ class ProjectServiceTest {
 
             PlanDTO planDTO = new PlanDTO();
             planDTO.setTitle("计划");
+            planDTO.setStartDate(new Date());
+            planDTO.setEndDate(new Date(System.currentTimeMillis() + 86400000));
 
             Result result = projectService.addPlan(1, planDTO, 2);
 
@@ -806,7 +812,7 @@ class ProjectServiceTest {
             testProject.setStatus("approved");
             when(projectDAO.findById(1)).thenReturn(testProject);
             when(projectDAO.isMember(1, 2)).thenReturn(true);
-            when(projectDAO.addProgress(any(), any())).thenReturn(true);
+            when(projectDAO.addProgress(any(), any(), any())).thenReturn(true);
 
             ProgressDTO progressDTO = new ProgressDTO();
             progressDTO.setTitle("完成设计");
@@ -877,7 +883,7 @@ class ProjectServiceTest {
             testProject.setStatus("approved");
             when(projectDAO.findById(1)).thenReturn(testProject);
             when(projectDAO.isMember(1, 2)).thenReturn(true);
-            when(projectDAO.addProgress(any(), any())).thenReturn(true);
+            when(projectDAO.addProgress(any(), any(), any())).thenReturn(true);
 
             ProgressDTO progressDTO = new ProgressDTO();
             progressDTO.setTitle("刚开始");
@@ -894,7 +900,7 @@ class ProjectServiceTest {
             testProject.setStatus("approved");
             when(projectDAO.findById(1)).thenReturn(testProject);
             when(projectDAO.isMember(1, 2)).thenReturn(true);
-            when(projectDAO.addProgress(any(), any())).thenReturn(true);
+            when(projectDAO.addProgress(any(), any(), any())).thenReturn(true);
 
             ProgressDTO progressDTO = new ProgressDTO();
             progressDTO.setTitle("已完成");
@@ -911,68 +917,116 @@ class ProjectServiceTest {
     class ListProjectsTests {
 
         @Test
-        @DisplayName("正常路径：返回项目列表")
-        void should_return_project_list() {
-            when(projectDAO.findByConditions(any(), any(), any()))
-                    .thenReturn(Arrays.asList(testProject));
+        @DisplayName("越界页码回退到最后一页并返回分页元数据")
+        void should_clamp_page_and_return_metadata() {
+            when(projectDAO.countByConditions(null, null, null, false)).thenReturn(23);
+            when(projectDAO.findPageByConditions(null, null, null, false, 10, 20))
+                    .thenReturn(List.of(testProject));
 
-            Result result = projectService.listProjects(null, 1, 20);
+            Result result = projectService.listProjects(null, 99, 10,
+                    new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
+
+            Map<?, ?> data = (Map<?, ?>) result.getData();
+            assertThat(data.get("list")).isEqualTo(List.of(testProject));
+            assertThat(data.get("total")).isEqualTo(23);
+            assertThat(data.get("page")).isEqualTo(3);
+            assertThat(data.get("pageSize")).isEqualTo(10);
+            assertThat(data.get("totalPages")).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("管理端状态筛选接受大写输入并传递标准小写状态")
+        void should_normalize_admin_status_filter() {
+            ProjectFilterDTO filter = new ProjectFilterDTO();
+            filter.setStatus("APPROVED");
+            when(projectDAO.countByConditions(null, Project.STATUS_APPROVED, null, false)).thenReturn(1);
+            when(projectDAO.findPageByConditions(null, Project.STATUS_APPROVED, null, false, 20, 0))
+                    .thenReturn(List.of(testProject));
+
+            Result result = projectService.listProjects(filter, 1, 20,
+                    new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData()).isInstanceOf(List.class);
+            verify(projectDAO).findPageByConditions(null, Project.STATUS_APPROVED, null, false, 20, 0);
+        }
+
+        @Test
+        @DisplayName("用户端状态筛选接受大写输入并按标准小写状态匹配")
+        void should_normalize_member_status_filter() {
+            testProject.setStatus(Project.STATUS_APPROVED);
+            ProjectFilterDTO filter = new ProjectFilterDTO();
+            filter.setStatus("APPROVED");
+            when(projectDAO.countByConditions(null, Project.STATUS_APPROVED, null, true)).thenReturn(1);
+            when(projectDAO.findPageByConditions(null, Project.STATUS_APPROVED, null, true, 20, 0))
+                    .thenReturn(List.of(testProject));
+
+            Result result = projectService.listProjects(filter, 1, 20,
+                    new com.softwaregroup.common.security.CurrentUser(2, "member", "MEMBER"));
+
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(((Map<?, ?>) result.getData()).get("list")).isEqualTo(List.of(testProject));
+        }
+
+        @Test
+        @DisplayName("正常路径：返回项目列表")
+        void should_return_project_list() {
+            when(projectDAO.countByConditions(null, null, null, false)).thenReturn(1);
+            when(projectDAO.findPageByConditions(null, null, null, false, 20, 0))
+                    .thenReturn(List.of(testProject));
+
+            Result result = projectService.listProjects(null, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
+
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(((Map<?, ?>) result.getData()).get("list")).isEqualTo(List.of(testProject));
         }
 
         @Test
         @DisplayName("正常路径：按关键词筛选")
         void should_filter_by_keyword() {
-            when(projectDAO.findByConditions(eq("测试"), any(), any()))
-                    .thenReturn(Arrays.asList(testProject));
 
             ProjectFilterDTO filter = new ProjectFilterDTO();
             filter.setKeyword("测试");
 
-            Result result = projectService.listProjects(filter, 1, 20);
+            Result result = projectService.listProjects(filter, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
+            verify(projectDAO).countByConditions("测试", null, null, false);
         }
 
         @Test
         @DisplayName("正常路径：按状态筛选")
         void should_filter_by_status() {
-            when(projectDAO.findByConditions(any(), eq("pending"), any()))
-                    .thenReturn(Arrays.asList(testProject));
 
             ProjectFilterDTO filter = new ProjectFilterDTO();
             filter.setStatus("pending");
 
-            Result result = projectService.listProjects(filter, 1, 20);
+            Result result = projectService.listProjects(filter, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
+            verify(projectDAO).countByConditions(null, "pending", null, false);
         }
 
         @Test
         @DisplayName("正常路径：按年度筛选")
         void should_filter_by_year() {
-            when(projectDAO.findByConditions(any(), any(), eq(2026)))
-                    .thenReturn(Arrays.asList(testProject));
 
             ProjectFilterDTO filter = new ProjectFilterDTO();
             filter.setYear(2026);
 
-            Result result = projectService.listProjects(filter, 1, 20);
+            Result result = projectService.listProjects(filter, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
+            verify(projectDAO).countByConditions(null, null, 2026, false);
         }
 
         @Test
         @DisplayName("正常路径：无项目时返回空列表")
         void should_return_empty_list_when_no_projects() {
-            when(projectDAO.findByConditions(any(), any(), any()))
-                    .thenReturn(Collections.emptyList());
 
-            Result result = projectService.listProjects(null, 1, 20);
+            Result result = projectService.listProjects(null, 1, 20, new com.softwaregroup.common.security.CurrentUser(1, "admin", "ADMIN"));
 
             assertThat(result.isSuccess()).isTrue();
+            assertThat(((Map<?, ?>) result.getData()).get("total")).isEqualTo(0);
         }
     }
 
@@ -984,21 +1038,36 @@ class ProjectServiceTest {
         @DisplayName("正常路径：返回项目详情")
         void should_return_project_detail() {
             when(projectDAO.findById(1)).thenReturn(testProject);
-            when(projectDAO.getProjectMembers(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getLabels(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getPlans(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getProgressList(1)).thenReturn(Collections.emptyList());
-            when(projectDAO.getHistory(1)).thenReturn(Collections.emptyList());
+            List<Object> members = List.of(Map.of("user_id", 2, "role", "OWNER"));
+            List<Object> labels = List.of(Map.of("label_code", "AI"));
+            List<Object> plans = List.of(Map.of("title", "Plan A"));
+            List<Object> progress = List.of(Map.of("title", "Milestone A"));
+            List<Object> history = List.of(Map.of("action", "created"));
+            when(projectDAO.getProjectMembers(1)).thenReturn(members);
+            when(projectDAO.getLabels(1)).thenReturn(labels);
+            when(projectDAO.getPlans(1)).thenReturn(plans);
+            when(projectDAO.getProgressList(1)).thenReturn(progress);
+            when(projectDAO.getHistory(1)).thenReturn(history);
 
-            Result result = projectService.getProjectDetail(1, 2);
+            Result result = projectService.getProjectDetail(1, 2, false);
 
             assertThat(result.isSuccess()).isTrue();
+            assertThat(result.getData()).isInstanceOf(Map.class);
+            Map<?, ?> detail = (Map<?, ?>) result.getData();
+            assertThat(detail.get("project")).isSameAs(testProject);
+            assertThat(detail.get("members")).isEqualTo(members);
+            assertThat(detail.get("labels")).isEqualTo(labels);
+            assertThat(detail.get("plans")).isEqualTo(plans);
+            assertThat(detail.get("progress")).isEqualTo(progress);
+            assertThat(detail.get("history")).isEqualTo(history);
+            assertThat(detail.get("isMember")).isEqualTo(false);
+            assertThat(detail.get("currentUserRole")).isEqualTo("ADMIN");
         }
 
         @Test
         @DisplayName("异常场景：项目ID无效应返回错误")
         void should_return_error_when_id_invalid() {
-            Result result = projectService.getProjectDetail(0, 2);
+            Result result = projectService.getProjectDetail(0, 2, false);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -1009,7 +1078,7 @@ class ProjectServiceTest {
         void should_return_404_when_project_not_found() {
             when(projectDAO.findById(999)).thenReturn(null);
 
-            Result result = projectService.getProjectDetail(999, 2);
+            Result result = projectService.getProjectDetail(999, 2, false);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(404);
@@ -1021,7 +1090,7 @@ class ProjectServiceTest {
             testProject.setStatus("pending");
             when(projectDAO.findById(1)).thenReturn(testProject);
 
-            Result result = projectService.getProjectDetail(1, 3);
+            Result result = projectService.getProjectDetail(1, 3, false);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(403);
@@ -1033,15 +1102,54 @@ class ProjectServiceTest {
     class GetMyProjectsTests {
 
         @Test
+        @DisplayName("我负责的项目使用独立查询并保留分页信息")
+        void created_by_me_should_use_leader_only_query() {
+            when(projectDAO.countProjectsByLeaderId(2)).thenReturn(3);
+            when(projectDAO.findPageByLeaderId(2, 2, 2)).thenReturn(List.of(testProject));
+
+            Result result = projectService.getCreatedByMeProjects(2, 99, 2);
+
+            assertThat(result.isSuccess()).isTrue();
+            Map<?, ?> data = (Map<?, ?>) result.getData();
+            assertThat(data.get("list")).isEqualTo(List.of(testProject));
+            assertThat(data.get("total")).isEqualTo(3);
+            assertThat(data.get("page")).isEqualTo(2);
+            assertThat(data.get("pageSize")).isEqualTo(2);
+            assertThat(data.get("totalPages")).isEqualTo(2);
+            org.mockito.Mockito.verify(projectDAO, org.mockito.Mockito.never()).countProjectsByUserId(2);
+        }
+
+        @Test
+        @DisplayName("我负责的项目拒绝无效用户ID")
+        void created_by_me_should_reject_invalid_user_id() {
+            Result result = projectService.getCreatedByMeProjects(null, 1, 20);
+            assertThat(result.isSuccess()).isFalse();
+            assertThat(result.getCode()).isEqualTo(400);
+        }
+
+        @Test
+        @DisplayName("无项目时仍返回规范的分页元数据")
+        void should_return_empty_page_metadata() {
+            Result result = projectService.getMyProjects(2, -1, 0);
+
+            Map<?, ?> data = (Map<?, ?>) result.getData();
+            assertThat(data.get("list")).isEqualTo(List.of());
+            assertThat(data.get("total")).isEqualTo(0);
+            assertThat(data.get("page")).isEqualTo(1);
+            assertThat(data.get("pageSize")).isEqualTo(20);
+            assertThat(data.get("totalPages")).isEqualTo(0);
+        }
+
+        @Test
         @DisplayName("正常路径：返回用户的项目列表")
         void should_return_user_projects() {
-            when(projectDAO.findProjectsByUserId(2))
-                    .thenReturn(Arrays.asList(testProject));
+            when(projectDAO.countProjectsByUserId(2)).thenReturn(1);
+            when(projectDAO.findPageByUserId(2, 20, 0)).thenReturn(List.of(testProject));
 
             Result result = projectService.getMyProjects(2, 1, 20);
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData()).isInstanceOf(List.class);
+            assertThat(((Map<?, ?>) result.getData()).get("list")).isEqualTo(List.of(testProject));
         }
 
         @Test
@@ -1056,12 +1164,11 @@ class ProjectServiceTest {
         @Test
         @DisplayName("正常路径：无项目时返回空列表")
         void should_return_empty_list_when_no_projects() {
-            when(projectDAO.findProjectsByUserId(2))
-                    .thenReturn(Collections.emptyList());
 
             Result result = projectService.getMyProjects(2, 1, 20);
 
             assertThat(result.isSuccess()).isTrue();
+            assertThat(((Map<?, ?>) result.getData()).get("list")).isEqualTo(List.of());
         }
     }
 

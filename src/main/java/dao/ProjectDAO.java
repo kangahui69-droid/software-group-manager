@@ -46,13 +46,14 @@ public class ProjectDAO {
      */
     public List<Project> findApprovedProjects() {
         List<Project> projects = new ArrayList<>();
-        String sql = "SELECT * FROM project WHERE status = 'APPROVED' ORDER BY created_at DESC";
+        String sql = "SELECT * FROM project WHERE status = ? AND (deleted = 0 OR deleted IS NULL) ORDER BY created_at DESC";
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, Project.STATUS_APPROVED);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 projects.add(mapResultSetToProject(rs));
@@ -119,7 +120,7 @@ public class ProjectDAO {
         }
         if (status != null && !status.trim().isEmpty()) {
             sql.append(" AND p.status = ?");
-            params.add(status.toLowerCase());
+            params.add(status.trim().toLowerCase(java.util.Locale.ROOT));
         }
         if (year != null) {
             sql.append(" AND p.year = ?");
@@ -146,6 +147,75 @@ public class ProjectDAO {
             closeResources(conn, pstmt, rs);
         }
         return projects;
+    }
+
+    private static class ProjectFilterQuery {
+        private final StringBuilder fromWhere = new StringBuilder(
+                " FROM project p LEFT JOIN user u ON p.leader_id = u.id " +
+                "WHERE (p.deleted = 0 OR p.deleted IS NULL)");
+        private final List<Object> params = new ArrayList<>();
+
+        private ProjectFilterQuery(String keyword, String status, String category, Integer year) {
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                fromWhere.append(" AND (p.name LIKE ? OR p.description LIKE ? OR u.name LIKE ?)");
+                String like = "%" + keyword.trim() + "%";
+                params.add(like);
+                params.add(like);
+                params.add(like);
+            }
+            if (status != null && !status.trim().isEmpty()) {
+                fromWhere.append(" AND p.status = ?");
+                params.add(status.trim().toLowerCase(java.util.Locale.ROOT));
+            }
+            if (category != null && !category.trim().isEmpty()) {
+                fromWhere.append(" AND p.category = ?");
+                params.add(category.trim());
+            }
+            if (year != null) {
+                fromWhere.append(" AND p.year = ?");
+                params.add(year);
+            }
+        }
+
+        private void bind(PreparedStatement statement) throws SQLException {
+            for (int i = 0; i < params.size(); i++) {
+                statement.setObject(i + 1, params.get(i));
+            }
+        }
+    }
+
+    public int countByConditions(String keyword, String status, String category, Integer year) {
+        ProjectFilterQuery query = new ProjectFilterQuery(keyword, status, category, year);
+        String sql = "SELECT COUNT(*)" + query.fromWhere;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            query.bind(statement);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("统计项目失败", e);
+        }
+    }
+
+    public List<Project> findPageByConditions(String keyword, String status, String category,
+                                               Integer year, int limit, int offset) {
+        ProjectFilterQuery query = new ProjectFilterQuery(keyword, status, category, year);
+        String sql = "SELECT p.*, u.name AS leader_name" + query.fromWhere +
+                " ORDER BY p.year DESC, p.created_at DESC, p.id DESC LIMIT ? OFFSET ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            query.bind(statement);
+            statement.setInt(query.params.size() + 1, limit);
+            statement.setInt(query.params.size() + 2, offset);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Project> projects = new ArrayList<>();
+                while (rs.next()) projects.add(mapResultSetToProject(rs));
+                return projects;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("分页查询项目失败", e);
+        }
     }
 
     /**
@@ -178,7 +248,9 @@ public class ProjectDAO {
      */
     public List<Project> findProjectsByUserId(Integer userId) {
         List<Project> projects = new ArrayList<>();
-        String sql = "SELECT DISTINCT p.* FROM project p LEFT JOIN project_member pm ON p.id = pm.project_id WHERE p.leader_id = ? OR pm.user_id = ? ORDER BY p.created_at DESC";
+        String sql = "SELECT DISTINCT p.* FROM project p LEFT JOIN project_member pm ON p.id = pm.project_id " +
+                "WHERE (p.leader_id = ? OR p.admin_id = ? OR pm.user_id = ?) " +
+                "AND (p.deleted = 0 OR p.deleted IS NULL) ORDER BY p.created_at DESC";
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -187,6 +259,7 @@ public class ProjectDAO {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, userId);
             pstmt.setInt(2, userId);
+            pstmt.setInt(3, userId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 projects.add(mapResultSetToProject(rs));
@@ -197,6 +270,78 @@ public class ProjectDAO {
             closeResources(conn, pstmt, rs);
         }
         return projects;
+    }
+
+    public int countProjectsByUserId(Integer userId) {
+        String sql = "SELECT COUNT(*) FROM project p WHERE (p.deleted = 0 OR p.deleted IS NULL) " +
+                "AND (p.leader_id = ? OR p.admin_id = ? OR EXISTS " +
+                "(SELECT 1 FROM project_member pm WHERE pm.project_id = p.id AND pm.user_id = ?))";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, userId);
+            statement.setInt(2, userId);
+            statement.setInt(3, userId);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("统计我的项目失败", e);
+        }
+    }
+
+    public List<Project> findPageByUserId(Integer userId, int limit, int offset) {
+        String sql = "SELECT p.* FROM project p WHERE (p.deleted = 0 OR p.deleted IS NULL) " +
+                "AND (p.leader_id = ? OR p.admin_id = ? OR EXISTS " +
+                "(SELECT 1 FROM project_member pm WHERE pm.project_id = p.id AND pm.user_id = ?)) " +
+                "ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, userId);
+            statement.setInt(2, userId);
+            statement.setInt(3, userId);
+            statement.setInt(4, limit);
+            statement.setInt(5, offset);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Project> projects = new ArrayList<>();
+                while (rs.next()) projects.add(mapResultSetToProject(rs));
+                return projects;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("分页查询我的项目失败", e);
+        }
+    }
+
+    public int countProjectsByLeaderId(Integer leaderId) {
+        String sql = "SELECT COUNT(*) FROM project p WHERE p.leader_id = ? " +
+                "AND (p.deleted = 0 OR p.deleted IS NULL)";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, leaderId);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("统计我负责的项目失败", e);
+        }
+    }
+
+    public List<Project> findPageByLeaderId(Integer leaderId, int limit, int offset) {
+        String sql = "SELECT p.* FROM project p WHERE p.leader_id = ? " +
+                "AND (p.deleted = 0 OR p.deleted IS NULL) " +
+                "ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, leaderId);
+            statement.setInt(2, limit);
+            statement.setInt(3, offset);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Project> projects = new ArrayList<>();
+                while (rs.next()) projects.add(mapResultSetToProject(rs));
+                return projects;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("分页查询我负责的项目失败", e);
+        }
     }
 
     /**
@@ -227,7 +372,8 @@ public class ProjectDAO {
             pstmt.setString(2, project.getDescription());
             pstmt.setString(3, project.getCategory());
             pstmt.setInt(4, project.getLeaderId());
-            pstmt.setString(5, project.getStatus() != null ? project.getStatus().toLowerCase() : "pending");
+            pstmt.setString(5, project.getStatus() != null
+                    ? project.getStatus().trim().toLowerCase(java.util.Locale.ROOT) : Project.STATUS_PENDING);
             pstmt.setInt(6, project.getYear());
 
             if (project.getExpectedStartDate() != null) {
@@ -286,12 +432,13 @@ public class ProjectDAO {
      * 审批项目（事务重载版本）
      */
     public boolean approve(Integer projectId, Integer adminId, Connection conn) {
-        String sql = "UPDATE project SET status = 'approved', approved_by = ?, approved_at = NOW() WHERE id = ?";
+        String sql = "UPDATE project SET status = ?, approved_by = ?, approved_at = NOW() WHERE id = ?";
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, adminId);
-            pstmt.setInt(2, projectId);
+            pstmt.setString(1, Project.STATUS_APPROVED);
+            pstmt.setInt(2, adminId);
+            pstmt.setInt(3, projectId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -320,12 +467,13 @@ public class ProjectDAO {
      * 拒绝项目（事务重载版本）
      */
     public boolean reject(Integer projectId, Integer adminId, Connection conn) {
-        String sql = "UPDATE project SET status = 'rejected', approved_by = ?, approved_at = NOW() WHERE id = ?";
+        String sql = "UPDATE project SET status = ?, approved_by = ?, approved_at = NOW() WHERE id = ?";
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, adminId);
-            pstmt.setInt(2, projectId);
+            pstmt.setString(1, Project.STATUS_REJECTED);
+            pstmt.setInt(2, adminId);
+            pstmt.setInt(3, projectId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -362,7 +510,8 @@ public class ProjectDAO {
             pstmt.setString(2, project.getDescription());
             pstmt.setString(3, project.getCategory());
             pstmt.setInt(4, project.getLeaderId());
-            pstmt.setString(5, project.getStatus());
+            pstmt.setString(5, project.getStatus() == null ? Project.STATUS_PENDING
+                    : project.getStatus().trim().toLowerCase(java.util.Locale.ROOT));
             pstmt.setInt(6, project.getYear());
 
             if (project.getExpectedStartDate() != null) {
@@ -1085,8 +1234,22 @@ public class ProjectDAO {
     }
 
     public List<ProjectMemberApplication> getMyApplications(Integer userId) {
+        return queryMyApplications(userId, null, null);
+    }
+
+    public List<ProjectMemberApplication> getMyApplications(Integer userId, int limit, int offset) {
+        return queryMyApplications(userId, limit, offset);
+    }
+
+    private List<ProjectMemberApplication> queryMyApplications(Integer userId, Integer limit, Integer offset) {
         List<ProjectMemberApplication> applications = new ArrayList<>();
-        String sql = "SELECT pma.*, p.name as project_name, u.name as user_name, mp.student_id, mp.major FROM project_member_application pma JOIN project p ON pma.project_id = p.id JOIN user u ON pma.user_id = u.id LEFT JOIN member_profile mp ON u.id = mp.user_id WHERE pma.user_id = ? ORDER BY pma.applied_at DESC";
+        String sql = "SELECT pma.*, p.name as project_name, u.name as user_name, mp.student_id, mp.major " +
+                "FROM project_member_application pma JOIN project p ON pma.project_id = p.id " +
+                "JOIN user u ON pma.user_id = u.id " +
+                "LEFT JOIN member_profile mp ON mp.id = " +
+                "(SELECT MAX(mp2.id) FROM member_profile mp2 WHERE mp2.user_id = u.id) " +
+                "WHERE pma.user_id = ? ORDER BY pma.applied_at DESC, pma.id DESC" +
+                (limit == null ? "" : " LIMIT ? OFFSET ?");
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1094,6 +1257,10 @@ public class ProjectDAO {
             conn = DBUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, userId);
+            if (limit != null) {
+                pstmt.setInt(2, limit);
+                pstmt.setInt(3, offset);
+            }
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 ProjectMemberApplication app = new ProjectMemberApplication();
@@ -1112,11 +1279,26 @@ public class ProjectDAO {
                 applications.add(app);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("查询我的项目申请失败", e);
         } finally {
             closeResources(conn, pstmt, rs);
         }
         return applications;
+    }
+
+    public int countMyApplications(Integer userId) {
+        String sql = "SELECT COUNT(*) FROM project_member_application pma " +
+                "JOIN project p ON pma.project_id = p.id JOIN user u ON pma.user_id = u.id " +
+                "WHERE pma.user_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("统计我的项目申请失败", e);
+        }
     }
 
     public boolean isMember(Integer projectId, Integer userId) {
@@ -1335,7 +1517,7 @@ public class ProjectDAO {
      * 统计项目总数
      */
     public int count() {
-        String sql = "SELECT COUNT(*) FROM project WHERE status = 1";
+        String sql = "SELECT COUNT(*) FROM project WHERE deleted = 0 OR deleted IS NULL";
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;

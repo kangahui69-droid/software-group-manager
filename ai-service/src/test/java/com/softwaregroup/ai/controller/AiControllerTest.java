@@ -4,6 +4,8 @@ import com.softwaregroup.ai.model.dto.*;
 import com.softwaregroup.ai.model.entity.*;
 import com.softwaregroup.ai.service.AIService;
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +20,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -28,6 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AiControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private AIService aiService;
@@ -37,14 +42,16 @@ class AiControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(aiController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(aiController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
     }
 
     // ==================== 对话管理测试 ====================
 
     @Test
     void chat_shouldReturnResponse() throws Exception {
-        when(aiService.chat(eq("你好"), isNull(), isNull())).thenReturn("你好，我是AI助手");
+        when(aiService.chat(eq("你好"), isNull(), eq(1))).thenReturn("你好，我是AI助手");
 
         mockMvc.perform(post("/api/ai/chat")
                         .contentType("application/json")
@@ -60,7 +67,7 @@ class AiControllerTest {
 
         mockMvc.perform(post("/api/ai/chat")
                         .contentType("application/json")
-                        .content("{\"message\":\"你好\",\"sessionId\":\"session123\",\"userId\":1}"))
+                        .content("{\"message\":\"你好\",\"sessionId\":\"session123\",\"userId\":999}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
     }
@@ -71,7 +78,7 @@ class AiControllerTest {
             createAIMessage(1, "你好"),
             createAIMessage(2, "你好，有什么帮助")
         );
-        when(aiService.getConversationHistory(eq("session123"))).thenReturn(history);
+        when(aiService.getConversationHistory(eq("session123"), eq(1))).thenReturn(history);
 
         mockMvc.perform(get("/api/ai/history")
                         .param("sessionId", "session123"))
@@ -156,7 +163,7 @@ class AiControllerTest {
 
     @Test
     void executeAction_shouldReturnResult() throws Exception {
-        when(aiService.executeAction(eq("queryActivity"), any(), isNull())).thenReturn(Map.of("id", 1));
+        when(aiService.executeAction(eq("queryActivity"), any(), any())).thenReturn(Map.of("id", 1));
 
         mockMvc.perform(post("/api/ai/execute")
                         .contentType("application/json")
@@ -176,6 +183,8 @@ class AiControllerTest {
                         .content("{\"actionType\":\"queryActivity\",\"params\":{},\"user\":{\"id\":1,\"username\":\"admin\",\"role\":\"ADMIN\"}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
+        verify(aiService).executeAction(eq("queryActivity"), any(),
+                argThat(actual -> actual.getId() == 1 && "MEMBER".equals(actual.getRole())));
     }
 
     // ==================== 系统提示词测试 ====================
@@ -205,7 +214,7 @@ class AiControllerTest {
 
     @Test
     void createStatus_shouldReturnStatusId() throws Exception {
-        when(aiService.createMessageStatus(eq("session123"), isNull(), isNull())).thenReturn(1);
+        when(aiService.createMessageStatus(eq("session123"), eq(1), isNull())).thenReturn(1);
 
         mockMvc.perform(post("/api/ai/status")
                         .contentType("application/json")
@@ -221,14 +230,14 @@ class AiControllerTest {
 
         mockMvc.perform(post("/api/ai/status")
                         .contentType("application/json")
-                        .content("{\"sessionId\":\"session123\",\"userId\":1,\"userMessage\":\"你好\"}"))
+                        .content("{\"sessionId\":\"session123\",\"userId\":999,\"userMessage\":\"你好\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
     }
 
     @Test
     void updateStatus_shouldReturnSuccess() throws Exception {
-        when(aiService.updateMessageStatus(eq(1), eq("COMPLETED"))).thenReturn(true);
+        when(aiService.updateMessageStatus(eq(1), eq("COMPLETED"), eq(1))).thenReturn(true);
 
         mockMvc.perform(put("/api/ai/status/1")
                         .contentType("application/json")

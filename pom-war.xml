@@ -18,8 +18,9 @@
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <servlet-api.version>5.0.0</servlet-api.version>
-        <jstl.version>1.2</jstl.version>
+        <servlet-api.version>6.0.0</servlet-api.version>
+        <jstl.version>3.0.2</jstl.version>
+        <jstl-impl.version>3.0.1</jstl-impl.version>
         <mysql-connector.version>8.0.28</mysql-connector.version>
         <hikaricp.version>4.0.3</hikaricp.version>
         <slf4j.version>1.7.36</slf4j.version>
@@ -29,10 +30,22 @@
         <assertj.version>3.24.2</assertj.version>
         <h2.version>2.2.224</h2.version>
         <tomcat-embed.version>10.1.20</tomcat-embed.version>
+        <spring-security-crypto.version>6.2.0</spring-security-crypto.version>
+        <bouncycastle.version>1.77</bouncycastle.version>
         <testcontainers.version>1.18.3</testcontainers.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>${spring-security-crypto.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>${bouncycastle.version}</version>
+        </dependency>
         <!-- Servlet API (provided by Tomcat 10+) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
@@ -41,11 +54,16 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- JSTL for JSP -->
+        <!-- JSTL for JSP (Jakarta Tags 3.0：TLD URI 为 jakarta.tags.core / jakarta.tags.fmt) -->
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>jstl</artifactId>
+            <groupId>jakarta.servlet.jsp.jstl</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
             <version>${jstl.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>${jstl-impl.version}</version>
         </dependency>
 
         <!-- MySQL Connector -->

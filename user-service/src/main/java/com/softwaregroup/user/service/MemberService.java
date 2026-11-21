@@ -125,7 +125,7 @@ public class MemberService {
         // 构建用户
         User user = new User();
         user.setUsername(username);
-        user.setPassword(password); // 密码应该在调用方已经加密
+        user.setPassword(password); // DAO 在持久化时生成 Argon2id 哈希
         user.setName(name != null ? name : username);
         user.setEmail(isBlank(email) ? username + "@default.com" : email);
         user.setPhone(phone);

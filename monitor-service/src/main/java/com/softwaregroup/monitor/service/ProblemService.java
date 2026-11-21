@@ -8,6 +8,7 @@ import com.softwaregroup.monitor.model.User;
 import com.softwaregroup.monitor.model.dto.ProblemDTO;
 import com.softwaregroup.monitor.model.dto.ProblemFilterDTO;
 import com.softwaregroup.common.util.Result;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -93,7 +94,7 @@ public class ProblemService {
         return Result.error(CODE_INTERNAL_ERROR, "提交问题失败");
     }
 
-    public Result getProblemDetail(Integer problemId) {
+    public Result getProblemDetail(Integer problemId, Integer userId) {
         if (problemId == null) {
             return Result.error(CODE_BAD_REQUEST, "问题ID不能为空");
         }
@@ -101,6 +102,9 @@ public class ProblemService {
         ProblemReport problem = problemReportDAO.findById(problemId);
         if (problem == null) {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
+        }
+        if (!canAccessOwnProblem(problem, userId)) {
+            return Result.error(403, "无权查看此问题");
         }
         return Result.ok(problem);
     }
@@ -134,6 +138,7 @@ public class ProblemService {
         return Result.ok(problems);
     }
 
+    @Transactional
     public Result updateProblem(Integer problemId, ProblemDTO dto, Integer operatorId) {
         if (problemId == null) {
             return Result.error(CODE_BAD_REQUEST, "问题ID不能为空");
@@ -149,12 +154,44 @@ public class ProblemService {
         if (existing == null) {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
+        if (!canAccessOwnProblem(existing, operatorId)) {
+            return Result.error(403, "无权修改此问题");
+        }
 
+        if (dto.getTitle() == null && dto.getContent() == null
+                && dto.getReporterName() == null && dto.getReporterContact() == null) {
+            return Result.error(CODE_BAD_REQUEST, "没有可更新的字段");
+        }
         if (dto.getTitle() != null && dto.getTitle().trim().isEmpty()) {
             return Result.error(CODE_BAD_REQUEST, "标题不能为空");
         }
+        if (dto.getTitle() != null && dto.getTitle().trim().length() > 200) {
+            return Result.error(CODE_BAD_REQUEST, "标题不能超过200个字符");
+        }
+        if (dto.getContent() != null && dto.getContent().trim().isEmpty()) {
+            return Result.error(CODE_BAD_REQUEST, "内容不能为空");
+        }
+        if (dto.getContent() != null && dto.getContent().trim().length() > MAX_CONTENT_LENGTH) {
+            return Result.error(CODE_BAD_REQUEST, "内容不能超过5000个字符");
+        }
+        if (dto.getReporterName() != null && dto.getReporterName().trim().length() > 100) {
+            return Result.error(CODE_BAD_REQUEST, "报告人姓名不能超过100个字符");
+        }
+        if (dto.getReporterContact() != null && dto.getReporterContact().trim().length() > 100) {
+            return Result.error(CODE_BAD_REQUEST, "联系方式不能超过100个字符");
+        }
 
-        return Result.ok();
+        if (dto.getTitle() != null) existing.setTitle(dto.getTitle().trim());
+        if (dto.getContent() != null) existing.setContent(dto.getContent().trim());
+        if (dto.getReporterName() != null) existing.setReporterName(dto.getReporterName().trim());
+        if (dto.getReporterContact() != null) existing.setReporterContact(dto.getReporterContact().trim());
+
+        boolean adminOverride = !operatorId.equals(existing.getUserId());
+        int affected = problemReportDAO.updateDetails(existing, operatorId, adminOverride);
+        if (affected == 1) {
+            return Result.ok();
+        }
+        return Result.error(409, "问题已变化，更新失败");
     }
 
     public Result updateStatus(Integer problemId, String status, String comment, Integer operatorId) {
@@ -168,6 +205,10 @@ public class ProblemService {
         ProblemReport problem = problemReportDAO.findById(problemId);
         if (problem == null) {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
+        }
+
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
         }
 
         if (!ProblemReport.CATEGORY_VERIFIED.equals(problem.getCategory())) {
@@ -196,6 +237,10 @@ public class ProblemService {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
 
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
+        }
+
         if (category == null || !VALID_CATEGORIES.contains(category)) {
             return Result.error(CODE_BAD_REQUEST, "无效的分类值");
         }
@@ -218,6 +263,10 @@ public class ProblemService {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
 
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
+        }
+
         boolean updated = problemReportDAO.updateAdminComment(problemId, comment);
         if (updated) {
             return Result.ok();
@@ -238,11 +287,27 @@ public class ProblemService {
             return Result.error(CODE_NOT_FOUND, "问题不存在");
         }
 
+        if (!isAdmin(operatorId)) {
+            return Result.error(403, "需要管理员权限");
+        }
+
         boolean deleted = problemReportDAO.delete(problemId);
         if (deleted) {
             return Result.ok();
         }
         return Result.error(CODE_INTERNAL_ERROR, "删除问题失败");
+    }
+
+    private boolean canAccessOwnProblem(ProblemReport problem, Integer userId) {
+        return userId != null && (userId.equals(problem.getUserId()) || isAdmin(userId));
+    }
+
+    private boolean isAdmin(Integer userId) {
+        if (userId == null) {
+            return false;
+        }
+        User user = userDAO.findById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
     }
 
     public Result getStatistics() {

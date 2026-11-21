@@ -59,7 +59,7 @@ public class ResumeProjectServlet extends HttpServlet {
         } else if ("edit".equals(action)) {
             showEditForm(req, resp, resumeId, resume);
         } else if ("delete".equals(action)) {
-            deleteProject(req, resp, resumeId);
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         } else {
             listProjects(req, resp, resumeId, resume);
         }
@@ -97,6 +97,8 @@ public class ResumeProjectServlet extends HttpServlet {
             createProject(req, resp, resumeId);
         } else if ("update".equals(action)) {
             updateProject(req, resp, resumeId);
+        } else if ("delete".equals(action)) {
+            deleteProject(req, resp, resumeId);
         } else {
             resp.sendRedirect(req.getContextPath() + "/resume/project?action=list&resumeId=" + resumeId);
         }

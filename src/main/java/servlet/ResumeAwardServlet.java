@@ -63,7 +63,7 @@ public class ResumeAwardServlet extends HttpServlet {
         } else if ("edit".equals(action)) {
             showEditForm(req, resp, resumeId, resume);
         } else if ("delete".equals(action)) {
-            deleteAward(req, resp, resumeId);
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         } else {
             listAwards(req, resp, resumeId, resume);
         }
@@ -101,6 +101,8 @@ public class ResumeAwardServlet extends HttpServlet {
             createAward(req, resp, resumeId);
         } else if ("update".equals(action)) {
             updateAward(req, resp, resumeId);
+        } else if ("delete".equals(action)) {
+            deleteAward(req, resp, resumeId);
         } else {
             resp.sendRedirect(req.getContextPath() + "/resume/award?action=list&resumeId=" + resumeId);
         }

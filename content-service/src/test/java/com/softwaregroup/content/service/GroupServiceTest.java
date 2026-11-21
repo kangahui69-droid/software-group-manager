@@ -294,21 +294,21 @@ class GroupServiceTest {
         }
 
         @Test
-        @DisplayName("边界情况：群组名称超过255字符应返回错误")
+        @DisplayName("边界情况：群组名称超过100字符应返回错误")
         void should_return_error_when_group_name_too_long() {
-            testGroupDTO.setGroupName("a".repeat(256));
+            testGroupDTO.setGroupName("a".repeat(101));
 
             Result result = groupService.createGroup(testGroupDTO, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("255");
+            assertThat(result.getMessage()).contains("100");
         }
 
         @Test
-        @DisplayName("边界情况：群组名称为255字符应正常创建")
-        void should_create_group_when_name_is_255_chars() {
-            testGroupDTO.setGroupName("a".repeat(255));
+        @DisplayName("边界情况：群组名称为100字符应正常创建")
+        void should_create_group_when_name_is_100_chars() {
+            testGroupDTO.setGroupName("a".repeat(100));
             when(userDAO.findById(1)).thenReturn(new com.softwaregroup.content.model.User());
             when(activityGroupDAO.insert(any(ActivityGroup.class))).thenReturn(1);
             when(groupMemberDAO.insertOwner(anyInt(), anyInt())).thenReturn(true);
@@ -357,6 +357,7 @@ class GroupServiceTest {
 
             GroupDTO updateDTO = new GroupDTO();
             updateDTO.setGroupName("更新后的群组");
+            when(activityGroupDAO.update(any(ActivityGroup.class))).thenReturn(true);
 
             Result result = groupService.updateGroup(1, updateDTO, 1);
 
@@ -672,7 +673,7 @@ class GroupServiceTest {
             when(groupMessageDAO.findByGroupId(eq(1), anyInt(), anyInt()))
                     .thenReturn(Arrays.asList(testMessage));
 
-            Result result = groupService.getMessages(1, 1);
+            Result result = groupService.getMessages(1, 1, 1);
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData()).isInstanceOf(List.class);
@@ -681,7 +682,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：群组ID为空应返回错误")
         void should_return_error_when_group_id_is_null() {
-            Result result = groupService.getMessages(null, 1);
+            Result result = groupService.getMessages(null, 1, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -691,7 +692,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：页码为空应返回错误")
         void should_return_error_when_page_is_null() {
-            Result result = groupService.getMessages(1, null);
+            Result result = groupService.getMessages(1, null, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -701,7 +702,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：页码为0应返回错误")
         void should_return_error_when_page_is_zero() {
-            Result result = groupService.getMessages(1, 0);
+            Result result = groupService.getMessages(1, 0, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -712,7 +713,7 @@ class GroupServiceTest {
         void should_return_403_when_not_member() {
             when(groupMemberDAO.isMember(1, 1)).thenReturn(false);
 
-            Result result = groupService.getMessages(1, 1);
+            Result result = groupService.getMessages(1, 1, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(403);
@@ -847,18 +848,31 @@ class GroupServiceTest {
         void should_mute_member_when_owner() {
             when(activityGroupDAO.findById(1)).thenReturn(testGroup);
             when(groupMemberDAO.isOwner(1, 1)).thenReturn(true);
-            when(activityGroupDAO.muteGroup(eq(1), any(java.sql.Date.class), anyString())).thenReturn(true);
+            when(groupMemberDAO.isMember(1, 2)).thenReturn(true);
+            when(groupMemberDAO.muteMember(eq(1), eq(2), any(Date.class), eq("违规发言"))).thenReturn(true);
 
             Date until = new Date(System.currentTimeMillis() + 3600000);
-            Result result = groupService.muteMember(1, 2, until, "违规发言");
+            Result result = groupService.muteMember(1, 2, until, "违规发言", 1);
 
             assertThat(result.isSuccess()).isTrue();
+            verify(activityGroupDAO, never()).muteGroup(anyInt(), any(), any());
+        }
+
+        @Test
+        void should_reject_muting_non_member() {
+            when(activityGroupDAO.findById(1)).thenReturn(testGroup);
+            when(groupMemberDAO.isOwner(1, 1)).thenReturn(true);
+
+            Result result = groupService.muteMember(1, 3, null, "reason", 1);
+
+            assertThat(result.getCode()).isEqualTo(404);
+            verify(groupMemberDAO, never()).muteMember(anyInt(), anyInt(), any(), any());
         }
 
         @Test
         @DisplayName("异常场景：群组ID为空应返回错误")
         void should_return_error_when_group_id_is_null() {
-            Result result = groupService.muteMember(null, 2, new Date(), "原因");
+            Result result = groupService.muteMember(null, 2, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -867,7 +881,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：目标用户ID为空应返回错误")
         void should_return_error_when_target_user_id_is_null() {
-            Result result = groupService.muteMember(1, null, new Date(), "原因");
+            Result result = groupService.muteMember(1, null, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -879,7 +893,7 @@ class GroupServiceTest {
             when(activityGroupDAO.findById(1)).thenReturn(testGroup);
             when(groupMemberDAO.isOwner(1, 1)).thenReturn(true);
 
-            Result result = groupService.muteMember(1, 1, new Date(), "原因");
+            Result result = groupService.muteMember(1, 1, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -892,7 +906,7 @@ class GroupServiceTest {
             when(activityGroupDAO.findById(1)).thenReturn(testGroup);
             when(groupMemberDAO.isOwner(1, 2)).thenReturn(false);
 
-            Result result = groupService.muteMember(1, 3, new Date(), "原因");
+            Result result = groupService.muteMember(1, 3, new Date(), "原因", 2);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(403);
@@ -900,18 +914,18 @@ class GroupServiceTest {
         }
 
         @Test
-        @DisplayName("异常场景：禁言原因超过500字符应返回错误")
+        @DisplayName("异常场景：禁言原因超过255字符应返回错误")
         void should_return_error_when_reason_too_long() {
             when(activityGroupDAO.findById(1)).thenReturn(testGroup);
             when(groupMemberDAO.isOwner(1, 1)).thenReturn(true);
 
-            String longReason = "a".repeat(501);
+            String longReason = "a".repeat(256);
 
-            Result result = groupService.muteMember(1, 2, new Date(), longReason);
+            Result result = groupService.muteMember(1, 2, new Date(), longReason, 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("500");
+            assertThat(result.getMessage()).contains("255");
         }
 
         @Test
@@ -919,7 +933,7 @@ class GroupServiceTest {
         void should_return_404_when_group_not_found() {
             when(activityGroupDAO.findById(999)).thenReturn(null);
 
-            Result result = groupService.muteMember(999, 2, new Date(), "原因");
+            Result result = groupService.muteMember(999, 2, new Date(), "原因", 1);
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(404);
@@ -929,6 +943,17 @@ class GroupServiceTest {
     @Nested
     @DisplayName("unmuteMember - 取消禁言")
     class UnmuteMemberTests {
+
+        @Test
+        void should_unmute_only_target_member() {
+            when(activityGroupDAO.findById(1)).thenReturn(testGroup);
+            when(groupMemberDAO.isOwner(1, 1)).thenReturn(true);
+            when(groupMemberDAO.isMember(1, 2)).thenReturn(true);
+            when(groupMemberDAO.unmuteMember(1, 2)).thenReturn(true);
+
+            assertThat(groupService.unmuteMember(1, 2, 1).isSuccess()).isTrue();
+            verify(activityGroupDAO, never()).unmuteGroup(anyInt());
+        }
 
         @Test
         @DisplayName("正常路径：群主成功取消禁言")
@@ -981,8 +1006,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("正常路径：发送者成功删除自己的消息")
         void should_delete_message_when_sender() {
-            when(groupMessageDAO.findByGroupId(eq(1), anyInt(), anyInt()))
-                    .thenReturn(Arrays.asList(testMessage));
+            when(groupMessageDAO.findById(1)).thenReturn(testMessage);
             when(groupMessageDAO.delete(1)).thenReturn(true);
 
             Result result = groupService.deleteMessage(1, 1);
@@ -1011,8 +1035,7 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：非发送者删除消息应返回403")
         void should_return_403_when_not_sender() {
-            when(groupMessageDAO.findByGroupId(eq(1), anyInt(), anyInt()))
-                    .thenReturn(Arrays.asList(testMessage));
+            when(groupMessageDAO.findById(1)).thenReturn(testMessage);
 
             Result result = groupService.deleteMessage(1, 2);
 
@@ -1024,9 +1047,6 @@ class GroupServiceTest {
         @Test
         @DisplayName("异常场景：消息不存在应返回404")
         void should_return_404_when_message_not_found() {
-            when(groupMessageDAO.findByGroupId(eq(1), anyInt(), anyInt()))
-                    .thenReturn(Arrays.asList());
-
             Result result = groupService.deleteMessage(999, 1);
 
             assertThat(result.isSuccess()).isFalse();

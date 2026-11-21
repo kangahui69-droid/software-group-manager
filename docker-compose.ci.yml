@@ -1,0 +1,38 @@
+# CI runs the complete default Compose stack on an isolated GitHub runner.
+# Discovery is disabled only here: the separate Nacos policy check validates credentials,
+# while production registration still requires the OPS-02 online acceptance.
+services:
+  mysql:
+    image: mysql:8.0.42
+  file-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  user-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  activity-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  project-award-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  hr-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  monitor-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  content-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  ai-service:
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+      SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"

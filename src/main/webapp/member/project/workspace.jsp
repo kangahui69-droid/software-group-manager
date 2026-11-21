@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<jsp:useBean id="projectStatuses" class="model.ProjectStatusCodes" scope="page" />
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <jsp:include page="../../jsp/common/layout_top.jsp">
     <jsp:param name="title" value="项目工作区 - ${project.name}" />
 </jsp:include>
@@ -349,14 +350,14 @@
                         <i class="bi bi-kanban me-2"></i>${project.name}
                     </h1>
                     <p class="member-hero-subtitle">
-                        <span class="badge-design ${project.status == 'PENDING' ? 'badge-warning' : project.status == 'APPROVED' ? 'badge-success' : 'badge-primary'}">
+                        <span class="badge-design ${project.status == projectStatuses.pending ? 'badge-warning' : project.status == projectStatuses.approved ? 'badge-success' : 'badge-primary'}">
                             <c:choose>
-                                <c:when test="${project.status == 'PENDING'}">申请审核中</c:when>
-                                <c:when test="${project.status == 'APPROVED'}">确认成立</c:when>
-                                <c:when test="${project.status == 'IN_PROGRESS'}">进行中</c:when>
-                                <c:when test="${project.status == 'COMPLETED'}">已完成</c:when>
-                                <c:when test="${project.status == 'CANCELED'}">已取消</c:when>
-                                <c:when test="${project.status == 'REJECTED'}">已驳回</c:when>
+                                <c:when test="${project.status == projectStatuses.pending}">申请审核中</c:when>
+                                <c:when test="${project.status == projectStatuses.approved}">确认成立</c:when>
+                                <c:when test="${project.status == projectStatuses.inProgress}">进行中</c:when>
+                                <c:when test="${project.status == projectStatuses.completed}">已完成</c:when>
+                                <c:when test="${project.status == projectStatuses.canceled}">已取消</c:when>
+                                <c:when test="${project.status == projectStatuses.rejected}">已驳回</c:when>
                                 <c:otherwise>${project.status}</c:otherwise>
                             </c:choose>
                         </span>

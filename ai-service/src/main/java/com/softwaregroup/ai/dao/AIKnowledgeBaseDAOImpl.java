@@ -2,6 +2,7 @@ package com.softwaregroup.ai.dao;
 
 import com.softwaregroup.ai.model.entity.AIKnowledgeBase;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Profile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * AIKnowledgeBaseDAO内存实现（用于测试）
  */
 @Repository
+@Profile("test")
 public class AIKnowledgeBaseDAOImpl implements AIKnowledgeBaseDAO {
     private final Map<Integer, AIKnowledgeBase> storage = new ConcurrentHashMap<>();
     private final AtomicInteger nextId = new AtomicInteger(1);

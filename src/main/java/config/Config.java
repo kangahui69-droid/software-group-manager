@@ -23,9 +23,6 @@ public class Config {
     private static final String LOCAL_CONFIG_FILE = "config.local.properties";
     private static final String DEFAULT_CONFIG_FILE = "config.properties";
 
-    // ==================== DES加密默认值 ====================
-    private static final String DEFAULT_DES_KEY = "(^&%gasie_%^";
-
     // ==================== 文件上传默认值 ====================
     private static final long DEFAULT_MAX_FILE_SIZE = 10485760L;
     private static final long DEFAULT_MAX_REQUEST_SIZE = 20971520L;
@@ -37,7 +34,7 @@ public class Config {
     // ==================== 数据库默认值 ====================
     private static final String DEFAULT_DB_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static final String DEFAULT_DB_URL = "jdbc:mysql://localhost:3306/software_group?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true";
-    private static final String DEFAULT_DB_USERNAME = "root";
+    private static final String DEFAULT_DB_USERNAME = "sg_app_svc";
     private static final String DEFAULT_DB_PASSWORD = "";
 
     // ==================== HikariCP连接池默认值 ====================
@@ -76,7 +73,6 @@ public class Config {
         Properties defaultProps = loadPropertiesFromResource(DEFAULT_CONFIG_FILE);
         if (defaultProps == null) {
             System.err.println("[Config] 警告: 无法找到配置文件 " + DEFAULT_CONFIG_FILE);
-            setFallbackDesKey();
             return;
         }
         for (String key : defaultProps.stringPropertyNames()) {
@@ -109,11 +105,36 @@ public class Config {
     // ==================== 通用属性读取 ====================
 
     public static String getProperty(String key, String defaultValue) {
-        return properties.getProperty(key, defaultValue);
+        String envName;
+        switch (key) {
+            case "db.username": envName = "DB_USER"; break;
+            case "db.password": envName = "DB_PASSWORD"; break;
+            case "redis.password": envName = "REDIS_PASSWORD"; break;
+            case "rabbitmq.username": envName = "RABBITMQ_USER"; break;
+            case "rabbitmq.password": envName = "RABBITMQ_PASSWORD"; break;
+            case "des.key": envName = "DES_KEY"; break;
+            case "ai.api.key": envName = "AI_API_KEY"; break;
+            case "ai.api.secret": envName = "AI_API_SECRET"; break;
+            default: envName = null;
+        }
+        if (envName != null && "production".equalsIgnoreCase(System.getenv("APP_ENV"))) {
+            String envValue = System.getenv(envName);
+            if (envValue != null && !envValue.trim().isEmpty()) {
+                if ("db.username".equals(key) && "root".equalsIgnoreCase(envValue.trim())) {
+                    throw new IllegalStateException("DB_USER must not be root in production");
+                }
+                return envValue;
+            }
+            if (!key.startsWith("ai.")) {
+                throw new IllegalStateException(envName + " is required in production");
+            }
+        }
+        String value = properties.getProperty(key, defaultValue);
+        return value == null ? null : resolve(value);
     }
 
     public static String getProperty(String key) {
-        return properties.getProperty(key);
+        return getProperty(key, null);
     }
 
     public static int getIntProperty(String key, int defaultValue) {
@@ -127,7 +148,11 @@ public class Config {
     // ==================== DES加密配置 ====================
 
     public static String getDesKey() {
-        return parseString(getProperty("des.key"), DEFAULT_DES_KEY);
+        String key = getProperty("des.key");
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalStateException("DES_KEY is required while legacy passwords remain");
+        }
+        return key;
     }
 
     // ==================== 文件上传配置 ====================
@@ -145,7 +170,10 @@ public class Config {
      * 支持占位符：${user.dir}（项目根目录）、${catalina.base}（Tomcat根目录）
      */
     public static String getFileStorageBaseDir() {
-        String value = getProperty("upload.baseDir", DEFAULT_UPLOAD_BASE_DIR);
+        String previewDir = "production".equalsIgnoreCase(System.getenv("APP_ENV")) ? null
+                : System.getProperty("preview.storageBaseDir");
+        String value = previewDir != null && !previewDir.trim().isEmpty() ? previewDir
+                : getProperty("upload.baseDir", DEFAULT_UPLOAD_BASE_DIR);
         value = value.replace("${user.dir}", System.getProperty("user.dir", "."));
         String catalinaBase = System.getProperty("catalina.base");
         if (catalinaBase != null) {
@@ -236,7 +264,64 @@ public class Config {
         return trimmed;
     }
 
-    private static void setFallbackDesKey() {
-        properties.setProperty("des.key", DEFAULT_DES_KEY);
+    // ==================== 运行期占位符解析 ====================
+
+    /**
+     * 展开配置值里的 ${NAME:-default} 占位符。
+     *
+     * 环境变量非空则用环境变量值，否则用默认值；默认值本身可含嵌套占位符，递归展开。
+     * 按花括号配对定位，避免 {@code ${A:-${B}/x}} 这种嵌套默认值被截断
+     * （upload.baseDir 的默认值就是嵌套形式）。
+     *
+     * 不含 ":-" 的形式（如 ${user.dir}）原样保留，交由 getFileStorageBaseDir() 处理。
+     */
+    private static String resolve(String value) {
+        if (value.indexOf("${") < 0) {
+            return value;
+        }
+        StringBuilder result = new StringBuilder();
+        int cursor = 0;
+        while (true) {
+            int start = value.indexOf("${", cursor);
+            if (start < 0) {
+                result.append(value, cursor, value.length());
+                return result.toString();
+            }
+            int end = findClosingBrace(value, start + 2);
+            if (end < 0) {
+                result.append(value, cursor, value.length());
+                return result.toString();
+            }
+            result.append(value, cursor, start);
+            result.append(expand(value.substring(start + 2, end)));
+            cursor = end + 1;
+        }
     }
+
+    private static int findClosingBrace(String value, int from) {
+        int depth = 1;
+        for (int i = from; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '{') {
+                depth++;
+            } else if (c == '}' && --depth == 0) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String expand(String placeholder) {
+        int separator = placeholder.indexOf(":-");
+        if (separator < 0) {
+            return "${" + placeholder + "}";
+        }
+        String name = placeholder.substring(0, separator).trim();
+        String envValue = System.getenv(name);
+        if (envValue != null && !envValue.trim().isEmpty()) {
+            return envValue;
+        }
+        return resolve(placeholder.substring(separator + 2));
+    }
+
 }

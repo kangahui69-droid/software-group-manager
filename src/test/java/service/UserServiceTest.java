@@ -5,6 +5,7 @@ import dao.MemberProfileDAO;
 import dao.UserDAO;
 import dto.ProfileDTO;
 import model.MemberProfile;
+import model.FileStorage;
 import model.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,7 +20,10 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import support.FastTest;
 import util.Result;
+import util.FileUtil;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -237,6 +241,7 @@ class UserServiceTest {
         void should_change_password_successfully() {
             User user = createUser(MEMBER_USER_ID, "member1", "encryptedOld", ROLE_MEMBER, STATUS_ACTIVE);
             when(userDAO.findById(MEMBER_USER_ID)).thenReturn(user);
+            when(userDAO.verifyPassword(MEMBER_USER_ID, "oldpwd")).thenReturn(true);
             when(userDAO.updatePassword(eq(MEMBER_USER_ID), anyString())).thenReturn(true);
 
             Result result = userService.changePassword(MEMBER_USER_ID, "oldpwd", "newpwd123");
@@ -308,12 +313,27 @@ class UserServiceTest {
         void should_return_error_when_database_update_fails() {
             User user = createUser(MEMBER_USER_ID, "member1", "encryptedOld", ROLE_MEMBER, STATUS_ACTIVE);
             when(userDAO.findById(MEMBER_USER_ID)).thenReturn(user);
+            when(userDAO.verifyPassword(MEMBER_USER_ID, "oldpwd")).thenReturn(true);
             when(userDAO.updatePassword(eq(MEMBER_USER_ID), anyString())).thenReturn(false);
 
             Result result = userService.changePassword(MEMBER_USER_ID, "oldpwd", "newpwd123");
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(500);
+        }
+
+        @FastTest
+        @DisplayName("旧密码错误时不更新密码")
+        void should_reject_wrong_old_password() {
+            User user = createUser(MEMBER_USER_ID, "member1", "encryptedOld", ROLE_MEMBER, STATUS_ACTIVE);
+            when(userDAO.findById(MEMBER_USER_ID)).thenReturn(user);
+            when(userDAO.verifyPassword(MEMBER_USER_ID, "wrongpwd")).thenReturn(false);
+
+            Result result = userService.changePassword(MEMBER_USER_ID, "wrongpwd", "newpwd123");
+
+            assertThat(result.isSuccess()).isFalse();
+            assertThat(result.getCode()).isEqualTo(400);
+            verify(userDAO, never()).updatePassword(anyInt(), anyString());
         }
 
         @FastTest
@@ -359,8 +379,8 @@ class UserServiceTest {
         }
 
         @FastTest
-        @DisplayName("修改不可改字段（姓名）应返回错误")
-        void should_return_error_when_trying_to_change_name() {
+        @DisplayName("修改姓名应保存")
+        void should_save_changed_name() {
             User user = createUser(MEMBER_USER_ID, "member1", "pwd", ROLE_MEMBER, STATUS_ACTIVE);
             user.setName("原始姓名");
             MemberProfile existingProfile = createMemberProfile(MEMBER_USER_ID);
@@ -369,15 +389,14 @@ class UserServiceTest {
 
             Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO("新姓名", "email@test.com", null, null, null, null, null, null, null));
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("姓名");
-            assertThat(result.getMessage()).contains("不可修改");
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(user.getName()).isEqualTo("新姓名");
+            verify(userDAO).update(user);
         }
 
         @FastTest
-        @DisplayName("修改不可改字段（学号）应返回错误")
-        void should_return_error_when_trying_to_change_student_id() {
+        @DisplayName("修改学号应保存")
+        void should_save_changed_student_id() {
             User user = createUser(MEMBER_USER_ID, "member1", "pwd", ROLE_MEMBER, STATUS_ACTIVE);
             MemberProfile existingProfile = createMemberProfile(MEMBER_USER_ID);
             existingProfile.setStudentId("123456");
@@ -386,10 +405,9 @@ class UserServiceTest {
 
             Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, "NEW123", null, null, null, null));
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("学号");
-            assertThat(result.getMessage()).contains("不可修改");
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(existingProfile.getStudentId()).isEqualTo("NEW123");
+            verify(memberProfileDAO).update(existingProfile);
         }
 
         @FastTest
@@ -441,7 +459,7 @@ class UserServiceTest {
         @FastTest
         @DisplayName("简介超长应返回错误")
         void should_return_error_when_introduction_too_long() {
-            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, "a".repeat(501), null, null));
+            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, "a".repeat(5001), null, null));
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -452,7 +470,7 @@ class UserServiceTest {
         @FastTest
         @DisplayName("GitHub URL格式错误应返回错误")
         void should_return_error_when_github_url_invalid() {
-            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, null, "not-a-valid-url", null));
+            Result result = userService.updateProfile(MEMBER_USER_ID, createProfileDTO(null, "email@test.com", null, null, null, null, null, "invalid github!", null));
 
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
@@ -592,6 +610,9 @@ class UserServiceTest {
                 public long getSize() { return size; }
                 public String getContentType() { return contentType; }
                 public String getSubmittedFileName() { return "avatar.png"; }
+                public java.io.InputStream getInputStream() {
+                    return new java.io.ByteArrayInputStream(new byte[]{1, 2, 3});
+                }
             };
         }
     }
@@ -765,7 +786,7 @@ class UserServiceTest {
 
         @FastTest
         @DisplayName("管理员上传头像应成功")
-        void should_update_avatar_successfully_as_admin() {
+        void should_update_avatar_successfully_as_admin() throws Exception {
             User admin = createUser(ADMIN_USER_ID, "admin", "pwd", ROLE_ADMIN, STATUS_ACTIVE);
             when(userDAO.findById(ADMIN_USER_ID)).thenReturn(admin);
             when(memberProfileDAO.findByUserId(ADMIN_USER_ID)).thenReturn(createMemberProfile(ADMIN_USER_ID));
@@ -774,8 +795,16 @@ class UserServiceTest {
             when(memberProfileDAO.update(any(MemberProfile.class))).thenReturn(true);
 
             Result result = userService.updateAdminAvatar(ADMIN_USER_ID, createMockPart(1024, "image/png"));
-
-            assertThat(result.isSuccess()).isTrue();
+            ArgumentCaptor<FileStorage> savedStorage = ArgumentCaptor.forClass(FileStorage.class);
+            verify(fileStorageDAO).insert(savedStorage.capture());
+            Path savedFile = Path.of(FileUtil.getCategoryDir("images/avatar"),
+                    savedStorage.getValue().getStoredName());
+            try {
+                assertThat(result.isSuccess()).as(result.getMessage()).isTrue();
+                assertThat(Files.readAllBytes(savedFile)).containsExactly(1, 2, 3);
+            } finally {
+                Files.deleteIfExists(savedFile);
+            }
         }
 
         @FastTest
@@ -809,6 +838,9 @@ class UserServiceTest {
                 public long getSize() { return size; }
                 public String getContentType() { return contentType; }
                 public String getSubmittedFileName() { return "avatar.png"; }
+                public java.io.InputStream getInputStream() {
+                    return new java.io.ByteArrayInputStream(new byte[]{1, 2, 3});
+                }
             };
         }
     }

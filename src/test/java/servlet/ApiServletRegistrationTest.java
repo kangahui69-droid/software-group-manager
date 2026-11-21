@@ -6,7 +6,13 @@ import org.junit.jupiter.api.Test;
 import support.FastTest;
 
 import jakarta.servlet.annotation.WebServlet;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.lang.reflect.Modifier;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,18 +22,50 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * API Servlet注册测试套件 - Red阶段
+ * API Servlet 注册测试套件
  *
  * 测试范围：服务分层与API化重构计划.md 5.6 web.xml / 注解注册
  *
  * 验证内容：
- * 1. 所有新API Servlet使用@WebServlet正确注册
- * 2. 检查web.xml中是否有重复注册
+ * 1. 所有新 API Servlet 在 web.xml 中正确注册
+ * 2. 检查 web.xml 与注解是否重复注册
  * 3. 检查新API路径与现有Servlet路径无冲突
  * 4. 验证URL patterns正确
  */
 @DisplayName("API Servlet注册测试")
 class ApiServletRegistrationTest {
+
+    private static Document readWebXml() throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        return factory.newDocumentBuilder().parse(Path.of("src/main/webapp/WEB-INF/web.xml").toFile());
+    }
+
+    private static String[] webXmlPathsFor(String className) throws Exception {
+        Document document = readWebXml();
+        String registeredName = null;
+        NodeList servlets = document.getElementsByTagName("servlet");
+        for (int i = 0; i < servlets.getLength(); i++) {
+            Element servlet = (Element) servlets.item(i);
+            if (className.equals(servlet.getElementsByTagName("servlet-class").item(0).getTextContent().trim())) {
+                registeredName = servlet.getElementsByTagName("servlet-name").item(0).getTextContent().trim();
+                break;
+            }
+        }
+        assertThat(registeredName).as(className + " 应在 web.xml 注册").isNotNull();
+        ArrayList<String> paths = new ArrayList<>();
+        NodeList mappings = document.getElementsByTagName("servlet-mapping");
+        for (int i = 0; i < mappings.getLength(); i++) {
+            Element mapping = (Element) mappings.item(i);
+            if (registeredName.equals(mapping.getElementsByTagName("servlet-name").item(0).getTextContent().trim())) {
+                NodeList patterns = mapping.getElementsByTagName("url-pattern");
+                for (int j = 0; j < patterns.getLength(); j++) {
+                    paths.add(patterns.item(j).getTextContent().trim());
+                }
+            }
+        }
+        return paths.toArray(String[]::new);
+    }
 
     // ==================== 辅助方法 ====================
 
@@ -43,6 +81,11 @@ class ApiServletRegistrationTest {
             urlPatterns = annotation.value();
         }
         return urlPatterns;
+    }
+
+    private static String[] registeredPatterns(Class<?> servletClass) throws Exception {
+        WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
+        return annotation == null ? webXmlPathsFor(servletClass.getName()) : getUrlPatterns(annotation);
     }
 
     // ==================== 常量 ====================
@@ -70,58 +113,55 @@ class ApiServletRegistrationTest {
             "/api/awards/*"
     };
 
-    // ==================== 5.6.1 新API Servlet注解测试 ====================
+    // ==================== 5.6.1 新 API Servlet 注册测试 ====================
 
     @Nested
-    @DisplayName("5.6.1 新API Servlet注解测试")
+    @DisplayName("5.6.1 新 API Servlet 注册测试")
     class NewApiServletAnnotationTests {
 
         @FastTest
-        @DisplayName("ActivityApiServlet应使用@WebServlet注册")
-        void activityApiServlet_should_have_webservlet_annotation() throws ClassNotFoundException {
+        @DisplayName("ActivityApiServlet应在web.xml注册且不重复使用注解")
+        void activityApiServlet_should_be_registered_once() throws Exception {
             Class<?> servletClass = Class.forName("servlet.api.ActivityApiServlet");
             WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-            assertThat(annotation).as("ActivityApiServlet应有@WebServlet注解").isNotNull();
+            assertThat(annotation).isNull();
+            assertThat(webXmlPathsFor(servletClass.getName())).contains("/api/activities/*");
         }
 
         @FastTest
-        @DisplayName("UserApiServlet应使用@WebServlet注册")
-        void userApiServlet_should_have_webservlet_annotation() throws ClassNotFoundException {
+        @DisplayName("UserApiServlet应在web.xml注册且不重复使用注解")
+        void userApiServlet_should_be_registered_once() throws Exception {
             Class<?> servletClass = Class.forName("servlet.api.UserApiServlet");
             WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-            assertThat(annotation).as("UserApiServlet应有@WebServlet注解").isNotNull();
+            assertThat(annotation).isNull();
+            assertThat(webXmlPathsFor(servletClass.getName())).contains("/api/*");
         }
 
         @FastTest
-        @DisplayName("FileApiServlet应使用@WebServlet注册")
-        void fileApiServlet_should_have_webservlet_annotation() throws ClassNotFoundException {
+        @DisplayName("FileApiServlet应在web.xml注册且不重复使用注解")
+        void fileApiServlet_should_be_registered_once() throws Exception {
             Class<?> servletClass = Class.forName("servlet.api.FileApiServlet");
             WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-            assertThat(annotation).as("FileApiServlet应有@WebServlet注解").isNotNull();
+            assertThat(annotation).isNull();
+            assertThat(webXmlPathsFor(servletClass.getName())).contains("/api/files/*");
         }
 
         @FastTest
-        @DisplayName("ProjectApiServlet应使用@WebServlet注册")
-        void projectApiServlet_should_have_webservlet_annotation() throws ClassNotFoundException {
+        @DisplayName("ProjectApiServlet应在web.xml注册且不重复使用注解")
+        void projectApiServlet_should_be_registered_once() throws Exception {
             Class<?> servletClass = Class.forName("servlet.api.ProjectApiServlet");
             WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-            assertThat(annotation).as("ProjectApiServlet应有@WebServlet注解").isNotNull();
+            assertThat(annotation).isNull();
+            assertThat(webXmlPathsFor(servletClass.getName())).contains("/api/projects/*");
         }
 
         @FastTest
-        @DisplayName("AwardApiServlet应使用@WebServlet注册")
-        void awardApiServlet_should_have_webservlet_annotation() throws ClassNotFoundException {
+        @DisplayName("AwardApiServlet应在web.xml注册且不重复使用注解")
+        void awardApiServlet_should_be_registered_once() throws Exception {
             Class<?> servletClass = Class.forName("servlet.api.AwardApiServlet");
             WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-            assertThat(annotation).as("AwardApiServlet应有@WebServlet注解").isNotNull();
-
-            String[] urlPatterns = annotation.urlPatterns();
-            assertThat(urlPatterns)
-                    .as("应有urlPatterns配置")
-                    .isNotEmpty();
-            assertThat(urlPatterns)
-                    .as("应包含/api/awards路径")
-                    .contains("/api/awards");
+            assertThat(annotation).isNull();
+            assertThat(webXmlPathsFor(servletClass.getName())).contains("/api/awards/*");
         }
 
         @FastTest
@@ -165,79 +205,56 @@ class ApiServletRegistrationTest {
 
         @FastTest
         @DisplayName("新API Servlet的URL pattern格式应正确")
-        void new_api_servlets_url_pattern_format_should_be_valid() throws ClassNotFoundException {
+        void new_api_servlets_url_pattern_format_should_be_valid() throws Exception {
             for (String servletName : NEW_API_SERVLETS) {
                 Class<?> servletClass = Class.forName(servletName);
-                WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-
-                if (annotation != null) {
-                    String[] urlPatterns = getUrlPatterns(annotation);
-                    for (String pattern : urlPatterns) {
-                        assertThat(pattern)
-                                .as(servletName + "的URL pattern应有效")
-                                .matches("^/api/.*");
-                    }
+                for (String pattern : registeredPatterns(servletClass)) {
+                    assertThat(pattern)
+                            .as(servletName + "的URL pattern应有效")
+                            .matches("^/api/.*");
                 }
             }
         }
 
         @FastTest
         @DisplayName("每个新API Servlet应注册有效的API路径")
-        void each_new_api_servlet_should_register_valid_api_paths() throws ClassNotFoundException {
+        void each_new_api_servlet_should_register_valid_api_paths() throws Exception {
             for (String servletName : NEW_API_SERVLETS) {
                 Class<?> servletClass = Class.forName(servletName);
-                WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-
-                if (annotation != null) {
-                    String[] urlPatterns = getUrlPatterns(annotation);
-                    Set<String> patternSet = new HashSet<>(Arrays.asList(urlPatterns));
-
-                    // 每个servlet必须至少注册一个/api开头的路径
-                    assertThat(patternSet)
-                            .as(servletName + "应至少注册一个API路径")
-                            .isNotEmpty();
-
-                    for (String pattern : patternSet) {
-                        assertThat(pattern)
-                                .as(servletName + "的所有路径必须以/api开头")
-                                .startsWith("/api");
-                    }
+                Set<String> patternSet = new HashSet<>(Arrays.asList(registeredPatterns(servletClass)));
+                assertThat(patternSet)
+                        .as(servletName + "应至少注册一个API路径")
+                        .isNotEmpty();
+                for (String pattern : patternSet) {
+                    assertThat(pattern)
+                            .as(servletName + "的所有路径必须以/api开头")
+                            .startsWith("/api");
                 }
             }
         }
 
         @FastTest
         @DisplayName("URL pattern不应包含空字符串")
-        void url_pattern_should_not_contain_empty_string() throws ClassNotFoundException {
+        void url_pattern_should_not_contain_empty_string() throws Exception {
             for (String servletName : NEW_API_SERVLETS) {
                 Class<?> servletClass = Class.forName(servletName);
-                WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-
-                if (annotation != null) {
-                    String[] urlPatterns = getUrlPatterns(annotation);
-                    for (String pattern : urlPatterns) {
-                        assertThat(pattern)
-                                .as(servletName + "的URL pattern不应为空")
-                                .isNotEmpty();
-                    }
+                for (String pattern : registeredPatterns(servletClass)) {
+                    assertThat(pattern)
+                            .as(servletName + "的URL pattern不应为空")
+                            .isNotEmpty();
                 }
             }
         }
 
         @FastTest
         @DisplayName("URL pattern必须以/api开头")
-        void url_pattern_must_start_with_api() throws ClassNotFoundException {
+        void url_pattern_must_start_with_api() throws Exception {
             for (String servletName : NEW_API_SERVLETS) {
                 Class<?> servletClass = Class.forName(servletName);
-                WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-
-                if (annotation != null) {
-                    String[] urlPatterns = getUrlPatterns(annotation);
-                    for (String pattern : urlPatterns) {
-                        assertThat(pattern)
-                                .as(servletName + "的URL pattern必须以/api开头")
-                                .startsWith("/api");
-                    }
+                for (String pattern : registeredPatterns(servletClass)) {
+                    assertThat(pattern)
+                            .as(servletName + "的URL pattern必须以/api开头")
+                            .startsWith("/api");
                 }
             }
         }
@@ -337,64 +354,53 @@ class ApiServletRegistrationTest {
 
         @FastTest
         @DisplayName("不应有servlet类被重复注册")
-        void no_duplicate_servlet_registrations() {
-            // 这个测试验证servlet注册规范：
-            // 同一个servlet类不应同时通过@WebServlet和web.xml注册
-            // 检查方法：读取web.xml看是否有与@WebServlet相同的servlet-mapping
-            // 这里只做静态验证：假设规范正确则无重复
+        void no_duplicate_servlet_registrations() throws Exception {
+            Document document = readWebXml();
+            NodeList servlets = document.getElementsByTagName("servlet");
             for (String servletName : NEW_API_SERVLETS) {
-                Class<?> servletClass = null;
-                try {
-                    servletClass = Class.forName(servletName);
-                } catch (ClassNotFoundException e) {
-                    continue;
-                }
-
+                Class<?> servletClass = Class.forName(servletName);
                 WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-                if (annotation != null) {
-                    String[] urlPatterns = getUrlPatterns(annotation);
-                    // @WebServlet注册的路径不应与web.xml中已有路径重复
-                    // 由于测试环境无法直接读取web.xml，这里做假设性验证
-                    assertThat(urlPatterns)
-                            .as(servletName + "应有有效的urlPatterns")
-                            .isNotEmpty();
+                int registrations = 0;
+                for (int i = 0; i < servlets.getLength(); i++) {
+                    Element servlet = (Element) servlets.item(i);
+                    if (servletName.equals(servlet.getElementsByTagName("servlet-class").item(0)
+                            .getTextContent().trim())) {
+                        registrations++;
+                    }
                 }
+                assertThat(registrations).as(servletName + " 在 web.xml 中应只注册一次").isEqualTo(1);
+                assertThat(annotation).as(servletName + " 不应同时通过注解注册").isNull();
             }
         }
 
         @FastTest
         @DisplayName("所有新API Servlet应有唯一的servlet名称")
-        void all_new_api_servlets_should_have_unique_names() throws ClassNotFoundException {
+        void all_new_api_servlets_should_have_unique_names() throws Exception {
+            Document document = readWebXml();
+            NodeList servlets = document.getElementsByTagName("servlet");
             Set<String> servletNames = new HashSet<>();
-            for (String servletName : NEW_API_SERVLETS) {
-                Class<?> servletClass = Class.forName(servletName);
-                WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-                if (annotation != null) {
-                    String name = annotation.name();
-                    if (name != null && !name.isEmpty()) {
-                        assertThat(servletNames)
-                                .as("servlet名称应唯一")
-                                .doesNotContain(name);
-                        servletNames.add(name);
-                    }
+            for (int i = 0; i < servlets.getLength(); i++) {
+                Element servlet = (Element) servlets.item(i);
+                String name = servlet.getElementsByTagName("servlet-name").item(0).getTextContent().trim();
+                if (Arrays.asList(NEW_API_SERVLETS).contains(servlet.getElementsByTagName("servlet-class")
+                        .item(0).getTextContent().trim())) {
+                    assertThat(servletNames.add(name)).as("新 API Servlet 名称应唯一: " + name).isTrue();
                 }
             }
+            assertThat(servletNames).hasSize(NEW_API_SERVLETS.length);
         }
 
         @FastTest
         @DisplayName("servlet名称不应为空字符串")
-        void servlet_name_should_not_be_empty() throws ClassNotFoundException {
-            for (String servletName : NEW_API_SERVLETS) {
-                Class<?> servletClass = Class.forName(servletName);
-                WebServlet annotation = servletClass.getAnnotation(WebServlet.class);
-                if (annotation != null) {
-                    String name = annotation.name();
-                    // name可以为空（默认为servlet类名），但不应为空白字符串
-                    if (name != null && !name.isEmpty()) {
-                        assertThat(name.trim())
-                                .as("servlet名称不应为空白字符串")
-                                .isNotEmpty();
-                    }
+        void servlet_name_should_not_be_empty() throws Exception {
+            Document document = readWebXml();
+            NodeList servlets = document.getElementsByTagName("servlet");
+            for (int i = 0; i < servlets.getLength(); i++) {
+                Element servlet = (Element) servlets.item(i);
+                if (Arrays.asList(NEW_API_SERVLETS).contains(servlet.getElementsByTagName("servlet-class")
+                        .item(0).getTextContent().trim())) {
+                    String name = servlet.getElementsByTagName("servlet-name").item(0).getTextContent();
+                    assertThat(name.trim()).as("servlet 名称不应为空白字符串").isNotEmpty();
                 }
             }
         }

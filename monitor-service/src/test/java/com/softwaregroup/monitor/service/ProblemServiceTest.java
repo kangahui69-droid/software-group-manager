@@ -66,11 +66,15 @@ class ProblemServiceTest {
 
         existingProblem = new ProblemReport();
         existingProblem.setId(problemId);
+        existingProblem.setUserId(operatorId);
         existingProblem.setTitle("无法登录系统");
         existingProblem.setContent("尝试多次登录都失败");
         existingProblem.setCategory(ProblemReport.CATEGORY_UNVERIFIED);
         existingProblem.setStatus(ProblemReport.STATUS_PENDING);
         existingProblem.setReporterType(ProblemReport.REPORTER_TYPE_GUEST);
+        User admin = new User();
+        admin.setRole("ADMIN");
+        lenient().when(userDAO.findById(operatorId)).thenReturn(admin);
     }
 
     // ==================== submitProblem 测试 ====================
@@ -266,7 +270,7 @@ class ProblemServiceTest {
             when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
 
             // When
-            Result result = problemService.getProblemDetail(problemId);
+            Result result = problemService.getProblemDetail(problemId, operatorId);
 
             // Then
             assertTrue(result.isSuccess());
@@ -281,7 +285,7 @@ class ProblemServiceTest {
             when(problemReportDAO.findById(999)).thenReturn(null);
 
             // When
-            Result result = problemService.getProblemDetail(999);
+            Result result = problemService.getProblemDetail(999, operatorId);
 
             // Then
             assertFalse(result.isSuccess());
@@ -293,7 +297,7 @@ class ProblemServiceTest {
         @DisplayName("查询失败 - ID为null")
         void should_fail_when_id_is_null() {
             // When
-            Result result = problemService.getProblemDetail(null);
+            Result result = problemService.getProblemDetail(null, operatorId);
 
             // Then
             assertFalse(result.isSuccess());
@@ -459,14 +463,77 @@ class ProblemServiceTest {
             ProblemDTO updateDTO = new ProblemDTO();
             updateDTO.setTitle("更新后的标题");
             when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
-            when(problemReportDAO.updateCategoryAndStatus(
-                eq(problemId), any(), any(), any(), any())).thenReturn(true);
+            when(problemReportDAO.updateDetails(any(ProblemReport.class), eq(operatorId), eq(false)))
+                    .thenReturn(1);
 
             // When
             Result result = problemService.updateProblem(problemId, updateDTO, operatorId);
 
             // Then
             assertTrue(result.isSuccess());
+            verify(problemReportDAO).updateDetails(argThat(problem ->
+                    "更新后的标题".equals(problem.getTitle())
+                            && "尝试多次登录都失败".equals(problem.getContent())),
+                    eq(operatorId), eq(false));
+        }
+
+        @Test
+        @DisplayName("数据库未更新时不能返回成功")
+        void should_fail_when_no_row_is_updated() {
+            ProblemDTO updateDTO = new ProblemDTO();
+            updateDTO.setTitle("新标题");
+            when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
+
+            Result result = problemService.updateProblem(problemId, updateDTO, operatorId);
+
+            assertFalse(result.isSuccess());
+            assertEquals(409, result.getCode());
+            verify(problemReportDAO).updateDetails(any(ProblemReport.class), eq(operatorId), eq(false));
+        }
+
+        @Test
+        @DisplayName("非所有者且非管理员不能更新")
+        void should_forbid_other_member() {
+            ProblemDTO updateDTO = new ProblemDTO();
+            updateDTO.setTitle("新标题");
+            when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
+            User member = new User();
+            member.setRole("MEMBER");
+            when(userDAO.findById(2)).thenReturn(member);
+
+            Result result = problemService.updateProblem(problemId, updateDTO, 2);
+
+            assertFalse(result.isSuccess());
+            assertEquals(403, result.getCode());
+            verify(problemReportDAO, never()).updateDetails(any(), any(), anyBoolean());
+        }
+
+        @Test
+        @DisplayName("管理员可以更新其他用户的问题")
+        void should_allow_admin_to_update_other_users_problem() {
+            existingProblem.setUserId(2);
+            ProblemDTO updateDTO = new ProblemDTO();
+            updateDTO.setContent("新内容");
+            when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
+            when(problemReportDAO.updateDetails(any(ProblemReport.class), eq(operatorId), eq(true)))
+                    .thenReturn(1);
+
+            Result result = problemService.updateProblem(problemId, updateDTO, operatorId);
+
+            assertTrue(result.isSuccess());
+            verify(problemReportDAO).updateDetails(argThat(problem ->
+                    "新内容".equals(problem.getContent())), eq(operatorId), eq(true));
+        }
+
+        @Test
+        @DisplayName("空更新和空内容无效")
+        void should_reject_empty_payload_and_content() {
+            when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
+            assertEquals(400, problemService.updateProblem(problemId, new ProblemDTO(), operatorId).getCode());
+            ProblemDTO blankContent = new ProblemDTO();
+            blankContent.setContent("   ");
+            assertEquals(400, problemService.updateProblem(problemId, blankContent, operatorId).getCode());
+            verify(problemReportDAO, never()).updateDetails(any(), any(), anyBoolean());
         }
 
         @Test
@@ -534,6 +601,7 @@ class ProblemServiceTest {
             // Given
             ProblemDTO updateDTO = new ProblemDTO();
             updateDTO.setTitle("");
+            when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
 
             // When
             Result result = problemService.updateProblem(problemId, updateDTO, operatorId);
@@ -607,6 +675,9 @@ class ProblemServiceTest {
         @ValueSource(strings = {"INVALID", "pending", "Solved", ""})
         @DisplayName("更新失败 - 无效状态值")
         void should_reject_invalid_statuses(String status) {
+            existingProblem.setCategory(ProblemReport.CATEGORY_VERIFIED);
+            when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
+
             // When
             Result result = problemService.updateStatus(problemId, status, null, operatorId);
 
@@ -686,6 +757,8 @@ class ProblemServiceTest {
         @ValueSource(strings = {"invalid", "VERIFIEDD", ""})
         @DisplayName("更新失败 - 无效分类值")
         void should_reject_invalid_categories(String category) {
+            when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
+
             // When
             Result result = problemService.updateCategory(problemId, category, operatorId);
 
@@ -724,6 +797,9 @@ class ProblemServiceTest {
             // Given
             when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
             when(problemReportDAO.updateAdminComment(problemId, "处理中")).thenReturn(true);
+            User admin = new User();
+            admin.setRole("ADMIN");
+            when(userDAO.findById(operatorId)).thenReturn(admin);
 
             // When
             Result result = problemService.addComment(problemId, "处理中", operatorId);
@@ -772,6 +848,9 @@ class ProblemServiceTest {
             // Given
             when(problemReportDAO.findById(problemId)).thenReturn(existingProblem);
             when(problemReportDAO.delete(problemId)).thenReturn(true);
+            User admin = new User();
+            admin.setRole("ADMIN");
+            when(userDAO.findById(operatorId)).thenReturn(admin);
 
             // When
             Result result = problemService.deleteProblem(problemId, operatorId);

@@ -4,6 +4,8 @@ import com.softwaregroup.content.model.dto.NewsDTO;
 import com.softwaregroup.content.model.dto.NewsFilterDTO;
 import com.softwaregroup.content.service.NewsService;
 import com.softwaregroup.common.util.Result;
+import com.softwaregroup.common.util.JwtService;
+import com.softwaregroup.common.security.CurrentUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class NewsControllerTest {
 
     private MockMvc mockMvc;
+    private final JwtService testJwt = new JwtService("controller-test-key-32-bytes-or-longer", "v1", "software-group", "software-group-api");
+    private final String testToken = testJwt.generateToken(1, "member", "MEMBER");
 
     @Mock
     private NewsService newsService;
@@ -37,7 +41,9 @@ class NewsControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(newsController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(newsController)
+                .setCustomArgumentResolvers(new CurrentUserArgumentResolver(testJwt))
+                .defaultRequest(get("/").header("Authorization", "Bearer " + testToken)).build();
     }
 
     @Test

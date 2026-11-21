@@ -142,6 +142,7 @@ CREATE TABLE `ai_conversation` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ai_conversation_session_id` (`session_id`),
   KEY `idx_session_id` (`session_id`),
   KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI瀵硅瘽璁板綍琛';
@@ -515,6 +516,7 @@ CREATE TABLE `group_member` (
   `joined_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `muted` tinyint(1) DEFAULT '0' COMMENT '鏄?惁琚??瑷?0-鍚?1-鏄',
   `muted_until` datetime DEFAULT NULL COMMENT '绂佽█鎴??鏃堕棿',
+  `mute_reason` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `last_read_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_group_user` (`group_id`,`user_id`),
@@ -635,6 +637,14 @@ CREATE TABLE `operation_log` (
   `ip_address` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `user_agent` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `result` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `http_status` smallint unsigned DEFAULT NULL,
+  `duration_ms` bigint unsigned DEFAULT NULL,
+  `request_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `error_code` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `target_type` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `target_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `proxy_ip` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_operation` (`operation`),
@@ -734,6 +744,9 @@ CREATE TABLE `project` (
   PRIMARY KEY (`id`),
   KEY `leader_id` (`leader_id`),
   KEY `fk_project_admin` (`admin_id`),
+  KEY `idx_project_deleted_year_created` (`deleted`,`year`,`created_at`,`id`),
+  KEY `idx_project_deleted_status_year_created` (`deleted`,`status`,`year`,`created_at`,`id`),
+  KEY `idx_project_deleted_category_year_created` (`deleted`,`category`,`year`,`created_at`,`id`),
   CONSTRAINT `fk_project_admin` FOREIGN KEY (`admin_id`) REFERENCES `user` (`id`) ON DELETE SET NULL,
   CONSTRAINT `project_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -1193,7 +1206,7 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Unknown',
   `email` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

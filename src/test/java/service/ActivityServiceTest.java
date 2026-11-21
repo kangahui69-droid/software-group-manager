@@ -240,18 +240,22 @@ class ActivityServiceTest {
         }
 
         @FastTest
-        @DisplayName("创建活动时非管理员用户应返回403错误")
-        void should_return_forbidden_when_not_admin() {
+        @DisplayName("普通成员可以创建待审核活动")
+        void member_can_create_pending_activity() {
             ActivityDTO dto = new ActivityDTO();
             dto.setTitle("测试活动");
             dto.setActivityType(TYPE_LECTURE);
             User member = createUser(MEMBER_USER_ID, "MEMBER");
             when(userDAO.findById(MEMBER_USER_ID)).thenReturn(member);
+            when(activityDAO.insert(any(Activity.class))).thenReturn(true);
 
             Result result = activityService.createActivity(dto, MEMBER_USER_ID);
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(403);
+            assertThat(result.isSuccess()).isTrue();
+            ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+            verify(activityDAO).insert(saved.capture());
+            assertThat(saved.getValue().getCreatorId()).isEqualTo(MEMBER_USER_ID);
+            assertThat(saved.getValue().getApprovalStatus()).isEqualTo(APPROVAL_PENDING);
         }
 
         @FastTest

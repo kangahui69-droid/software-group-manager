@@ -2,11 +2,16 @@ package com.softwaregroup.content.controller;
 
 import com.softwaregroup.content.model.dto.GroupDTO;
 import com.softwaregroup.content.service.GroupService;
+import com.softwaregroup.common.security.CurrentUser;
+import com.softwaregroup.common.security.AuthenticatedUser;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Date;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 
 /**
  * 群组管理 REST API
@@ -26,45 +31,49 @@ public class GroupController {
 
     @GetMapping("/{groupId}")
     public Result getGroupDetail(@PathVariable Integer groupId,
-                                @RequestParam Integer userId) {
+                                @AuthenticatedUser Integer userId) {
         return groupService.getGroupDetail(groupId, userId);
     }
 
     @GetMapping("/user/{userId}/created")
     public Result getCreatedGroups(@PathVariable Integer userId,
-                                  @RequestParam(defaultValue = "1") int page) {
+                                  @RequestParam(defaultValue = "1") int page,
+                                  @AuthenticatedUser Integer currentUserId) {
+        CurrentUser.requireSameId(userId, currentUserId);
         return groupService.getCreatedGroups(userId, page);
     }
 
     @GetMapping("/user/{userId}/my-groups")
     public Result getMyGroups(@PathVariable Integer userId,
-                            @RequestParam(defaultValue = "1") int page) {
+                            @RequestParam(defaultValue = "1") int page,
+                            @AuthenticatedUser Integer currentUserId) {
+        CurrentUser.requireSameId(userId, currentUserId);
         return groupService.getMyGroups(userId, page);
     }
 
     @PostMapping
     public Result createGroup(@RequestBody GroupDTO dto,
-                            @RequestParam Integer userId) {
+                            @AuthenticatedUser Integer userId) {
         return groupService.createGroup(dto, userId);
     }
 
     @PutMapping("/{groupId}")
     public Result updateGroup(@PathVariable Integer groupId,
                              @RequestBody GroupDTO dto,
-                             @RequestParam Integer userId) {
+                             @AuthenticatedUser Integer userId) {
         return groupService.updateGroup(groupId, dto, userId);
     }
 
     @DeleteMapping("/{groupId}")
     public Result deleteGroup(@PathVariable Integer groupId,
-                            @RequestParam Integer userId) {
+                            @AuthenticatedUser Integer userId) {
         return groupService.deleteGroup(groupId, userId);
     }
 
     @PostMapping("/{groupId}/members")
     public Result addMember(@PathVariable Integer groupId,
                            @RequestBody Map<String, Integer> body,
-                           @RequestParam Integer operatorId) {
+                           @AuthenticatedUser Integer operatorId) {
         Integer userId = body.get("userId");
         return groupService.addMember(groupId, userId, operatorId);
     }
@@ -72,40 +81,75 @@ public class GroupController {
     @DeleteMapping("/{groupId}/members/{userId}")
     public Result removeMember(@PathVariable Integer groupId,
                               @PathVariable Integer userId,
-                              @RequestParam Integer operatorId) {
+                              @AuthenticatedUser Integer operatorId) {
         return groupService.removeMember(groupId, userId, operatorId);
     }
 
     @GetMapping("/{groupId}/messages")
     public Result getMessages(@PathVariable Integer groupId,
-                             @RequestParam(defaultValue = "1") int page) {
-        return groupService.getMessages(groupId, page);
+                             @RequestParam(defaultValue = "1") int page,
+                             @AuthenticatedUser Integer userId) {
+        return groupService.getMessages(groupId, page, userId);
     }
 
     @PostMapping("/{groupId}/messages")
     public Result sendMessage(@PathVariable Integer groupId,
-                             @RequestBody Map<String, Object> body) {
-        Integer userId = (Integer) body.get("userId");
+                             @RequestBody Map<String, Object> body,
+                             @AuthenticatedUser Integer userId) {
         String content = (String) body.get("content");
         return groupService.sendMessage(groupId, userId, content);
     }
 
     @DeleteMapping("/messages/{messageId}")
     public Result deleteMessage(@PathVariable Integer messageId,
-                               @RequestParam Integer userId) {
+                               @AuthenticatedUser Integer userId) {
         return groupService.deleteMessage(messageId, userId);
     }
 
     @PostMapping("/{groupId}/mute")
     public Result muteMember(@PathVariable Integer groupId,
-                            @RequestBody Map<String, Object> body) {
-        Integer targetUserId = (Integer) body.get("targetUserId");
-        return groupService.muteMember(groupId, targetUserId, null, (String) body.get("reason"));
+                            @RequestBody Map<String, Object> body,
+                            @AuthenticatedUser Integer operatorId) {
+        Integer targetUserId = body.get("targetUserId") instanceof Number value ? value.intValue() : null;
+        return muteTarget(groupId, targetUserId, body, operatorId);
+    }
+
+    @PostMapping("/{groupId}/members/{targetUserId}/mute")
+    public Result muteSpecificMember(@PathVariable Integer groupId,
+                                     @PathVariable Integer targetUserId,
+                                     @RequestBody Map<String, Object> body,
+                                     @AuthenticatedUser Integer operatorId) {
+        return muteTarget(groupId, targetUserId, body, operatorId);
+    }
+
+    private Result muteTarget(Integer groupId, Integer targetUserId,
+                              Map<String, Object> body, Integer operatorId) {
+        Date until = null;
+        Object rawUntil = body.get("mutedUntil");
+        if (rawUntil != null) {
+            try {
+                until = rawUntil instanceof Number value ? new Date(value.longValue())
+                        : Date.from(Instant.parse(rawUntil.toString()));
+            } catch (DateTimeParseException e) {
+                return Result.error(400, "禁言截止时间必须为 ISO-8601 时间或毫秒时间戳");
+            }
+        }
+        if (body.get("reason") != null && !(body.get("reason") instanceof String)) {
+            return Result.error(400, "禁言原因必须为字符串");
+        }
+        return groupService.muteMember(groupId, targetUserId, until, (String) body.get("reason"), operatorId);
     }
 
     @DeleteMapping("/{groupId}/mute")
     public Result unmuteMember(@PathVariable Integer groupId,
-                              @RequestParam Integer operatorId) {
+                              @AuthenticatedUser Integer operatorId) {
         return groupService.unmuteMember(groupId, operatorId);
+    }
+
+    @DeleteMapping("/{groupId}/members/{targetUserId}/mute")
+    public Result unmuteSpecificMember(@PathVariable Integer groupId,
+                                       @PathVariable Integer targetUserId,
+                                       @AuthenticatedUser Integer operatorId) {
+        return groupService.unmuteMember(groupId, targetUserId, operatorId);
     }
 }

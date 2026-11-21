@@ -78,6 +78,11 @@ public class RecruitService {
             return Result.error(CODE_BAD_REQUEST, "申请ID必须大于0");
         }
 
+        Result permission = requireAdmin(operatorId);
+        if (permission != null) {
+            return permission;
+        }
+
         RecruitApplication app = recruitDAO.findById(applicationId);
         if (app == null) {
             return Result.error(CODE_NOT_FOUND, "申请不存在");
@@ -131,6 +136,11 @@ public class RecruitService {
             return Result.error(CODE_BAD_REQUEST, "申请ID必须大于0");
         }
 
+        Result permission = requireAdmin(operatorId);
+        if (permission != null) {
+            return permission;
+        }
+
         RecruitApplication app = recruitDAO.findById(applicationId);
         if (app == null) {
             return Result.error(CODE_NOT_FOUND, "申请不存在");
@@ -167,7 +177,7 @@ public class RecruitService {
         return Result.ok(app);
     }
 
-    public Result deleteApplication(Integer applicationId) {
+    public Result deleteApplication(Integer applicationId, Integer operatorId) {
         if (applicationId == null) {
             return Result.error(CODE_BAD_REQUEST, "申请ID不能为空");
         }
@@ -175,11 +185,25 @@ public class RecruitService {
             return Result.error(CODE_BAD_REQUEST, "申请ID必须大于0");
         }
 
+        Result permission = requireAdmin(operatorId);
+        if (permission != null) {
+            return permission;
+        }
+
         boolean deleted = recruitDAO.delete(applicationId);
         if (!deleted) {
             return Result.error(CODE_NOT_FOUND, "申请不存在");
         }
         return Result.ok();
+    }
+
+    private Result requireAdmin(Integer operatorId) {
+        if (operatorId == null) {
+            return Result.error(CODE_FORBIDDEN, "需要管理员权限");
+        }
+        User user = userDAO.findById(operatorId);
+        return user != null && "ADMIN".equals(user.getRole())
+                ? null : Result.error(CODE_FORBIDDEN, "需要管理员权限");
     }
 
     public Result countPending() {

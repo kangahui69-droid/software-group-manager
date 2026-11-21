@@ -24,7 +24,7 @@ public class DESUtil {
 
     private final String desKey;
 
-    public DESUtil(@Value("${spring.des.key:(^&%gasie_%^}") String desKey) {
+    public DESUtil(@Value("${spring.des.key}") String desKey) {
         this.desKey = desKey;
     }
 

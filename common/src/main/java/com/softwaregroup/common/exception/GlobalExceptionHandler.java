@@ -4,12 +4,14 @@ import com.softwaregroup.common.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.stream.Collectors;
 
@@ -22,6 +24,14 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Result> handleResponseStatus(ResponseStatusException e) {
+        int code = e.getStatusCode().value();
+        String message = code == 401 ? "未登录或令牌无效"
+                : code == 403 ? "无权限执行此操作" : "请求未完成";
+        return ResponseEntity.status(e.getStatusCode()).body(Result.error(code, message));
+    }
 
     /**
      * 处理业务异常

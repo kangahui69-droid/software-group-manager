@@ -27,7 +27,7 @@ public class ResumeDAOImpl implements ResumeDAO {
 
     @Override
     public boolean save(Resume resume) {
-        String sql = "INSERT INTO resume (user_id, resume_name, template_style, summary, career_objective, phone, email, wechat, github_url, blog_url, is_default, status, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
+        String sql = "INSERT INTO resumes (user_id, resume_name, template_style, summary, career_objective, phone, email, wechat, github_url, blog_url, is_default, status, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -51,7 +51,7 @@ public class ResumeDAOImpl implements ResumeDAO {
 
     @Override
     public boolean update(Resume resume) {
-        String sql = "UPDATE resume SET resume_name=?, template_style=?, summary=?, career_objective=?, phone=?, email=?, wechat=?, github_url=?, blog_url=? WHERE id=?";
+        String sql = "UPDATE resumes SET resume_name=?, template_style=?, summary=?, career_objective=?, phone=?, email=?, wechat=?, github_url=?, blog_url=? WHERE id=?";
         int rows = jdbcTemplate.update(sql,
                 resume.getResumeName(), resume.getTemplateStyle(), resume.getSummary(),
                 resume.getCareerObjective(), resume.getPhone(), resume.getEmail(),
@@ -61,26 +61,26 @@ public class ResumeDAOImpl implements ResumeDAO {
 
     @Override
     public boolean softDelete(Integer id) {
-        String sql = "UPDATE resume SET deleted=1 WHERE id=?";
+        String sql = "UPDATE resumes SET deleted=1 WHERE id=?";
         return jdbcTemplate.update(sql, id) > 0;
     }
 
     @Override
     public boolean setDefaultResume(Integer resumeId, Integer userId) {
-        jdbcTemplate.update("UPDATE resume SET is_default=0 WHERE user_id=?", userId);
-        String sql = "UPDATE resume SET is_default=1 WHERE id=? AND user_id=?";
+        jdbcTemplate.update("UPDATE resumes SET is_default=0 WHERE user_id=?", userId);
+        String sql = "UPDATE resumes SET is_default=1 WHERE id=? AND user_id=?";
         return jdbcTemplate.update(sql, resumeId, userId) > 0;
     }
 
     @Override
     public boolean restore(Integer id) {
-        String sql = "UPDATE resume SET deleted=0 WHERE id=?";
+        String sql = "UPDATE resumes SET deleted=0 WHERE id=?";
         return jdbcTemplate.update(sql, id) > 0;
     }
 
     @Override
     public boolean hardDelete(Integer id) {
-        String sql = "DELETE FROM resume WHERE id=?";
+        String sql = "DELETE FROM resumes WHERE id=?";
         return jdbcTemplate.update(sql, id) > 0;
     }
 
@@ -92,21 +92,21 @@ public class ResumeDAOImpl implements ResumeDAO {
     @Override
     public Resume findById(Integer id, boolean includeDeleted) {
         String sql = includeDeleted
-                ? "SELECT * FROM resume WHERE id=?"
-                : "SELECT * FROM resume WHERE id=? AND deleted=0";
+                ? "SELECT * FROM resumes WHERE id=?"
+                : "SELECT * FROM resumes WHERE id=? AND deleted=0";
         List<Resume> list = jdbcTemplate.query(sql, ROW_MAPPER, id);
         return list.isEmpty() ? null : list.get(0);
     }
 
     @Override
     public List<Resume> findByUserId(Integer userId) {
-        String sql = "SELECT * FROM resume WHERE user_id=? AND deleted=0 ORDER BY is_default DESC, id DESC";
+        String sql = "SELECT * FROM resumes WHERE user_id=? AND deleted=0 ORDER BY is_default DESC, id DESC";
         return jdbcTemplate.query(sql, ROW_MAPPER, userId);
     }
 
     @Override
     public List<Resume> findDeletedByUserId(Integer userId) {
-        String sql = "SELECT * FROM resume WHERE user_id=? AND deleted=1 ORDER BY id DESC";
+        String sql = "SELECT * FROM resumes WHERE user_id=? AND deleted=1 ORDER BY id DESC";
         return jdbcTemplate.query(sql, ROW_MAPPER, userId);
     }
 }

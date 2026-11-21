@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ class AwardControllerTest {
     private AwardService awardService;
 
     private AwardController awardController;
+    private final MockHttpServletRequest request = new MockHttpServletRequest();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -44,12 +46,12 @@ class AwardControllerTest {
         pageResult.put("total", 0);
         pageResult.put("page", 1);
 
-        when(awardService.listAwards(isNull(), eq(1))).thenReturn(Result.ok(pageResult));
+        when(awardService.listAwards(isNull(), eq(1), isNull())).thenReturn(Result.ok(pageResult));
 
-        Result result = awardController.listAwards(null, 1);
+        Result result = awardController.listAwards(null, 1, request);
 
         assertTrue(result.isSuccess());
-        verify(awardService).listAwards(isNull(), eq(1));
+        verify(awardService).listAwards(isNull(), eq(1), isNull());
     }
 
     @Test
@@ -58,12 +60,12 @@ class AwardControllerTest {
         pageResult.put("list", List.of());
         pageResult.put("total", 0);
 
-        when(awardService.listAwards(eq("PENDING"), eq(1))).thenReturn(Result.ok(pageResult));
+        when(awardService.listAwards(eq("PENDING"), eq(1), isNull())).thenReturn(Result.ok(pageResult));
 
-        Result result = awardController.listAwards("PENDING", 1);
+        Result result = awardController.listAwards("PENDING", 1, request);
 
         assertTrue(result.isSuccess());
-        verify(awardService).listAwards(eq("PENDING"), eq(1));
+        verify(awardService).listAwards(eq("PENDING"), eq(1), isNull());
     }
 
     @Test
@@ -72,9 +74,9 @@ class AwardControllerTest {
         awardDetail.put("id", 1);
         awardDetail.put("competition", "挑战杯");
 
-        when(awardService.getAwardDetail(1)).thenReturn(Result.ok(awardDetail));
+        when(awardService.getAwardDetail(1, null)).thenReturn(Result.ok(awardDetail));
 
-        Result result = awardController.getAwardDetail(1);
+        Result result = awardController.getAwardDetail(1, request);
 
         assertTrue(result.isSuccess());
         assertNotNull(result.getData());
@@ -82,9 +84,9 @@ class AwardControllerTest {
 
     @Test
     void getAwardDetail_withInvalidId_shouldReturnError() {
-        when(awardService.getAwardDetail(999)).thenReturn(Result.error(404, "奖项不存在"));
+        when(awardService.getAwardDetail(999, null)).thenReturn(Result.error(404, "奖项不存在"));
 
-        Result result = awardController.getAwardDetail(999);
+        Result result = awardController.getAwardDetail(999, request);
 
         assertFalse(result.isSuccess());
         assertEquals(404, result.getCode());
@@ -92,12 +94,12 @@ class AwardControllerTest {
 
     @Test
     void getAwardImages_withValidId_shouldReturnImages() {
-        when(awardService.getAwardImages(1)).thenReturn(Result.ok(List.of()));
+        when(awardService.getAwardImages(1, null)).thenReturn(Result.ok(List.of()));
 
-        Result result = awardController.getAwardImages(1);
+        Result result = awardController.getAwardImages(1, request);
 
         assertTrue(result.isSuccess());
-        verify(awardService).getAwardImages(1);
+        verify(awardService).getAwardImages(1, null);
     }
 
     @Test
@@ -170,7 +172,7 @@ class AwardControllerTest {
 
         when(awardService.approveAward(1, 1)).thenReturn(Result.ok());
 
-        Result result = awardController.approveAward(1, body);
+        Result result = awardController.approveAward(1, 1);
 
         assertTrue(result.isSuccess());
         verify(awardService).approveAward(1, 1);
@@ -185,7 +187,7 @@ class AwardControllerTest {
         when(awardService.rejectAward(eq(1), eq("材料不全"), eq(1)))
                 .thenReturn(Result.ok());
 
-        Result result = awardController.rejectAward(1, body);
+        Result result = awardController.rejectAward(1, body, 1);
 
         assertTrue(result.isSuccess());
         verify(awardService).rejectAward(eq(1), eq("材料不全"), eq(1));

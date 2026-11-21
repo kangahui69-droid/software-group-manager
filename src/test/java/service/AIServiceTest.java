@@ -408,6 +408,7 @@ class AIServiceTest {
             Map<String, Object> result = aiService.executeAction("view_my_projects", params, member);
 
             assertThat(result.get("success")).isEqualTo(true);
+            assertThat(result.get("redirectUrl")).isEqualTo("/project?action=myProjects");
         }
 
         @FastTest

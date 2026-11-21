@@ -3,6 +3,8 @@ package com.softwaregroup.content.controller;
 import com.softwaregroup.content.model.dto.NewsDTO;
 import com.softwaregroup.content.model.dto.NewsFilterDTO;
 import com.softwaregroup.content.service.NewsService;
+import com.softwaregroup.common.security.AuthenticatedUser;
+import com.softwaregroup.common.security.RequireRole;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -41,33 +43,38 @@ public class NewsController {
     }
 
     @PostMapping
+    @RequireRole("ADMIN")
     public Result createNews(@RequestBody NewsDTO dto,
-                            @RequestParam Integer authorId) {
+                            @AuthenticatedUser Integer authorId) {
         return newsService.createNews(dto, authorId);
     }
 
     @PutMapping("/{newsId}")
+    @RequireRole("ADMIN")
     public Result updateNews(@PathVariable Integer newsId,
                             @RequestBody NewsDTO dto,
-                            @RequestParam Integer operatorId) {
+                            @AuthenticatedUser Integer operatorId) {
         return newsService.updateNews(newsId, dto, operatorId);
     }
 
     @DeleteMapping("/{newsId}")
+    @RequireRole("ADMIN")
     public Result deleteNews(@PathVariable Integer newsId,
-                            @RequestParam Integer operatorId) {
+                            @AuthenticatedUser Integer operatorId) {
         return newsService.deleteNews(newsId, operatorId);
     }
 
     @PutMapping("/{newsId}/publish")
+    @RequireRole("ADMIN")
     public Result publishNews(@PathVariable Integer newsId,
-                             @RequestParam Integer operatorId) {
+                             @AuthenticatedUser Integer operatorId) {
         return newsService.publishNews(newsId, operatorId);
     }
 
     @PutMapping("/{newsId}/unpublish")
+    @RequireRole("ADMIN")
     public Result unpublishNews(@PathVariable Integer newsId,
-                               @RequestParam Integer operatorId) {
+                               @AuthenticatedUser Integer operatorId) {
         return newsService.unpublishNews(newsId, operatorId);
     }
 }

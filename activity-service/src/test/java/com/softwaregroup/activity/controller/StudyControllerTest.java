@@ -82,9 +82,9 @@ class StudyControllerTest {
         sessionDetail.put("id", 1);
         sessionDetail.put("userId", 1);
 
-        when(studyService.getSessionDetail(1)).thenReturn(Result.ok(sessionDetail));
+        when(studyService.getSessionDetail(1, 1)).thenReturn(Result.ok(sessionDetail));
 
-        Result result = studyController.getSessionDetail(1);
+        Result result = studyController.getSessionDetail(1, 1);
 
         assertTrue(result.isSuccess());
         assertNotNull(result.getData());
@@ -98,12 +98,22 @@ class StudyControllerTest {
         pageResult.put("page", 1);
         pageResult.put("pageSize", 20);
 
-        when(studyService.listSessions(anyMap(), eq(1), eq(20))).thenReturn(Result.ok(pageResult));
+        when(studyService.listSessions(anyMap(), eq(1), eq(20), eq(1))).thenReturn(Result.ok(pageResult));
 
-        Result result = studyController.listSessions(new HashMap<>(), 1, 20);
+        Result result = studyController.listSessions(new HashMap<>(), 1, 20, 1);
 
         assertTrue(result.isSuccess());
-        verify(studyService).listSessions(anyMap(), eq(1), eq(20));
+        verify(studyService).listSessions(anyMap(), eq(1), eq(20), eq(1));
+    }
+
+    @Test
+    void listSessions_ignoresForgedUserId() {
+        Map<String, Object> filter = new HashMap<>();
+        filter.put("userId", "999");
+        studyController.listSessions(filter, 1, 20, 1);
+        org.mockito.ArgumentCaptor<Map> captured = org.mockito.ArgumentCaptor.forClass(Map.class);
+        verify(studyService).listSessions(captured.capture(), eq(1), eq(20), eq(1));
+        assertEquals(1, captured.getValue().get("userId"));
     }
 
     @Test

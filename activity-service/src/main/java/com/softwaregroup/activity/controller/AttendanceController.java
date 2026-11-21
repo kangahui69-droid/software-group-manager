@@ -1,6 +1,8 @@
 package com.softwaregroup.activity.controller;
 
 import com.softwaregroup.activity.service.AttendanceService;
+import com.softwaregroup.common.security.AuthenticatedUser;
+import com.softwaregroup.common.security.RequireRole;
 import com.softwaregroup.common.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +24,7 @@ public class AttendanceController {
      * 签到
      */
     @PostMapping("/check-in")
-    public Result checkIn(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result checkIn(@AuthenticatedUser Integer userId) {
         return attendanceService.checkIn(userId);
     }
 
@@ -30,7 +32,7 @@ public class AttendanceController {
      * 签退
      */
     @PostMapping("/check-out")
-    public Result checkOut(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result checkOut(@AuthenticatedUser Integer userId) {
         return attendanceService.checkOut(userId);
     }
 
@@ -38,6 +40,7 @@ public class AttendanceController {
      * 考勤列表
      */
     @GetMapping
+    @RequireRole("ADMIN")
     public Result listAttendance(@RequestParam(required = false) Map<String, Object> filter,
                                   @RequestParam(defaultValue = "1") int page) {
         return attendanceService.listAttendance(filter, page);
@@ -47,7 +50,7 @@ public class AttendanceController {
      * 考勤统计
      */
     @GetMapping("/stats")
-    public Result getAttendanceStats(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getAttendanceStats(@AuthenticatedUser Integer userId) {
         return attendanceService.getAttendanceStats(userId);
     }
 
@@ -55,7 +58,7 @@ public class AttendanceController {
      * 我的考勤
      */
     @GetMapping("/my")
-    public Result getMyAttendance(@RequestHeader(value = "X-User-Id", required = false) Integer userId,
+    public Result getMyAttendance(@AuthenticatedUser Integer userId,
                                   @RequestParam(defaultValue = "1") int page) {
         return attendanceService.getMyAttendance(userId, page);
     }
@@ -64,7 +67,7 @@ public class AttendanceController {
      * 我的统计
      */
     @GetMapping("/my/stats")
-    public Result getMyStats(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getMyStats(@AuthenticatedUser Integer userId) {
         return attendanceService.getMyStats(userId);
     }
 
@@ -73,7 +76,7 @@ public class AttendanceController {
      */
     @PostMapping("/makeup")
     public Result applyMakeup(@RequestBody Map<String, Object> body,
-                               @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+                               @AuthenticatedUser Integer userId) {
         Date date = body.get("date") != null ? new Date(((Number) body.get("date")).longValue()) : null;
         String reason = (String) body.get("reason");
         return attendanceService.applyMakeup(date, reason, userId);
@@ -83,8 +86,9 @@ public class AttendanceController {
      * 审批补签
      */
     @PostMapping("/makeup/{id}/approve")
+    @RequireRole("ADMIN")
     public Result approveMakeup(@PathVariable Integer id,
-                                 @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                 @AuthenticatedUser Integer operatorId) {
         return attendanceService.approveMakeup(id, operatorId);
     }
 
@@ -92,8 +96,9 @@ public class AttendanceController {
      * 拒绝补签
      */
     @PostMapping("/makeup/{id}/reject")
+    @RequireRole("ADMIN")
     public Result rejectMakeup(@PathVariable Integer id,
-                                @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                @AuthenticatedUser Integer operatorId) {
         return attendanceService.rejectMakeup(id, operatorId);
     }
 
@@ -101,6 +106,7 @@ public class AttendanceController {
      * 获取待处理的补签申请列表
      */
     @GetMapping("/makeup/pending")
+    @RequireRole("ADMIN")
     public Result getPendingMakeupList(@RequestParam(defaultValue = "1") int page) {
         return attendanceService.getPendingMakeupList(page);
     }

@@ -116,7 +116,7 @@ class AIServiceIT {
         when(conversationDAO.findBySessionId(sessionId)).thenReturn(conversation);
         when(messageDAO.findByConversationId(100)).thenReturn(Arrays.asList(msg1, msg2));
 
-        List<AIMessage> result = aiService.getConversationHistory(sessionId);
+        List<AIMessage> result = aiService.getConversationHistory(sessionId, 1);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getContent()).isEqualTo("你好");
@@ -127,7 +127,7 @@ class AIServiceIT {
         String sessionId = "non-existing-session";
         when(conversationDAO.findBySessionId(sessionId)).thenReturn(null);
 
-        List<AIMessage> result = aiService.getConversationHistory(sessionId);
+        List<AIMessage> result = aiService.getConversationHistory(sessionId, 1);
 
         assertThat(result).isNull();
     }
@@ -142,7 +142,7 @@ class AIServiceIT {
         doNothing().when(messageDAO).deleteByConversationId(100);
         doNothing().when(conversationDAO).delete(100);
 
-        aiService.clearConversation(sessionId);
+        aiService.clearConversation(sessionId, 1);
 
         verify(messageDAO).deleteByConversationId(100);
         verify(conversationDAO).delete(100);
@@ -257,7 +257,7 @@ class AIServiceIT {
     @Test
     void recordQuestionStatistics_withNewQuestion_shouldCreateStats() {
         String question = "如何加入小组？";
-        when(faqStatsDAO.findByHash(question.toLowerCase())).thenReturn(null);
+        when(faqStatsDAO.findByHash(anyString())).thenReturn(null);
         when(faqStatsDAO.save(any(AIFaqStatistics.class))).thenReturn(1);
 
         aiService.recordQuestionStatistics(question);
@@ -272,7 +272,7 @@ class AIServiceIT {
         existing.setQueryCount(5);
         existing.setNormalizedQuestion("如何加入小组？");
 
-        when(faqStatsDAO.findByHash(question.toLowerCase())).thenReturn(existing);
+        when(faqStatsDAO.findByHash(anyString())).thenReturn(existing);
         doNothing().when(faqStatsDAO).update(any(AIFaqStatistics.class));
 
         aiService.recordQuestionStatistics(question);
@@ -652,12 +652,13 @@ class AIServiceIT {
     void updateMessageStatus_withExistingStatus_shouldReturnTrue() {
         AIMessageStatus status = new AIMessageStatus();
         status.setId(1);
+        status.setUserId(1);
         status.setStatus(AIMessageStatus.STATUS_PENDING);
 
         when(messageStatusDAO.findById(1)).thenReturn(status);
         doNothing().when(messageStatusDAO).update(any(AIMessageStatus.class));
 
-        boolean result = aiService.updateMessageStatus(1, AIMessageStatus.STATUS_COMPLETED);
+        boolean result = aiService.updateMessageStatus(1, AIMessageStatus.STATUS_COMPLETED, 1);
 
         assertThat(result).isTrue();
     }
@@ -666,7 +667,7 @@ class AIServiceIT {
     void updateMessageStatus_withNonExistingStatus_shouldReturnFalse() {
         when(messageStatusDAO.findById(9999)).thenReturn(null);
 
-        boolean result = aiService.updateMessageStatus(9999, AIMessageStatus.STATUS_COMPLETED);
+        boolean result = aiService.updateMessageStatus(9999, AIMessageStatus.STATUS_COMPLETED, 1);
 
         assertThat(result).isFalse();
     }

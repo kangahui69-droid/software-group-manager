@@ -1485,7 +1485,7 @@ class ProjectApiServletTest {
             List<Project> projects = Arrays.asList(
                     createProject(1, STATUS_APPROVED, MEMBER_USER_ID)
             );
-            when(mockProjectService.getMyProjects(eq(MEMBER_USER_ID), eq(1), anyInt()))
+            when(mockProjectService.getCreatedByMeProjects(eq(MEMBER_USER_ID), eq(1), anyInt()))
                     .thenReturn(Result.ok(projects));
 
             StringWriter sw = new StringWriter();
@@ -2070,7 +2070,8 @@ class ProjectApiServletTest {
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> body = parseJsonRequest(req, Map.class);
-                Integer applicationId = body != null ? (Integer) body.get("applicationId") : null;
+                Integer applicationId = body != null && body.get("applicationId") instanceof Number
+                        ? ((Number) body.get("applicationId")).intValue() : null;
                 if (applicationId == null) {
                     writeJson(resp, Result.error(400, "申请ID不能为空"));
                     return;
@@ -2086,7 +2087,8 @@ class ProjectApiServletTest {
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> body = parseJsonRequest(req, Map.class);
-                Integer applicationId = body != null ? (Integer) body.get("applicationId") : null;
+                Integer applicationId = body != null && body.get("applicationId") instanceof Number
+                        ? ((Number) body.get("applicationId")).intValue() : null;
                 String reason = body != null ? (String) body.get("reason") : null;
                 if (applicationId == null) {
                     writeJson(resp, Result.error(400, "申请ID不能为空"));
@@ -2182,7 +2184,8 @@ class ProjectApiServletTest {
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> body = parseJsonRequest(req, Map.class);
-                Integer newAdminId = body != null ? (Integer) body.get("newAdminId") : null;
+                Integer newAdminId = body != null && body.get("newAdminId") instanceof Number
+                        ? ((Number) body.get("newAdminId")).intValue() : null;
                 if (newAdminId == null) {
                     writeJson(resp, Result.error(400, "新管理员ID不能为空"));
                     return;
@@ -2212,7 +2215,7 @@ class ProjectApiServletTest {
                 if (pageStr != null) page = Integer.parseInt(pageStr);
             } catch (NumberFormatException ignored) {}
 
-            Result result = projectService.getMyProjects(currentUser.getId(), page, 20);
+            Result result = projectService.getCreatedByMeProjects(currentUser.getId(), page, 20);
             writeJson(resp, result);
         }
 

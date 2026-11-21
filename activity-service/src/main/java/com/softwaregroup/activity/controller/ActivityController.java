@@ -3,7 +3,12 @@ package com.softwaregroup.activity.controller;
 import com.softwaregroup.activity.model.dto.ActivityDTO;
 import com.softwaregroup.activity.model.dto.ActivityFilterDTO;
 import com.softwaregroup.activity.service.ActivityService;
+import com.softwaregroup.common.security.AuthenticatedUser;
+import com.softwaregroup.common.security.ApiAuthenticationFilter;
+import com.softwaregroup.common.security.CurrentUser;
+import com.softwaregroup.common.security.RequireRole;
 import com.softwaregroup.common.util.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +30,7 @@ public class ActivityController {
      */
     @PostMapping
     public Result createActivity(@RequestBody ActivityDTO dto,
-                                 @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+                                 @AuthenticatedUser Integer userId) {
         return activityService.createActivity(dto, userId);
     }
 
@@ -35,7 +40,7 @@ public class ActivityController {
     @PutMapping("/{id}")
     public Result updateActivity(@PathVariable Integer id,
                                  @RequestBody ActivityDTO dto,
-                                 @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+                                 @AuthenticatedUser Integer userId) {
         return activityService.updateActivity(id, dto, userId);
     }
 
@@ -44,7 +49,7 @@ public class ActivityController {
      */
     @DeleteMapping("/{id}")
     public Result deleteActivity(@PathVariable Integer id,
-                                 @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+                                 @AuthenticatedUser Integer userId) {
         return activityService.deleteActivity(id, userId);
     }
 
@@ -55,29 +60,31 @@ public class ActivityController {
     public Result listActivities(@RequestParam(required = false) String keyword,
                                   @RequestParam(required = false) String activityType,
                                   @RequestParam(required = false) String status,
-                                  @RequestParam(required = false) String approvalStatus) {
+                                  @RequestParam(required = false) String approvalStatus,
+                                  HttpServletRequest request) {
         ActivityFilterDTO filter = new ActivityFilterDTO();
         filter.setKeyword(keyword);
         filter.setActivityType(activityType);
         filter.setStatus(status);
         filter.setApprovalStatus(approvalStatus);
-        return activityService.listActivities(filter);
+        return activityService.listActivities(filter, (CurrentUser) request.getAttribute(ApiAuthenticationFilter.PRINCIPAL_ATTRIBUTE));
     }
 
     /**
      * 活动详情
      */
     @GetMapping("/{id}")
-    public Result getActivityDetail(@PathVariable Integer id,
-                                    @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
-        return activityService.getActivityDetail(id, userId);
+    public Result getActivityDetail(@PathVariable Integer id, HttpServletRequest request) {
+        CurrentUser user = (CurrentUser) request.getAttribute(ApiAuthenticationFilter.PRINCIPAL_ATTRIBUTE);
+        return activityService.getActivityDetail(id, user == null ? null : user.id(),
+                user != null && "ADMIN".equals(user.role()));
     }
 
     /**
      * 我报名的活动
      */
     @GetMapping("/my")
-    public Result getMyActivities(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getMyActivities(@AuthenticatedUser Integer userId) {
         return activityService.getMyActivities(userId);
     }
 
@@ -85,7 +92,7 @@ public class ActivityController {
      * 我创建的活动
      */
     @GetMapping("/created")
-    public Result getMyCreatedActivities(@RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+    public Result getMyCreatedActivities(@AuthenticatedUser Integer userId) {
         return activityService.getMyCreatedActivities(userId);
     }
 
@@ -94,7 +101,7 @@ public class ActivityController {
      */
     @PostMapping("/{id}/register")
     public Result register(@PathVariable Integer id,
-                           @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+                           @AuthenticatedUser Integer userId) {
         return activityService.register(id, userId);
     }
 
@@ -104,7 +111,7 @@ public class ActivityController {
     @PostMapping("/{activityId}/participants/{userId}/approve")
     public Result approveParticipant(@PathVariable Integer activityId,
                                      @PathVariable Integer userId,
-                                     @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                     @AuthenticatedUser Integer operatorId) {
         return activityService.approveParticipant(activityId, userId, operatorId);
     }
 
@@ -114,7 +121,7 @@ public class ActivityController {
     @PostMapping("/{activityId}/participants/{userId}/reject")
     public Result rejectParticipant(@PathVariable Integer activityId,
                                      @PathVariable Integer userId,
-                                     @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                     @AuthenticatedUser Integer operatorId) {
         return activityService.rejectParticipant(activityId, userId, operatorId);
     }
 
@@ -124,7 +131,7 @@ public class ActivityController {
     @PostMapping("/{activityId}/participants/batch-approve")
     public Result batchApprove(@PathVariable Integer activityId,
                                 @RequestBody Map<String, Object> body,
-                                @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                @AuthenticatedUser Integer operatorId) {
         List<Integer> userIds = (List<Integer>) body.get("userIds");
         return activityService.batchApprove(activityId, userIds, operatorId);
     }
@@ -135,7 +142,7 @@ public class ActivityController {
     @PostMapping("/{activityId}/participants/batch-reject")
     public Result batchReject(@PathVariable Integer activityId,
                                @RequestBody Map<String, Object> body,
-                               @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                               @AuthenticatedUser Integer operatorId) {
         List<Integer> userIds = (List<Integer>) body.get("userIds");
         return activityService.batchReject(activityId, userIds, operatorId);
     }
@@ -144,8 +151,9 @@ public class ActivityController {
      * 活动审核通过
      */
     @PostMapping("/{id}/approve")
+    @RequireRole("ADMIN")
     public Result approveActivity(@PathVariable Integer id,
-                                   @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                   @AuthenticatedUser Integer operatorId) {
         return activityService.approveActivity(id, operatorId);
     }
 
@@ -153,9 +161,10 @@ public class ActivityController {
      * 活动审核驳回
      */
     @PostMapping("/{id}/reject")
+    @RequireRole("ADMIN")
     public Result rejectActivity(@PathVariable Integer id,
                                    @RequestBody Map<String, String> body,
-                                   @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                   @AuthenticatedUser Integer operatorId) {
         String reason = body.get("reason");
         return activityService.rejectActivity(id, reason, operatorId);
     }
@@ -165,7 +174,7 @@ public class ActivityController {
      */
     @PostMapping("/{id}/cancel")
     public Result cancelActivity(@PathVariable Integer id,
-                                   @RequestHeader(value = "X-User-Id", required = false) Integer operatorId) {
+                                   @AuthenticatedUser Integer operatorId) {
         return activityService.cancelActivity(id, operatorId);
     }
 
@@ -173,8 +182,9 @@ public class ActivityController {
      * 获取活动报名列表
      */
     @GetMapping("/{id}/participants")
-    public Result getActivityParticipants(@PathVariable Integer id) {
-        return activityService.getActivityParticipants(id);
+    public Result getActivityParticipants(@PathVariable Integer id,
+                                           @AuthenticatedUser Integer operatorId) {
+        return activityService.getActivityParticipants(id, operatorId);
     }
 
     /**
